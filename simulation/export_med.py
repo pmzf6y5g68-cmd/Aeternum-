@@ -77,9 +77,17 @@ def main():
     ref[mm.G_RAMP] = 5
     ref = canon(ref[None])[0]
 
+    # meilleure stratégie en gardant médecine : sélection dédiée (halving_med_garder.json), sinon variante
+    if os.path.exists(os.path.join(RES, "halving_med_garder.json")):
+        hgm = load("halving_med_garder.json")
+        kg = canon(np.array([hgm["champion_genome"]], dtype=np.int64))[0]
+        keep_name = "Meilleure stratégie en gardant médecine (≤ 10 h par semaine au début)"
+    else:
+        kg = keep
+        keep_name = "Ta stratégie en gardant médecine"
     roles = [("Ta stratégie retenue (≤ 10 h par semaine au début)", g10)]
     seen = {key(g10)}
-    for name, g in [("Sans limite d'effort", gl), ("Ta stratégie en gardant médecine", keep),
+    for name, g in [("Sans limite d'effort", gl), (keep_name, kg),
                     ("Référence : médecine seule", ref)]:
         if key(g) in seen:
             print(f"  « {name} » identique à une ligne précédente : non répétée", flush=True)

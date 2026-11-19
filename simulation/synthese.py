@@ -41,6 +41,7 @@ if cal:
     P("")
 
 for tag, titre in [("med_10h", "Ta stratégie : au plus 10 h par semaine au début"),
+                   ("med_garder", "Meilleure stratégie en gardant médecine (≤ 10 h)"),
                    ("med_libre", "Sans limite d'effort (comparaison)"),
                    ("generic_10h", "Version générique : au plus 10 h par semaine au début")]:
     h = load(f"halving_{tag}.json")
