@@ -1261,7 +1261,7 @@ def sim_one(g, U, Z, UI, ZI, ENG, SEC, W, out, trace, do_trace):
                         inv_cap += move
                     r = 0.0055 + 0.045 * z[3]
                     invest_gain = inv_cap * r
-                    rev = invest_gain
+                    rev = inv_cap * 0.0055  # revenu réalisable : le rendement moyen seulement ; les variations restent dans le portefeuille
                 else:
                     if base_on and base_kind == 3 and base_months >= 12 and cash >= 12000.0 \
                             and immo_units < 1.0 + base_salary / 1500.0 + t / 48.0:
@@ -1316,8 +1316,8 @@ def sim_one(g, U, Z, UI, ZI, ENG, SEC, W, out, trace, do_trace):
                 last_profit = profit
             last_rev = rev
             if eng == E_ETF:
-                inv_cap += invest_gain
-                cash += inc_b + side_inc - living
+                inv_cap += invest_gain - rev  # le rendement moyen est retiré en trésorerie
+                cash += rev + inc_b + side_inc - living
             else:
                 cash += income + inc_b + side_inc - living
 
