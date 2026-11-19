@@ -296,6 +296,7 @@ def sim_one(g, U, Z, UI, ZI, ENG, SEC, W, out, trace, do_trace):
     phase_t0 = 0
     pstreak = 0
     served = 0.0
+    b2b_served = 0.0
     retainers = 0.0
     ret_price = 0.0
     partner = 0.0
@@ -391,7 +392,8 @@ def sim_one(g, U, Z, UI, ZI, ENG, SEC, W, out, trace, do_trace):
         youth_t = 1.0 - t / 48.0
         if youth_t < 0.0:
             youth_t = 0.0
-        youth_s = 1.0 - served / 10.0
+        # le malus d'âge s'efface avec l'expérience dans l'activité en cours (ou une vraie expérience B2B passée)
+        youth_s = 1.0 - max(b2b_served, served) / 10.0
         if youth_s < 0.0:
             youth_s = 0.0
         youth = youth_t * youth_s
@@ -547,6 +549,7 @@ def sim_one(g, U, Z, UI, ZI, ENG, SEC, W, out, trace, do_trace):
                 tech_h = days * 8.0
                 ins_h = days * 8.0 * 0.3
                 served += days / 20.0
+                b2b_served += days / 20.0
 
             elif eng == E_AGENCY:
                 avail = work + cofh
@@ -617,6 +620,7 @@ def sim_one(g, U, Z, UI, ZI, ENG, SEC, W, out, trace, do_trace):
                     ret_price = (rk * ret_price + rn * AG_RET[tier] * pf) / (rk + rn)
                 retainers = rk + rn
                 served += new_cl
+                b2b_served += new_cl
                 rep = min(1.0, rep * 0.995 + 0.03 * new_cl * (0.4 + tech_e))
                 cost += 150.0 + 25.0 * retainers
                 tech_h = min(need, cap_h) + 0.5 * ret_h
@@ -1111,6 +1115,8 @@ def sim_one(g, U, Z, UI, ZI, ENG, SEC, W, out, trace, do_trace):
                             ret_price = (rk * ret_price + rn * SVC[eng, SV_RECP] * pf) / (rk + rn)
                         retainers = rk + rn
                         served += units
+                        if eng == 15 or eng == 16:
+                            b2b_served += units
                         rep = min(1.0, rep * 0.995 + 0.02 * units / (1.0 + 0.1 * units) * (0.4 + skill))
                         own_h = min(need, cap_h)
                         if sk == 0.0:
@@ -1426,6 +1432,10 @@ def sim_one(g, U, Z, UI, ZI, ENG, SEC, W, out, trace, do_trace):
                     pstreak = 0
                     fo = FAMILY[old]
                     new_b2b = _is_product(eng) and ENG[eng, P_B2B] > 0.5
+                    served_old = served
+                    served = 0.0
+                    contacted = 0.0
+                    rep *= 0.5
                     hourly_old = fo == F_SVC and SVC[old, SV_HOURLY] > 0.5
                     if fo == F_AGENCY or fo == F_SVC:
                         if _is_product(eng) and keep and not hourly_old:
@@ -1444,7 +1454,7 @@ def sim_one(g, U, Z, UI, ZI, ENG, SEC, W, out, trace, do_trace):
                         deleg_cap = 0.0
                         last_deleg = 0.0
                     elif fo == F_FREE and new_b2b:
-                        warm = 0.05 * served
+                        warm = 0.05 * served_old
                     if fo == F_FLIP:
                         cash += 0.85 * stock
                         stock = 0.0
