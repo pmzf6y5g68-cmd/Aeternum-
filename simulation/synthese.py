@@ -48,29 +48,29 @@ for tag, titre in [("med_10h", "Ta stratégie : au plus 10 h par semaine au déb
         continue
     P(f"## {titre}\n")
     P("Étapes de coupe et relance :\n")
-    P("| Étape | Vies par stratégie | Stratégies | Coupées | Gardées | Relancées | Meilleure utilité | ≤ 24 mois | ≤ 60 mois |")
-    P("|---:|---:|---:|---:|---:|---:|---:|---:|---:|")
+    P("| Étape | Vies par stratégie | Stratégies | Coupées | Gardées | Relancées | Meilleur score | ≤ 24 mois | ≤ 60 mois | Licorne |")
+    P("|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|")
     for e in h["etapes"]:
         P(f"| {e['etape']} | {e['vies_par_strategie']:,} | {e['strategies']} | {e['coupees']} | {e['gardees']} | "
-          f"{e['relancees_par_mutation']} | {fr(e['utilite_meilleure'], 4)} | {pct(e['p10k_24m_meilleure_pct'])} | "
-          f"{pct(e['p10k_60m_meilleure_pct'])} |".replace(",", " "))
+          f"{e['relancees_par_mutation']} | {fr(e['score_meilleure'], 4)} | {pct(e['p10k_24m_meilleure_pct'])} | "
+          f"{pct(e['p10k_60m_meilleure_pct'])} | {pct(e['licorne_meilleure_pct'])} |".replace(",", " "))
     P("")
     P("Finalistes (300 000 vies, puis 12 mondes perturbés) :\n")
-    P("| Parcours | ≤ 24 mois | ≤ 60 mois | Part du temps ≥ 10 k€ | Licorne | Abandon | Catastrophe | Revenu médian 5 ans | Utilité monde moy. | Utilité monde min. |")
-    P("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|")
+    P("| Parcours | ≤ 24 mois | ≤ 60 mois | Part du temps ≥ 10 k€ | Licorne | Abandon | Catastrophe | Revenu médian 5 ans | Score (300 000 vies) | Score moyen mondes | Score min mondes |")
+    P("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|")
     mondes = {tuple(m["genome"]): m for m in h["mondes"]}
     for r in h["final"]:
         s = r["stats"]
         m = mondes.get(tuple(r["strategie"]["genome"]))
         P(f"| {r['strategie']['parcours']} | {pct(s['p10k_24m'] * 100)} | {pct(s['p10k_60m'] * 100)} | "
           f"{pct(s['part_temps_10k_3_10ans'] * 100)} | {pct(s['p_licorne'] * 100)} | {pct(s['p_abandon'] * 100)} | "
-          f"{pct(s['p_catastrophe'] * 100)} | {eur(r['i60_quantiles']['0.5'])} | "
-          f"{fr(m['utilite_moyenne_mondes'], 4) if m else '—'} | {fr(m['utilite_minimum_mondes'], 4) if m else '—'} |")
+          f"{pct(s['p_catastrophe'] * 100)} | {eur(r['i60_quantiles']['0.5'])} | {fr(r['score'], 4)} | "
+          f"{fr(m['score_moyen_mondes'], 4) if m else '—'} | {fr(m['score_min_mondes'], 4) if m else '—'} |")
     P("")
     ch = tuple(h["champion_genome"])
     rec = [r for r in h["final"] if tuple(r["strategie"]["genome"]) == ch]
     if rec:
-        P(f"Retenue (utilité moyenne sur les 12 mondes la plus haute) : **{rec[0]['strategie']['parcours']}**\n")
+        P(f"Retenue (score moyen sur les mondes le plus haut) : **{rec[0]['strategie']['parcours']}**\n")
     P("")
 
 v = load("med_variants.json")

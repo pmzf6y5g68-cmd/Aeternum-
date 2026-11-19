@@ -12,6 +12,7 @@ import numpy as np  # noqa: E402
 from model import FAMILY, F_JOB, F_SAL, F_FREE, F_AGENCY, F_CLOSER, F_SVC, F_PROD, F_ECOM, F_FLIP, F_CONTENT, \
     F_INFO, F_AUD, F_TRADING, F_SPEC, F_INV, F_FRAUD  # noqa: E402
 from params import WORLD_NAMES, ENGINES_SHORT  # noqa: E402
+import evolve2 as E  # noqa: E402
 
 RES = os.path.join(HERE, "results")
 OUT = os.path.join(RES, "dash_v2")
@@ -96,7 +97,7 @@ def main():
     fastest = max(rows_all, key=lambda c: (c["p10k_24m"], c["p10k_12m"], c["part_temps_10k"]))
     steadiest = max(rows_all, key=lambda c: (c["part_temps_10k"], c["p10k_24m"]))
     biggest = max(rows_all, key=lambda c: (c["p_licorne"], c["part_temps_10k"]))
-    roles = [("Meilleur compromis", best), ("La plus rapide vers 10 k€", fastest), ("La plus pérenne", steadiest),
+    roles = [("Meilleur compromis (critère de la campagne)", best), ("La plus rapide vers 10 k€", fastest), ("La plus pérenne", steadiest),
              ("Le plus gros potentiel licorne", biggest)]
     champions, used = [], set()
     for role, c in roles:
@@ -118,7 +119,20 @@ def main():
         champions.append(c)
         if len(champions) >= 14:
             break
-    save("champions.json", champions, ["results/v2_main1.json"])
+    # stratégie retenue : sélection « vitesse × valorisation » sous 10 h au début (halving.py)
+    hg = load("halving_generic_10h.json")
+    ret_rec = None
+    if hg:
+        ret_rec = E.deep_eval(np.array([hg["champion_genome"]], dtype=np.int64), lives=300_000, seed=999)[0]
+        ret = dict(strat_row(ret_rec))
+        ret["role"] = "Retenue : vitesse × valorisation (≤ 10 h au début)"
+        ret["id"] = ret["role"]
+        ret["score_compromis"] = r5(compromise(ret))
+        champions = [ret] + champions
+        best_parcours = ret["parcours"]
+    else:
+        best_parcours = best["parcours"]
+    save("champions.json", champions, ["results/v2_main1.json", "results/halving_generic_10h.json"])
 
     # 2. Convergence
     rows = []
@@ -164,8 +178,10 @@ def main():
 
     # 5. Course aux 10 k€/mois
     by_genome = {" ".join(str(x) for x in r["strategie"]["genome"]): r for r in final}
-    series = [("Meilleur compromis", by_genome[best["genome"]]),
+    series = [("Meilleur compromis (critère de la campagne)", by_genome[best["genome"]]),
               ("La plus rapide", by_genome[fastest["genome"]])] + curves
+    if ret_rec is not None:
+        series = [("Retenue : vitesse × valorisation", ret_rec)] + series
     rows = []
     for name, r in series:
         cum = r["p10k_cumul_par_mois"]
@@ -198,7 +214,7 @@ def main():
     rows = [{"vies_simulees": int(lives), "generations": int(gens), "strategies_uniques": int(uniq),
              "iles": main1["iles"], "generations_par_ile": main1["generations_par_ile"],
              "mondes_perturbes": len(robust["worlds"]) if robust else 0, "moteurs": len(locked["engines"]),
-             "champion": best["parcours"]}]
+             "champion": best_parcours}]
     save("campagne.json", rows, ["results/v2_main1.json", "results/v2_locked.json", "results/v2_robust.json"])
     # 10. Calibrage : cibles, facteurs et probabilités avant / après
     cal = load("calibrage.json")
