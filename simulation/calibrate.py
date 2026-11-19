@@ -15,8 +15,8 @@ plupart sont des jugements, signalés comme tels dans le bloc TARGETS et dans le
   (lecture du tableau à confirmer ; le neuvième décile n'a pas été vérifié) ; 22 % des micro-entrepreneurs de
   moins de 30 ans sont encore actifs 3 ans après leur immatriculation ; 63 % des entreprises individuelles classiques et
   39 % des micro-entreprises qui ont démarré survivent 5 ans ;
-- Chague, De-Losso et Giovannetti (2019) : 97 % des day traders persistants perdent de l'argent,
-  1,1 % gagnent plus que le salaire minimum ;
+- Chague, De-Losso et Giovannetti (« Day Trading for a Living? ») : 1,1 % des day traders brésiliens suivis
+  gagnent plus que le salaire minimum (le chiffre de 97 % de pertes n'a pas été vérifié) ;
 - les startups ne sont corrigées que pour le revenu du fondateur (les taux de levée et de licorne
   restent calés sur CB Insights et Carta).
 
@@ -50,7 +50,7 @@ TARGETS = {
     10: 0.02,   # e-commerce : jugement
     11: 0.03,   # contenu : 4 à 5 % des créateurs gagnent plus de 100 000 $/an (Aspire 2022, Kajabi 2024)
     12: 0.05,   # info-produits : estimation (1 à 5 % des vendeurs de formations, chiffres de plateformes non vérifiés)
-    13: 0.01,   # trading : Chague et al. 2019 (1,1 % des day traders persistants gagnent plus que le salaire minimum)
+    13: 0.01,   # trading : Chague et al. (1,1 % des day traders suivis gagnent plus que le salaire minimum)
     15: 0.04,   # agence réseaux sociaux : jugement
     19: 0.04,   # conciergerie Airbnb : jugement
     24: 0.05,   # mandataire immobilier : jugement (commission seule, forte rotation)
@@ -60,7 +60,7 @@ TARGETS = {
     39: 0.02,   # sites SEO / affiliation : jugement
     40: 0.02,   # newsletter payante : jugement
     41: 0.01,   # musique : jugement
-    42: 0.005,  # paris sportifs : jugement (comptes limités par les opérateurs ; voir Chague et al. pour le trading)
+    42: 0.005,  # paris sportifs : jugement (comptes limités par les opérateurs)
     43: 0.01,   # poker en ligne : jugement
     44: 0.01,   # memecoins / NFT : jugement
 }
