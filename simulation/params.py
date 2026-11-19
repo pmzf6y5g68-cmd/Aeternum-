@@ -187,6 +187,20 @@ ENG = np.array([
 ] + [_Z] * 16, dtype=np.float64)
 assert ENG.shape == (50, 19)
 
+# --------------------------------------------------------------------------
+# Calibrage sur les données réelles (colonne 19 de ENG, P_CAL dans model.py).
+# Facteur de difficulté du marché par moteur : il multiplie la demande (clients, acheteurs, leads,
+# marge, gains) pour que la meilleure version de chaque activité, seule, atteigne 10 k€/mois
+# (3 mois de suite) dans 10 ans avec une probabilité proche des données publiques
+# (enquêtes créateurs, Insee non-salariés et micro-entrepreneurs, Chague et al. 2019…).
+# Cibles et sources : calibrate.py et README. 1.0 = pas de correction.
+CALIBRAGE = {}
+CAL = np.ones(50)
+for _e, _k in CALIBRAGE.items():
+    CAL[_e] = _k
+ENG = np.hstack([ENG, CAL[:, None]])
+assert ENG.shape == (50, 20)
+
 # Monde « nominal » : multiplicateurs (voir model.py, W_*). W_TRADE est additif.
 WORLD_NOMINAL = np.array([1.0] * 12 + [0.0, 1.0, 1.0, 1.0, 0.0], dtype=np.float64)
 WORLD_NAMES = [

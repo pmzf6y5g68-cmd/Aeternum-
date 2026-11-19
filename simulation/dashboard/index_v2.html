@@ -53,15 +53,40 @@
 @media (max-width: 720px) { .ae-duo { grid-template-columns: minmax(0, 1fr); } }
 .ae-h3 { font-size: var(--cds-font-size-body); font-weight: var(--cds-font-weight-medium); margin: 0; color: var(--color-fg-muted); }
 .ae-chart.ae-bars { min-height: 120px; }
+.ae-sep { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0; padding-top: var(--cds-gap-md); border-top: 1px solid var(--color-border-line); }
 </style>
 
 <div class="ae" lang="fr" data-read>
 
 <header class="ae-head" id="entete">
   <h1>Évolution Aeternum</h1>
-  <p class="ae-lede">Après <b data-draw="nb-gen" data-source="campagne" data-field="generations" data-row="0">—</b> générations d'évolution et <b data-draw="nb-vies" data-source="campagne" data-field="vies_simulees" data-row="0">—</b> vies simulées mois par mois, le meilleur compromis pour toi est : <b data-draw="champion" data-source="champions" data-field="parcours" data-row="0">—</b>.</p>
+  <p class="ae-lede">Après <b data-draw="nb-gen" data-source="campagne" data-field="generations" data-row="0">—</b> générations d'évolution et <b data-draw="nb-vies" data-source="campagne" data-field="vies_simulees" data-row="0">—</b> vies simulées mois par mois, le meilleur compromis pour un jeune de 18 ans sans expérience est : <b data-draw="champion" data-source="champions" data-field="parcours" data-row="0">—</b>.</p>
   <p class="ae-note">Profil simulé : 18 ans, sans expérience ni réseau, en France, quelques centaines d'euros d'épargne, 5 à 20 h/semaine au début à côté d'une activité de base (études, petit job, job ou rien) ; temps plein seulement une fois que le projet rapporte. « 10 k€/mois » = revenu total avant impôts (projet + activité de base), tenu 3 mois de suite. « Licorne » = entreprise valorisée au moins 1 milliard de dollars.</p>
 </header>
+
+<section class="ae-sec" id="pour-toi">
+  <h2>Pour toi : étudiant en médecine, 18 ans, près de Paris</h2>
+  <p class="ae-note">Simulation personnalisée sur 15 ans (de 18 à 33 ans) : le vrai parcours de médecine (cours, externat, internat, puis médecin généraliste ou spécialiste), 1 500 € d'épargne, quelques bases en code, 5 à 20 h/semaine pour un projet au début. L'algorithme pouvait garder médecine, prendre une année de césure ou arrêter. Revenus avant impôts.</p>
+  <div class="ae-tablewrap">
+    <table data-source="champions_med" data-row-key="id" aria-label="Stratégies personnalisées">
+      <thead><tr>
+        <th data-field="id">Stratégie</th>
+        <th data-field="parcours">Projet à côté</th>
+        <th data-field="activite_base">Médecine</th>
+        <th class="n" data-field="p10k_60m_pct">10 k€ en 5 ans</th>
+        <th class="n" data-field="p10k_120m_pct">en 15 ans</th>
+        <th class="n" data-field="part_temps_10k_pct">Temps à ≥ 10 k€</th>
+        <th class="n" data-field="p_licorne_pct">Licorne</th>
+        <th class="n" data-field="p_abandon_pct">Projet abandonné</th>
+      </tr></thead>
+      <tbody data-draw="tb-med"></tbody>
+    </table>
+  </div>
+  <h3 class="ae-h3">Revenu mensuel médian de 18 à 33 ans</h3>
+  <div class="ae-chart" data-draw="traj-med" data-source="trajectoire_med" role="img" aria-label="Revenu mensuel médian de 18 à 33 ans selon la stratégie"></div>
+</section>
+
+<h2 class="ae-sep">Pour un jeune de 18 ans en général</h2>
 
 <section class="ae-tiles" id="chiffres-cles" aria-label="Chiffres clés du meilleur compromis">
   <div class="ae-tile" id="tuile-24m">
@@ -468,7 +493,7 @@ dash.draw('evo', (el) => {
         const p = pts.reduce((a, b) => (Math.abs(b.generation - g) < Math.abs(a.generation - g) ? b : a));
         const d = document.createElement('div'); const b = document.createElement('b'); b.textContent = run + ', génération ' + AE.fr.format(',.0f')(p.generation); d.appendChild(b); t.appendChild(d);
         const e = document.createElement('div'); e.textContent = 'meilleur score ' + AE.fr.format('.3f')(p.meilleure_utilite) + ' · ' + p.meilleur_parcours; t.appendChild(e);
-        const f = document.createElement('div'); f.className = 'ae-k'; f.textContent = AE.big(p.vies_millions * 1e6) + ' vies simulées à ce stade'; t.appendChild(f);
+        const f = document.createElement('div'); f.className = 'ae-k'; f.textContent = AE.fr.format(',.0f')(Math.round(p.vies_milliards * 1e9)) + ' vies simulées à ce stade'; t.appendChild(f);
       });
       t.hidden = false; const r = el.getBoundingClientRect(); AE.place(el, t, ev.clientX - r.left, ev.clientY - r.top);
     })
@@ -589,4 +614,72 @@ dash.draw('traj', (el) => {
     })
     .on('pointerleave', () => { t.hidden = true; vline.attr('opacity', 0); });
 });
+</script>
+
+<script>
+// Version personnalisée : tableau et revenu médian sur 15 ans
+(function () {
+  const td = (tr, text, cls) => { const c = document.createElement('td'); c.textContent = text; if (cls) c.className = cls; tr.appendChild(c); return c; };
+  dash.draw('tb-med', (tb) => {
+    tb.replaceChildren();
+    if (!AE.ok('champions_med')) return;
+    dash.data('champions_med').data.forEach((r) => {
+      const tr = document.createElement('tr');
+      tr.dataset.key = r.id;
+      if (r.id.indexOf('Référence') === 0) tr.className = 'ae-dead';
+      td(tr, r.id);
+      td(tr, r.parcours, 'ae-wrap');
+      td(tr, r.activite_base, 'ae-wrap');
+      td(tr, AE.pct(r.p10k_60m_pct) + ' %', 'n');
+      td(tr, AE.pct(r.p10k_120m_pct) + ' %', 'n');
+      td(tr, AE.pct(r.part_temps_10k_pct) + ' %', 'n');
+      td(tr, AE.pct(r.p_licorne_pct) + ' %', 'n');
+      td(tr, AE.pct(r.p_abandon_pct) + ' %', 'n');
+      tb.appendChild(tr);
+    });
+  });
+  dash.draw('traj-med', (el) => {
+    if (!AE.ok('trajectoire_med')) { if (!AE.fail(el, 'trajectoire_med')) el.replaceChildren(); return; }
+    const rows = dash.data('trajectoire_med').data;
+    const names = Array.from(new Set(rows.map((r) => r.strategie)));
+    const series = names.map((n) => ({ n, pts: rows.filter((r) => r.strategie === n).sort((a, b) => a.mois - b.mois) }));
+    const W = el.clientWidth || 600, H = 300, m = { t: 12, r: 16, b: 30, l: 48 };
+    el.replaceChildren();
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Revenu médian de 18 à 33 ans');
+    const x = d3.scaleLinear().domain([18, 33]).range([m.l, W - m.r]);
+    const y = d3.scaleLinear().domain([Math.min(0, d3.min(rows, (r) => r.mediane)), d3.max(rows, (r) => r.mediane) * 1.08]).nice().range([H - m.b, m.t]);
+    svg.append('g').attr('class', 'grid').attr('transform', `translate(${m.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(-(W - m.l - m.r)).tickFormat(''));
+    svg.append('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', y(10000)).attr('y2', y(10000)).style('stroke', 'var(--cds-chart-reference)').attr('stroke-dasharray', '4 3');
+    svg.append('text').attr('x', W - m.r).attr('y', y(10000) - 5).attr('text-anchor', 'end').style('fill', 'var(--cds-text-secondary)').style('font-size', 'var(--cds-font-size-caption)').text('10 k€/mois');
+    svg.append('g').attr('class', 'axis').attr('transform', `translate(0,${H - m.b})`).call(d3.axisBottom(x).tickValues([18, 20, 22, 24, 26, 28, 30, 33]).tickFormat((d) => d + ' ans'));
+    svg.append('g').attr('class', 'axis').attr('transform', `translate(${m.l},0)`).call(d3.axisLeft(y).ticks(5).tickFormat((d) => AE.fr.format(',.0f')(d / 1000) + ' k€'));
+    const C = AE.colors();
+    const col = (n, i) => (n.indexOf('Référence') === 0 ? 'var(--cds-chart-muted)' : C[i % C.length]);
+    series.forEach((s, i) => {
+      svg.append('path').datum(s.pts).attr('fill', 'none').style('stroke', col(s.n, i)).attr('stroke-width', s.n.indexOf('Référence') === 0 ? 2.5 : 2)
+        .attr('d', d3.line().x((d) => x(d.age)).y((d) => y(d.mediane)));
+    });
+    const leg = document.createElement('div'); leg.className = 'ae-legend';
+    series.forEach((s, i) => { const sp = document.createElement('span'); const ic = document.createElement('i'); ic.style.background = col(s.n, i); sp.appendChild(ic); sp.appendChild(document.createTextNode(s.n)); leg.appendChild(sp); });
+    el.appendChild(leg);
+    const t = AE.tip(el);
+    const vline = svg.append('line').attr('y1', m.t).attr('y2', H - m.b).style('stroke', 'var(--cds-chart-reference)').attr('opacity', 0);
+    svg.append('rect').attr('x', m.l).attr('y', m.t).attr('width', W - m.l - m.r).attr('height', H - m.t - m.b).attr('fill', 'transparent')
+      .on('pointermove', (ev) => {
+        const [px] = d3.pointer(ev); const age = x.invert(px);
+        const mo = Math.max(1, Math.min(180, Math.round((age - 18) * 12)));
+        vline.attr('x1', x(18 + mo / 12)).attr('x2', x(18 + mo / 12)).attr('opacity', 1);
+        t.replaceChildren();
+        const h = document.createElement('div'); const b = document.createElement('b'); b.textContent = AE.fr.format('.1f')(18 + mo / 12) + ' ans'; h.appendChild(b); t.appendChild(h);
+        series.forEach((s) => {
+          const p = s.pts.find((d) => d.mois === mo) || s.pts[s.pts.length - 1];
+          const d = document.createElement('div'); const k = document.createElement('span'); k.className = 'ae-k'; k.textContent = s.n + ' : ';
+          d.appendChild(k); d.appendChild(document.createTextNode(AE.eur(p.mediane) + '/mois (médiane), ' + AE.pct(p.part_10k_pct) + ' % à ≥ 10 k€'));
+          t.appendChild(d);
+        });
+        t.hidden = false; const rr = el.getBoundingClientRect(); AE.place(el, t, ev.clientX - rr.left, ev.clientY - rr.top);
+      })
+      .on('pointerleave', () => { t.hidden = true; vline.attr('opacity', 0); });
+  });
+})();
 </script>

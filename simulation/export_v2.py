@@ -45,6 +45,10 @@ def lic_score(p):
     return min(1.0, max(0.0, (np.log10(p + 1e-7) + 5) / 3))
 
 
+def has_fraud(genome):
+    return any(FAMILY[int(x)] == F_FRAUD for x in genome[:3])
+
+
 def strat_row(r, extra=None):
     s, g = r["stats"], r["strategie"]
     row = {
@@ -82,7 +86,8 @@ def main():
     traj = load("v2_trajectoire.json")
 
     # 1. Les trois stratégies à connaître + finalistes distincts
-    final = main1["final"]
+    # la fraude reste dans le modèle comme témoin de contrôle : aucune stratégie qui la contient n'est publiée
+    final = [r for r in main1["final"] if not has_fraud(r["strategie"]["genome"])]
     rows_all = [strat_row(r) for r in final]
 
     def compromise(c):
@@ -119,7 +124,7 @@ def main():
     rows = []
     for e in main1["log"]:
         if e["gen"] % 50 == 0:
-            rows.append({"generation": e["gen"], "vies_milliards": round(e["vies"] / 1e9, 4),
+            rows.append({"run": "Évolution principale", "generation": e["gen"], "vies_milliards": round(e["vies"] / 1e9, 4),
                          "meilleure_utilite": r5(e["best_util"]), "utilite_moyenne": r5(e["mean_util"]),
                          "meilleur_parcours": e["best"]})
     save("evolution.json", rows, ["results/v2_main1.json"])
@@ -146,6 +151,8 @@ def main():
     rows, curves = [], []
     for k, v in sorted(locked["engines"].items(), key=lambda kv: int(kv[0])):
         e = int(k)
+        if FAMILY[e] == F_FRAUD:
+            continue
         r = v["final"][0]
         row = strat_row(r, {"moteur": v["moteur"], "domaine": DOMAIN[int(FAMILY[e])]})
         rows.append(row)
@@ -193,6 +200,10 @@ def main():
              "mondes_perturbes": len(robust["worlds"]) if robust else 0, "moteurs": len(locked["engines"]),
              "champion": best["parcours"]}]
     save("campagne.json", rows, ["results/v2_main1.json", "results/v2_locked.json", "results/v2_robust.json"])
+    # 10. Calibrage : cibles, facteurs et probabilités avant / après
+    cal = load("calibrage.json")
+    if cal:
+        save("calibrage.json", cal["lignes"], ["results/calibrage.json"])
     print("meilleur compromis :", best["parcours"], best["genome"])
     print("plus rapide :", fastest["parcours"], fastest["genome"], fastest["p10k_24m_pct"])
     print("plus pérenne :", steadiest["parcours"], steadiest["genome"], steadiest["part_temps_10k_pct"])

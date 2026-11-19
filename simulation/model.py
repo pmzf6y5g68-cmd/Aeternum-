@@ -68,6 +68,7 @@ METRIC_NAMES = ["score_vitesse", "p10k_6m", "p10k_12m", "p10k_24m", "p10k_60m", 
 
 (P_BUILD, P_MINTECH, P_CAPITAL, P_PMF, P_INSEXP, P_B2B, P_ARPU, P_ACQ, P_GORG,
  P_CHURN, P_MARGIN, P_CEIL, P_M0, P_M1, P_MCAP, P_VCHOT, P_PAYBACK, P_MOAT, P_ELAST) = range(19)
+P_CAL = 19  # facteur de difficulté du marché, calé sur les données réelles (calibrate.py)
 
 ELAST = np.array([[1.3, 1.0, 0.55, 0.25],
                   [1.4, 1.0, 0.50, 0.20],
@@ -104,13 +105,13 @@ NSV = 29
 _S = np.zeros((NE, NSV))
 #               price hunit recsh recp  rech  lead  close skill gate cap    deleg labor pool    commod youth ins  cycle recch sale online costr wtp natsec gateinc maxu risk
 _S[15] = [600, 14, 0.60, 450, 7, 0.035, 0.075, 1, 0, 100, 1, 0.62, 60000, 0.004, 0.30, 0.30, 0, 0.070, 0.8, 1, 0.05, 1, -1, 0, 30, 0.1, 0, 0.2, 999]  # agence réseaux sociaux
-_S[16] = [180, 5, 0.35, 650, 20, 0.07, 0.1125, 0, 1, 400, 1, 0.68, 100000, 0.008, 0.05, 0.05, 0, 0.080, 0.3, 1, 0.03, 0, -1, 0, 60, 0.1, 0, 0.2, 999]  # montage vidéo / UGC
-_S[17] = [30, 1.3, 0.85, 125, 5.5, 0.18, 0.2625, 0, 0, 0, 1, 0.82, 25000, 0.002, 0.0, 0.0, 0, 0.100, 0.5, 1, 0.05, 0, -1, 0, 80, 0.05, 1, 0.5, 110]  # cours particuliers
+_S[16] = [180, 5, 0.35, 650, 20, 0.07, 0.1125, 2, 1, 400, 1, 0.68, 100000, 0.008, 0.05, 0.05, 0, 0.080, 0.3, 1, 0.03, 0, -1, 0, 60, 0.1, 0, 0.2, 999]  # montage vidéo / UGC
+_S[17] = [30, 1.3, 0.85, 125, 5.5, 0.18, 0.2625, 2, 0, 0, 1, 0.82, 25000, 0.002, 0.0, 0.0, 0, 0.100, 0.5, 1, 0.05, 0, -1, 0, 80, 0.05, 1, 0.5, 110]  # cours particuliers
 _S[18] = [120, 4.5, 0.55, 420, 16, 0.12, 0.225, 2, 0, 600, 1, 0.85, 50000, 0.0, 0.15, 0.10, 0, 0.040, 1.0, 0, 0.05, 0, 4, 0, 120, 0.05, 1, 0.4, 160]  # services à domicile
 _S[19] = [150, 6, 0.95, 300, 8, 0.06, 0.12, 1, 0, 400, 1, 0.65, 12000, 0.004, 0.25, 0.20, 1, 0.035, 1.5, 0, 0.06, 0, 3, 0, 15, 0.1, 0, 0.3, 999]  # conciergerie Airbnb
-_S[20] = [70, 1.2, 0.0, 0, 0, 0.35, 0.3375, 0, 1, 1500, 1, 0.72, 40000, 0.002, 0.05, 0.0, 0, 0.0, 0.8, 0, 0.35, 0, -1, 0, 250, 0.1, 1, 0.3, 170]  # réparation smartphones / PC
+_S[20] = [70, 1.2, 0.0, 0, 0, 0.35, 0.3375, 2, 1, 1500, 1, 0.72, 40000, 0.002, 0.05, 0.0, 0, 0.0, 0.8, 0, 0.35, 0, -1, 0, 250, 0.1, 1, 0.3, 170]  # réparation smartphones / PC
 _S[21] = [50, 1.3, 0.50, 240, 6, 0.10, 0.1875, 2, 10, 300, 1, 0.8, 30000, 0.002, 0.05, 0.0, 0, 0.060, 0.6, 1, 0.05, 0, -1, 650, 20, 0.05, 1, 0.4, 130]  # coaching sportif (BPJEPS)
-_S[22] = [1500, 35, 0.0, 0, 0, 0.02, 0.15, 0, 2, 3000, 1, 0.62, 20000, 0.003, 0.15, 0.0, 4, 0.0, 0.5, 0, 0.10, 0, -1, 0, 8, 0.15, 1, 0.3, 150]  # photo / vidéo de mariage
+_S[22] = [1500, 35, 0.0, 0, 0, 0.02, 0.15, 2, 2, 3000, 1, 0.62, 20000, 0.003, 0.15, 0.0, 4, 0.0, 0.5, 0, 0.10, 0, -1, 0, 8, 0.15, 1, 0.3, 150]  # photo / vidéo de mariage
 _S[23] = [3500, 45, 0.0, 0, 0, 0.015, 0.375, 1, 0, 1500, 1, 0.5, 8000, 0.0, 0.0, 0.0, 1, 0.0, 0.3, 0, 0.68, 0, -1, 0, 6, 0.5, 1, 0.3, 150]  # organisation de soirées
 _S[24] = [5000, 25, 0.0, 0, 0, 0.008, 0.2625, 1, 1, 1200, 0, 0.0, 30000, 0.0, 0.40, 0.30, 4, 0.0, 0.0, 0, 0.15, 0, 3, 0, 4, 0.15, 0, 0.2, 999]  # mandataire immobilier
 _S[25] = [1800, 45, 0.10, 150, 2, 0.09, 0.2625, 2, 18, 5000, 1, 0.8, 100000, -0.001, 0.20, 0.60, 1, 0.030, 1.0, 0, 0.30, 0, 4, 900, 25, 0.15, 0, 0.4, 999]  # artisan du bâtiment
@@ -537,7 +538,7 @@ def sim_one(g, U, Z, UI, ZI, ENG, SEC, W, out, trace, do_trace):
                 prop = min(sales_h * 2.0, 70.0)
                 win = (0.006 + 0.05 * fr_rep + 0.025 * tech_e) * FR_TWIN[tier] * tal_c * W[W_SERV] * chm * geo_w * sq \
                     * (1.0 - 0.25 * youth)
-                lam = prop * win * math.exp(0.3 * z[0] - 0.045) + audience * 0.0001 * FR_TWIN[tier]
+                lam = (prop * win * math.exp(0.3 * z[0] - 0.045) + audience * 0.0001 * FR_TWIN[tier]) * ENG[eng, P_CAL]
                 backlog += _poisson(lam, u[3], z[7]) * 5.5
                 days = min(backlog, cap_days)
                 backlog = (backlog - days) * 0.8
@@ -587,7 +588,7 @@ def sim_one(g, U, Z, UI, ZI, ENG, SEC, W, out, trace, do_trace):
                     meet = sales_h * 0.06 * (0.4 + sales_e) * (0.4 + network) * geo_p * W[W_SERV]
                     network += 0.015 * sales_h / 40.0 * (1.0 - network)
                 meet += 0.05 * retainers + audience * 0.0002 * (1.3 if narrow else 1.0)
-                meet *= sq * math.exp(0.35 * z[0] - 0.06 - 0.005 * t * W[W_COMMOD])
+                meet *= sq * math.exp(0.35 * z[0] - 0.06 - 0.005 * t * W[W_COMMOD]) * ENG[eng, P_CAL]
                 cred = 0.6 + 0.5 * (1.0 - math.exp(-served / 4.0)) + 0.25 * rep
                 if cred > 1.1:
                     cred = 1.1
@@ -642,7 +643,7 @@ def sim_one(g, U, Z, UI, ZI, ENG, SEC, W, out, trace, do_trace):
                     if tier >= 2:
                         gate = min(1.0, sales_e / 0.45)
                     crt = (0.05 + 0.27 * sales_e) * CL_TCLOSE[tier] * gate * math.sqrt(talent) * (1.0 - 0.1 * youth)
-                    rev = calls * crt * CL_COMM[tier] * W[W_CLOSER]
+                    rev = calls * crt * CL_COMM[tier] * W[W_CLOSER] * ENG[eng, P_CAL]
                     sales_h = calls * 1.5
                     intensity = 1.4
                     if u[3] < 0.08:
@@ -688,7 +689,7 @@ def sim_one(g, U, Z, UI, ZI, ENG, SEC, W, out, trace, do_trace):
                             * (0.3 + 0.7 * tech_e) * (0.5 + quality) \
                             * (sec_pmf if (b2b_prod or eng == E_MARKET) else 1.0) \
                             * (1.5 if narrow else 1.0) * math.sqrt(talent) * (1.25 if has_cof else 1.0) \
-                            * (1.3 if accel else 1.0) * (1.5 if funded_now else 1.0) * W[W_PMF]
+                            * (1.3 if accel else 1.0) * (1.5 if funded_now else 1.0) * W[W_PMF] * 0.6
                         if eng == 31 and diploma == 0 and network < 0.4:
                             ph *= 0.3  # défense : habilitations, crédibilité, réseau institutionnel
                         if u[2] < ph:
@@ -699,6 +700,18 @@ def sim_one(g, U, Z, UI, ZI, ENG, SEC, W, out, trace, do_trace):
                     elif u[15] < 0.02:
                         cq *= 0.5
                         churn_mult = min(3.0, churn_mult * 1.3)
+                    # mortalité des produits : la plupart meurent (idée sans marché, concurrent, IA qui rend le produit banal)
+                    if stage == 0 and u[13] < (0.008 if pmf else 0.02):
+                        launched = False
+                        progress = 0.0
+                        pmf = False
+                        customers = 0.0
+                        mrr = 0.0
+                        quality = 0.0
+                        cq = 1.0
+                        churn_mult = 1.0
+                        n_prod += 1
+                        stagnation += 6  # gros coup au moral
                     gtm_f = 0.55 * work + (0.2 * cofh if cof_is_tech else 0.7 * cofh)
                     prod_f = 0.45 * work + (0.8 * cofh if cof_is_tech else 0.3 * cofh)
                     gtm = gtm_f + 0.35 * team * 140.0 * 0.5 / (1.0 + team / 60.0)
@@ -759,15 +772,17 @@ def sim_one(g, U, Z, UI, ZI, ENG, SEC, W, out, trace, do_trace):
                     else:
                         acq *= cq
                     heavy = ENG[eng, P_ARPU] >= 800.0 and not funded_now
+                    if not funded_now:
+                        acq *= 0.6  # sans équipe financée, la vente plafonne vite
                     if heavy:
                         acq *= 0.3  # gros contrats (défense, santé, énergie, hardware) : cycles de vente longs sans équipe financée
-                    acq *= math.exp(0.35 * z[1] - 0.06) * sat
+                    acq *= math.exp(0.35 * z[1] - 0.06) * sat * ENG[eng, P_CAL]
                     gb = 1.0 + 0.12 * stage + (0.2 if has_cof else 0.0)
                     if funded_now:
                         size_f = 1.0 / (1.0 + (12.0 * mrr / 1e6) ** 0.6)
                     else:
-                        size_f = 0.7 / (1.0 + (12.0 * mrr / 3e5) ** 0.6)
-                    org = customers * ENG[eng, P_GORG] * W[W_GROWTH] * ((cq * size_f) if pmf else 0.15) * sat * gb \
+                        size_f = 0.5 / (1.0 + (12.0 * mrr / 2e5) ** 0.7)
+                    org = customers * ENG[eng, P_GORG] * W[W_GROWTH] * ENG[eng, P_CAL] * ((cq * size_f) if pmf else 0.15) * sat * gb \
                         * math.sqrt(min(1.0, el))
                     if t < exp_pen_until:
                         org *= 0.8
@@ -917,7 +932,7 @@ def sim_one(g, U, Z, UI, ZI, ENG, SEC, W, out, trace, do_trace):
                     if tb >= 100.0:
                         cost = tb + 60.0
                         rev = tb * 0.5
-                        pw = 0.025 * (0.3 + 0.7 * mkt) * math.sqrt(talent) * W[W_ECOM] * (0.7 if tier == 3 else 1.0) \
+                        pw = 0.025 * (0.3 + 0.7 * mkt) * math.sqrt(talent) * W[W_ECOM] * ENG[eng, P_CAL] * (0.7 if tier == 3 else 1.0) \
                             * min(1.3, math.sqrt(tb / 600.0)) * min(1.0, work / 80.0)
                         if u[11] < pw:
                             winner = True
@@ -947,7 +962,7 @@ def sim_one(g, U, Z, UI, ZI, ENG, SEC, W, out, trace, do_trace):
                 growth_ok = False
                 content_h += 0.85 * work
                 sales_h = 0.15 * work
-                rev = audience * 0.04 * (0.5 + cskill) * (1.4 if narrow else 0.8)
+                rev = audience * 0.04 * (0.5 + cskill) * (1.4 if narrow else 0.8) * ENG[eng, P_CAL]
                 cost = 50.0
 
             elif eng == E_INFO:
@@ -961,6 +976,7 @@ def sim_one(g, U, Z, UI, ZI, ENG, SEC, W, out, trace, do_trace):
                     cpa = IP_PRICE[tier] * 0.6 / (0.5 + mkt)
                     buyers += ab / cpa
                     cost += ab
+                buyers *= ENG[eng, P_CAL]
                 rev = buyers * IP_PRICE[tier]
                 cost += 0.1 * rev + (0.12 * rev if tier >= 2 else 0.0) + 80.0
                 rep = min(1.0, rep * 0.997 + 0.004 * buyers / (buyers + 10.0))
@@ -973,6 +989,8 @@ def sim_one(g, U, Z, UI, ZI, ENG, SEC, W, out, trace, do_trace):
                 lev = TR_LEV[tier]
                 fat = 2.2 if u[13] < 0.08 else 1.0
                 r = lev * (alpha + tr_skill) - 0.002 * lev + lev * 0.08 * z[3] * fat
+                if r > 0.0:
+                    r *= ENG[eng, P_CAL]  # gains réels plus faibles (frais, glissement, erreurs)
                 if r < -1.0:
                     r = -1.0
                 capital = cash if cash > 0.0 else 0.0
@@ -1046,7 +1064,7 @@ def sim_one(g, U, Z, UI, ZI, ENG, SEC, W, out, trace, do_trace):
                             network += 0.012 * sales_h / 40.0 * (1.0 - network)
                             leads *= (0.6 + network)
                         leads += 0.03 * retainers + 0.01 * served + audience * 0.0003
-                        leads *= sq * math.exp(0.35 * z[0] - 0.06)
+                        leads *= sq * math.exp(0.35 * z[0] - 0.06) * ENG[eng, P_CAL]  # facteur de marché sur TOUS les leads
                         cred = 0.6 + 0.5 * (1.0 - math.exp(-served / 5.0)) + 0.2 * rep
                         if cred > 1.1:
                             cred = 1.1
@@ -1154,7 +1172,7 @@ def sim_one(g, U, Z, UI, ZI, ENG, SEC, W, out, trace, do_trace):
                     vol *= math.exp(0.3 * z[0] - 0.045) * math.sqrt(sq)
                     sd = FLIP[eng, FL_SD]
                     m = FLIP[eng, FL_MARGIN] * (0.6 + 0.8 * mkt) * math.exp(sd * z[4] - 0.5 * sd * sd) \
-                        / (1.0 + vol / FLIP[eng, FL_SAT]) * math.exp(-FLIP[eng, FL_COMMOD] * t * W[W_COMMOD]) * W[W_FLIP]
+                        / (1.0 + vol / FLIP[eng, FL_SAT]) * math.exp(-FLIP[eng, FL_COMMOD] * t * W[W_COMMOD]) * W[W_FLIP] * ENG[eng, P_CAL]
                     rev = vol * (1.0 + m)
                     cost = vol + FLIP[eng, FL_LABK] * extra / 1000.0 + FLIP[eng, FL_FIXED]
                     if u[11] < FLIP[eng, FL_LOSSP]:
@@ -1179,7 +1197,7 @@ def sim_one(g, U, Z, UI, ZI, ENG, SEC, W, out, trace, do_trace):
                 aud2 = aud2 * (1.0 - AUD[eng, AU_CHURN]) + gr
                 if u[10] < AUD[eng, AU_HAZ]:
                     aud2 *= (1.0 - AUD[eng, AU_COLL])
-                rev = aud2 * AUD[eng, AU_MON] * (0.5 + cskill) * (1.3 if narrow else 0.9) * W[W_AUD]
+                rev = aud2 * AUD[eng, AU_MON] * (0.5 + cskill) * (1.3 if narrow else 0.9) * W[W_AUD] * ENG[eng, P_CAL]
                 cost = 40.0
 
             # ---------------- spéculation
@@ -1189,6 +1207,8 @@ def sim_one(g, U, Z, UI, ZI, ENG, SEC, W, out, trace, do_trace):
                 hf = min(1.0, work / SPEC[eng, SP_HOURS])
                 fat = SPEC[eng, SP_FATM] if u[13] < SPEC[eng, SP_FATP] else 1.0
                 r = edge * hf + SPEC[eng, SP_VOL] * math.sqrt(hf) * z[3] * fat
+                if r > 0.0:
+                    r *= ENG[eng, P_CAL]  # mises plus hautes = adversaires plus forts, comptes limités
                 bank = cash - 200.0 if cash > 200.0 else 0.0
                 if bank > SPEC[eng, SP_LIMIT] and edge > 0.0:
                     r = 0.3 * r
