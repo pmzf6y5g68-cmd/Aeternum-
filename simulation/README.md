@@ -1,173 +1,202 @@
-# Simulation générationnelle : comment devenir riche en partant de zéro
+# Simulation de vies : quelle stratégie de revenu pour un jeune sans expérience ?
 
-Ce dossier contient un **algorithme génétique** qui fait évoluer des stratégies d'enrichissement pour une personne
-**seule, jeune, sans expérience ni réseau, en France, avec environ 1 500 € d'épargne**. Il cherche la stratégie qui :
+Ce dossier contient un simulateur de vies (Monte Carlo), un algorithme génétique qui fait évoluer des stratégies de
+revenu, une sélection « on coupe, on relance », un calibrage sur des données publiques, et une version personnalisée
+pour un·e étudiant·e en médecine de 18 ans, près de Paris, avec 1 500 € d'épargne et quelques bases en code.
 
-1. atteint **10 000 €/mois** le plus vite possible ;
-2. reste **pérenne**, c'est-à-dire qu'elle rapporte encore ≥ 10 k€/mois à 5 ans ;
-3. garde un **potentiel de valorisation ≥ 1 milliard de dollars**.
+> ⚠️ Un modèle n'est pas la réalité. Les résultats sont des **ordres de grandeur conditionnés aux hypothèses**. Les
+> probabilités de licorne sont les moins fiables. Les revenus sont avant impôts et charges. Rien ici n'est une promesse.
 
-> ⚠️ Le modèle n'est pas la réalité. L'algorithme optimise *à l'intérieur* d'hypothèses que j'ai écrites et calées sur des
-> données publiques (voir plus bas). C'est pour ça que tout est relancé dans 24 « mondes » où ces hypothèses sont
-> perturbées de ±30 à 50 %. Les résultats donnent des **ordres de grandeur et un classement**, pas des promesses.
+## En bref
 
-## Comment ça marche
+**Pour toi (version personnalisée, contraintes : au plus 10 h par semaine au début, aucun moteur spéculatif).**
 
-**Une vie simulée** (`model.py`) avance mois par mois pendant 10 ans. Chaque vie tire au hasard un talent, une
-ténacité, un capital de départ, la chance commerciale et les chocs de marché. Les compétences (technique, vente,
-connaissance d'un métier, contenu), l'audience, le réseau, la trésorerie, la fatigue (burnout) et la motivation
-(abandon) évoluent. Le modèle suit aussi les clients, le revenu récurrent, les levées de fonds (accélérateur, seed,
-séries A à D), la dilution, la valorisation, et la saisie des gains illicites.
+- **Aucune voie ne fait 10 000 € par mois dans les cinq premières années** (0 % des simulations).
+- **La plus fiable : garder médecine et placer l'épargne en ETF** (rendement moyen de 0,55 % par mois, soit environ 6,8 % par an, hypothèse). Les 10 000 € par mois arrivent vers 29 ans, dans **94 %** des simulations sur 15 ans. Le revenu de médecin fait l'essentiel ; l'ETF complète. Effort : 5 h par semaine au départ.
+- **L'alternative : arrêter médecine** (alternance, salariat tech, marque e-commerce) donne **4 300 € par mois à 5 ans** (médiane), mais 10 000 € seulement dans **77 %** des cas sur 15 ans, avec **20 %** d'abandons.
+- **Sans limite d'effort, rien ne change** : la même voie reste la meilleure. Travailler plus de 10 h au départ n'accélère rien dans le modèle.
+- **Valorisation de plusieurs milliards : pas de chance mesurable** dans ce modèle (licorne : 0 % pour les voies retenues).
+- **Spéculation (trading, paris, poker, memecoins) et fraude : exclues.** Dans le modèle, leur espérance est négative et elles produisaient des résultats artificiels (voir Corrections).
 
-**Une stratégie** est un génome de 20 gènes :
+**Pour un jeune sans contrainte de médecine** : la meilleure voie sous 10 h atteint 10 000 € par mois dans **53 %** des simulations sur 10 ans (médiane : 1 037 € par mois à 2 ans, 4 057 € à 5 ans).
 
-- jusqu'à **3 phases** parmi 15 moteurs de revenus : salariat, freelance, agence d'automatisation IA, closer,
-  micro-SaaS, startup IA verticale, app B2C, marketplace, fintech, deeptech, e-commerce, contenu, info-produits,
-  trading et fraude (témoin) ;
-- les **déclencheurs** de passage d'une phase à l'autre : un seuil de revenu tenu 3 mois et/ou un délai ;
-- le secteur visé (14 au choix), le canal d'acquisition, le niveau de prix, les heures par semaine, le temps
-  d'apprentissage, la part de temps sur le contenu, le réinvestissement ;
-- le mode de financement et son déclencheur, la stratégie géographique, la recherche d'un associé, le positionnement
-  niche ou large, et le choix de garder l'agence pour financer le produit.
+**Effort de calcul** : environ 900 millions de vies simulées dans les campagnes et sélections finales (110 400 générations
+cumulées, 4,4 à 4,5 millions de stratégies différentes explorées par évolution, 12 mondes perturbés pour les finalistes).
 
-**L'évolution** (`evolve.py`) suit l'algorithme NSGA-II, multi-objectif et élitiste. À chaque génération :
+## Ce qui est simulé
 
-1. on tire de nouveaux destins aléatoires ;
-2. les enfants naissent par tournoi, croisement et mutation ;
-3. chaque stratégie vit les *mêmes* destins (nombres aléatoires communs, pour des comparaisons justes) ;
-4. on garde les stratégies non dominées sur les 3 objectifs, les autres meurent.
 
-Il existe une contrainte : pas plus de 2 % de risque de catastrophe judiciaire.
+- **Une vie** : 18 ans → 28 ans (120 mois) pour le modèle général ; 18 → 33 ans (180 mois) pour la version personnalisée.
+  Au départ sont tirés au hasard le talent, la ténacité, l'épargne, la chance commerciale et la qualité de l'entreprise.
+  En cours de route : chocs de marché, burn-out, associés trouvés ou perdus, levées réussies ou ratées, produit qui
+  échoue, clients qui partent.
+- **50 moteurs de revenus** (`params.py`), répartis en 16 familles : emploi, services (agence, freelance, closer,
+  artisanat…), startups (IA verticale, micro-SaaS, deeptech, défense…), commerce, audience (contenu, newsletter,
+  info-produits…), spéculation (trading, paris sportifs, poker, memecoins), placements, et la fraude (témoin).
+- **Une stratégie = un génome de 23 gènes** : jusqu'à trois phases parmi les 50 moteurs, leurs déclencheurs, l'activité
+  de base (études courtes ou longues, petit job, job à temps plein, rien), les **heures au début** (5, 10, 15 ou 20 h
+  par semaine), le seuil de passage à temps plein, le secteur, le canal de vente, le prix, le financement, la
+  géographie, l'associé, etc.
+- **Version personnalisée** (`model_med.py`) : externat, internat, diplôme, puis revenu de médecin (généraliste ou
+  spécialiste), avec ou sans année de césure. Le projet se fait à côté des études ; médecine peut être maintenue ou
+  arrêtée si le projet décolle. Charge de travail : 45 h/semaine en premier cycle, 50 h en externat, 55 h en internat.
 
-Un cache cumule les vies déjà simulées des stratégies survivantes. Plus une stratégie survit, plus son score est
-précis : jusqu'à 2 048 vies pendant l'évolution. Les finalistes sont ensuite réévalués sur 200 000 vies chacun.
+## Comment les stratégies sont cherchées
 
-## Résultats de la campagne (19 novembre 2026)
+1. **Évolution** (`evolve2.py`, `evolve2_med.py`) : 48 îles de 96 stratégies chacune, algorithme génétique multi-objectif
+   (type NSGA-II) sur trois critères : vitesse vers 10 k€/mois, probabilité de licorne, part du temps à ≥ 10 k€/mois
+   entre 3 et 10 ans. Contrainte : probabilité de catastrophe ≤ 2 %. Migration en anneau toutes les 50 générations.
+2. **Destins communs** : à chaque génération, toutes les stratégies vivent les mêmes tirages aléatoires. La comparaison
+   est donc équitable, et le bruit de simulation ne fabrique pas de faux gagnants.
+3. **Évaluation profonde** : les meilleures trouvées sont réévaluées sur 300 000 vies.
+4. **Coupe et relance** (`halving.py`) : sélection par étapes (successive halving). Chaque étape évalue le lot sur un
+   budget croissant (20 000, 60 000, puis 200 000 vies par stratégie), **coupe** les moins bonnes (65 à 75 %) et
+   **relance** les autres par mutation de un ou deux gènes. Les huit dernières survivantes sont évaluées sur 300 000 vies,
+   puis dans des **mondes perturbés** (hypothèses multipliées de ±30 à 50 %). La retenue est celle qui est la plus
+   solide en moyenne sur les mondes.
+5. **Contrainte d'effort** : pour respecter « pas trop de temps au début », la sélection principale n'autorise que
+   5 ou 10 h par semaine pendant la première année. Une sélection sans contrainte sert de comparaison.
+6. **Critère de la sélection finale** (dans l'ordre de tes demandes) : la **vitesse** est la probabilité d'avoir atteint
+   10 k€/mois pendant 3 mois de suite, pondérée par exp(−t / 36 mois) : une arrivée à 2 ans compte plus qu'une arrivée à
+   10 ans. Elle est multipliée par un **facteur de valorisation** de 1 (aucune chance de licorne) à 2 (0,5 % ou plus).
+   Les stratégies qui dépassent 2 % de risque de catastrophe sont éliminées.
+7. **Moteurs exclus de la recommandation** : trading, paris sportifs, poker, memecoins / NFT et fraude (voir Limites).
+8. **En gardant médecine** : une sélection limite l'activité de base à médecine (maintenue, ou avec une année de césure),
+   pour comparer directement « garder médecine » et « arrêter médecine ».
 
-**1 369 820 080 vies simulées** (environ 164 milliards de mois de vie), **21 100 générations**, **2 011 135 stratégies
-uniques** testées : 3 évolutions principales, 15 évolutions « une voie à la fois » et 24 mondes perturbés.
+**Critère des campagnes d'évolution** (pour les classements de l'algorithme génétique) :
+`0,45 × vitesse + 0,30 × licorne (échelle log) + 0,25 × pérennité − 3 × max(0 ; catastrophe − 1 %)`,
+où la vitesse vaut 2^(−T/12). Ce critère a montré son défaut quand la contrainte d'effort est active (voir Corrections,
+point 23) : il favorise une licorne improbable plutôt que la vitesse ; la sélection finale utilise donc le critère 6.
 
-### La stratégie gagnante
+## Calibrage sur des données publiques
 
-Les évolutions 1 et 2 sont parties de populations aléatoires différentes et ont trouvé **la même recette** :
+Le premier calibrage (`calibrage_avant_mecanisme.log`) avait révélé que le modèle surestimait la réussite de plusieurs
+activités : jusqu'à 25 à 35 % des meilleures versions atteignaient 10 k€/mois pendant 10 ans, contre quelques pour cent
+dans les données. Pour chaque activité, un **facteur de difficulté** (colonne `P_CAL`) réduit la demande (clients,
+leads, acheteurs, gains) jusqu'à ce que la meilleure version atteigne une **cible de probabilité** (bissection).
 
-1. **Closer** (vente à la commission) jusqu'à 4 k€/mois tenus 3 mois, 12 mois au maximum : on apprend à vendre en
-   étant payé.
-2. **Agence d'automatisation IA** pour un seul métier (l'immobilier dans le modèle), avec ces réglages :
-   - prospection directe, prix moyen, 55 h/semaine ;
-   - un associé dès que possible, des clients au-delà de la France, une niche étroite ;
-   - sous-traiter dès que la demande dépasse sa capacité.
-3. **Startup IA verticale** pour ce même métier, au plus tard après 48 mois d'agence. L'agence est gardée pour financer
-   le produit, et on lève des fonds vers 1,5 M€ de revenu annuel récurrent.
+- **Cibles sourcées** : créateurs de contenu (4 à 5 % gagnent plus de 100 000 $/an : Aspire 2022, Kajabi 2024 ; 9 % des
+  créateurs indépendants : MBO Partners) ; trading (1,1 % des day traders suivis au Brésil gagnent plus
+  que le salaire minimum : Chague, De-Losso et Giovannetti, « Day Trading for a Living? ») ; survie des micro-entreprises
+  (28 % encore actives à 5 ans, Insee Première n° 2069 ; 22 % des moins de 30 ans encore actifs à 3 ans, cohorte 2018 de l'Insee).
+- **Cibles jugées** : les autres. Elles sont signalées comme telles dans `calibrate.py` (bloc `TARGETS`). Ce sont des
+  ordres de grandeur, pas des mesures ; le tableau de calibrage du tableau de bord montre les valeurs obtenues.
+- **Non calibré** : les taux de levée et de licorne restent ceux des enquêtes CB Insights et Carta (1 à 5,6 % des
+  startups qui ont levé un seed deviennent licornes). Ce sont les chiffres les moins fiables du modèle.
 
-Résultats sur 200 000 vies :
+## Corrections (failles trouvées par l'algorithme)
 
-| Indicateur | Valeur |
-|---|---|
-| 10 k€/mois atteints en 12 mois | 0,5 % des vies |
-| 10 k€/mois atteints en 24 mois | 12,5 % des vies |
-| 10 k€/mois atteints en 5 ans | 39 % des vies |
-| ≥ 10 k€/mois à 5 ans | 36 % des vies |
-| Temps passé à ≥ 10 k€/mois entre 3 et 10 ans | 26 % en moyenne |
-| Potentiel licorne | 1,2 %, soit environ 1 chance sur 80 |
-| Abandon en route | 47 % |
+L'algorithme exploite les failles d'un modèle. Chacune de celles-ci a été trouvée, puis corrigée avant la campagne finale :
 
-Pour comparaison, une startup IA lancée directement par un débutant n'a que 0,01 % de potentiel licorne.
-
-L'évolution 3 optimisait une pérennité plus stricte. Elle a trouvé « 2 ans de salariat puis startup IA » : même
-potentiel licorne, mais 0 % de chances d'atteindre 10 k€ en 2 ans.
-
-### Ce que la sélection élimine (meilleure version de chaque voie)
-
-| Voie | 10 k€ en 24 mois | ≥ 10 k€ à 5 ans | Potentiel licorne | Abandon ou ruine |
-|---|---|---|---|---|
-| Agence IA seule | 17 % | 34 % | 0 | 53 % |
-| Info-produits | 4,4 % | 27 % | 0 | 55 % |
-| Freelance | ≈ 0 | 19 % | 0 | 63 % |
-| Closer seul | 6 % | 15 % | 0 | 43 % |
-| Contenu | 0,5 % | 8 % | 0 | 74 % |
-| Trading | 2 % | 0,3 % | 0 | 93 % |
-| E-commerce, micro-SaaS, app B2C, marketplace, fintech, deeptech en direct | < 0,5 % | < 1,5 % | ≤ 0,01 % | ≥ 95 % |
-| Fraude (témoin) | 5,7 % (gains non saisis) | 0,3 % | 0 | **91 % condamnés** |
-
-### Robuste aux erreurs d'hypothèses (24 mondes perturbés)
-
-- Le parcours gagnant finit par une **entreprise de produit IA** dans 24 mondes sur 24, dont 20 fois une startup IA
-  verticale.
-- La meilleure stratégie travaille **55 h/semaine** dans 23 mondes sur 24.
-- Elle a **un associé** et vend **au-delà de la France** dans 24 mondes sur 24.
-- La première étape varie selon les hypothèses : vente (closer) 9 fois, contenu ou info-produits 10 fois,
-  salariat 3 fois, agence 2 fois.
-
-### Ce qui compte le plus (un seul réglage changé, 100 000 vies chacun)
-
-Effet mesuré sur la part du temps passée à ≥ 10 k€/mois entre la 3ᵉ et la 10ᵉ année (référence : 26 %).
-
-- **Canal** : publicité au lieu de la prospection directe, −22 points ; contenu, −19.
-- **Secteur** : santé au lieu de l'immobilier, −19 points ; juridique, −11. Les ressources humaines ne font que −2.
-- **90 h/semaine au lieu de 55** : −18 points et 86 % d'abandon (burnout).
-- **Prix bas** : −17 points.
-- **France uniquement** : −13 points, et un potentiel licorne divisé par 5.
-- **Marché large au lieu d'une niche** : −11 points.
-- **Supprimer la phase closer** : −7 points.
-- **Sans associé** : −4 points, et un potentiel licorne divisé par 2,4.
-- **Rester une agence sans jamais lancer la startup** : +4 points de revenu stable, mais un potentiel licorne nul.
-  C'est le vrai arbitrage : la startup coûte un peu de revenu contre environ 1 % de chance de licorne.
-
-## Lancer
-
-```bash
-pip install numpy numba
-python3 calibrate.py 20000      # chaque moteur seul, réglages « raisonnables »
-python3 evolve.py main --pop 500 --gens 2000 --M 256 --seed 3 --dur2   # évolution « pérennité stricte »
-python3 variants.py "[3, 2, 5, 2, 3, 0, 7, 3, 0, 1, 1, 2, 1, 1, 3, 3, 3, 2, 0, 1]" 100000  # analyse « et si »
-python3 trajectory.py '[["Stratégie gagnante", [3, 2, 5, 2, 3, 0, 7, 3, 0, 1, 1, 2, 1, 1, 3, 3, 3, 2, 0, 1]]]' 5000
-./run_all.sh                    # campagne complète (~1 h sur 4 cœurs)
-python3 export.py               # jeux de données du tableau de bord (results/dash/)
-python3 trace.py "[3, 2, 5, 2, 3, 0, 7, 3, 0, 1, 1, 2, 1, 1, 3, 3, 3, 2, 0, 1]" 3   # 3 vies mois par mois
-python3 funnel.py "[...génome...]" 5000   # entonnoir des levées de fonds
-```
-
-## Calage sur des données réelles
-
-| Ce que le modèle reproduit | Valeur visée | Source |
-|---|---|---|
-| Part des startups ayant levé un seed qui deviennent licornes | 1 % (moyenne) à 5,6 % (quartile haut) | CB Insights ; Carta *State of the Seed* 2025 ; Y Combinator ≈ 4,5 % sur les promotions matures |
-| Passage seed → série A → B → C | ≈ 45 % → 55 % → 45 % | ordres de grandeur Carta / CB Insights |
-| Multiples de valorisation IA | 10–50× l'ARR, 50–100× pour les leaders (Harvey, Sierra) | Tomasz Tunguz 2026 ; guides de valorisation IA 2026 |
-| Tarifs d'une agence d'automatisation IA (PME) | mise en place 1,5–8 k$, abonnement 500–3 000 $/mois | guides de prix 2026 (Ciela, taskip…) |
-| Traders particuliers | ~97 % de perdants parmi ceux qui persistent | Chague, De-Losso & Giovannetti (2019), Brésil ; avertissements AMF/ESMA sur les CFD |
-| Productivité au-delà de 50 h/semaine | quasi nulle | Pencavel (2014) |
-
-## Failles trouvées par l'algorithme (et corrigées)
-
-Un algorithme génétique exploite la moindre erreur d'un modèle. Pendant le calage et la campagne, il a trouvé et exploité :
-
-- le **tarif premium** qui ne freinait pas le bouche-à-oreille : une PME à 3 600 €/mois devenait une machine à milliards ;
-- l'**audience des réseaux sociaux** convertie en clients B2B chers sans tenir compte du prix ni de sa pertinence ;
-- la **prospection à froid** illimitée sur le même vivier d'entreprises ;
-- le **freelance premium international** à 1 200 €/jour après 3 ans ;
-- les **90 h/semaine** sans perte de productivité ;
-- la **pérennité** mesurée sur une seule fenêtre (mois 55 à 60) : l'algorithme lançait la startup juste après ;
-- l'**abandon** qui faisait échapper à la justice après une fraude (bug corrigé, voie relancée) ;
-- la **publicité** au coût d'acquisition constant à 2 M€/mois ;
-- les **levées de fonds** qui rendaient la licorne presque automatique ;
-- des **créateurs de contenu** qui grossissaient tous au même rythme.
-
-Chaque correction s'appuie sur un mécanisme réel : élasticité-prix, épuisement du vivier, rendements décroissants,
-sélection et échecs après levée, talent à queue lourde.
-
-## Le moteur « fraude »
-
-Il est là comme **témoin**, parce que la demande était « sans limite morale ». Ses paramètres sont illustratifs :
-détection d'environ 3 % par mois, saisie des gains, prison. Il sert à montrer que la sélection l'élimine. Je n'aide pas à
-le mettre en œuvre, et rien dans ce dépôt ne le décrit concrètement.
+1. Délégation illimitée sans coût de management : capacité plafonnée (25 × (0,5 + ventes) h/mois) ; frais de management
+   de 12 % des heures déléguées le mois précédent.
+2. Clients récurrents : part de marché plafonnée à 1 % du vivier local.
+3. Services facturés à l'heure : grille de prix par palier ; au projet, l'expérience fait gagner du temps, à l'heure non.
+4. Coût d'acquisition publicitaire des services : 0,4 × prix + 30 € par lead.
+5. Passage d'un service à un produit : les clients récurrents ne suivent que si la stratégie le décide (gène « garder
+   les services »), sinon ils sont perdus.
+6. Changement de moteur : crédibilité remise à zéro (clients et réputation divisés par deux). La crédibilité B2B ne se
+   transporte pas d'un moteur à l'autre.
+7. Changement de moteur : l'actif d'audience est vendu, il ne suit pas.
+8. Une formation en cours bloque la montée à temps plein.
+9. Investisseurs : pas de levée pour un fondateur à temps partiel (probabilité × 0,3).
+10. Technologies lourdes sans financement : cycles de vente longs (acquisition × 0,3, croissance organique × 0,5).
+11. Entreprise jamais financée : valorisation à 60 % des multiples habituels.
+12. Probabilité d'atteindre le produit-marché réduite de 40 % pour les startups.
+13. Mortalité du produit : un produit peut échouer (0,8 % par mois avec PMF, 2 % sans) et repart de zéro.
+14. Startups non financées : taille de marché et acquisition réduites.
+15. Les séances de tutorat n'augmentent plus la compétence technique (compétences de service remappées).
+16. Bug de crédibilité : les séances de tutorat comptaient comme clients B2B (corrigé).
+17. Médecine à long horizon : 76 % des premiers essais atteignaient 10 k€/mois en 15 ans, par sur-optimisation des
+    startups. Corrigé par la mortalité du produit, le PMF réduit, l'amortissement bootstrap et l'acquisition réduite.
+18. Charge au-delà de 50 h par semaine : risque de burn-out ; après un épuisement, productivité quasi nulle pendant 2 à 4 mois.
+19. Trading : gains réels plus faibles (frais, glissement, erreurs) : facteur de calibrage.
+20. Paris sportifs et poker : au-delà d'un seuil de mise, les gains sont réduits (× 0,3), comme des comptes limités.
+21. Calibrage : le facteur de difficulté ne couvrait pas tous les leads des services (leads publicitaires et
+    recommandations). Corrigé : le facteur porte sur le total des leads.
+22. Témoin de fraude : toute stratégie qui la contient est exclue du classement et du tableau de bord.
+23. **Critère de valorisation saturé** : le terme licorne du critère d'évolution vaut son maximum dès 1 % de chance,
+    si bien qu'une voie sans aucune chance d'atteindre 10 k€/mois en 5 ans obtenait le meilleur score sous la contrainte
+    d'effort. Corrigé dans la sélection finale par le critère 6.
+24. **Moteurs spéculatifs (non corrigé, exclus)** : la mise porte sur l'épargne accumulée, réinvestie chaque mois ; le
+    modèle produit une queue de distribution extrême. Sur la meilleure voie d'une première sélection, 77 % des mois à plus
+    de 10 000 € venaient des memecoins, et 71 % des vies atteignaient 10 000 € à un moment donné. Ces moteurs ne sont donc
+    pas recommandés ; leurs chiffres ne sont pas publiés.
+25. **Revenu de l'ETF** : le gain aléatoire du portefeuille (écart-type 4,5 % par mois) était compté comme revenu, sans
+    entrer en trésorerie. Une voie sans aucune activité entrepreneuriale atteignait ainsi 10 000 € par mois dans 89 %
+    des vies. Corrigé : seul le rendement moyen (0,55 % par mois) est revenu, versé en trésorerie ; les variations restent
+    dans le portefeuille. La voie en tête passe de 89 % à 4,8 % des vies.
 
 ## Limites
 
-- Tout dépend des hypothèses de `params.py` et `model.py`. Les mondes perturbés testent leur sensibilité, pas leur vérité.
-- Le « potentiel licorne » est une probabilité modélisée, fondée sur la valorisation à 10 ans plus 2 ans de croissance
-  extrapolée. Les queues de distribution sont les moins fiables.
-- Le revenu est un bénéfice mensuel avant impôts et charges sociales. En France, comptez 25 à 45 % de prélèvements.
-- Le modèle ignore la vie personnelle, la santé (hors burnout), les crises macroéconomiques et les ruptures
-  technologiques autres que les chocs modélisés.
+- **Le modèle n'est pas la réalité.** Les hypothèses (taux, délais, prix, comportements) sont des choix. Les mondes
+  perturbés montrent la sensibilité, pas la vérité.
+- **Les probabilités de licorne** dépendent de multiples de valorisation et de taux de levée qui ne sont pas calibrés
+  sur des données françaises : à prendre comme des ordres de grandeur.
+- **Les revenus** sont bruts (avant impôts et charges). En France, le revenu net d'un indépendant est nettement plus bas.
+- **L'effort** est modélisé par les heures au début et la charge de travail, pas par le stress ni par la vie sociale.
+- **Les données de médecine** (revenus de généraliste et de spécialiste) viennent de la DREES (2021) via des sources
+  secondaires ; elles n'ont pas été vérifiées dans le tableau original.
+- **Le modèle ne se met pas à jour.** Il faudrait le recalibrer avec les résultats réels d'un test de 90 jours.
+- **Moteurs spéculatifs.** Le calibrage ne corrige pas la queue de distribution décrite au point 24 : les moteurs de
+  trading, de paris, de poker et de memecoins sont donc exclus de la recommandation, pas seulement mal calibrés.
+- **Médecine.** La version personnalisée suppose un parcours type (externat, internat, revenu de médecin après 9 à 11 ans).
+  Un·e étudiant·e réel·le peut réorienter, redoubler ou changer de spécialité : le modèle ne le représente pas.
+
+## Résultats détaillés
+
+Tous les chiffres viennent de `results/synthese.md` (généré par `synthese.py`). Pour chaque finaliste, 300 000 vies
+simulées ; pour la sélection, 12 mondes perturbés.
+
+**Version personnalisée, 10 h au départ**
+
+| Voie | 10 k€ en 5 ans | 10 k€ en 15 ans | Temps à ≥ 10 k€ (après 3 ans) | Licorne | Abandon | Revenu médian à 5 ans |
+|---|---:|---:|---:|---:|---:|---:|
+| **Garder médecine + ETF** (retenue) | 0 % | 93,8 % | 29,3 % | 0 % | 15,5 % | 350 € |
+| Arrêter médecine : alternance → salariat tech → marque e-commerce | 0 % | 76,7 % | 32,2 % | 0 % | 20,0 % | 4 324 € |
+| Référence : médecine seule (sans projet) | 0 % | 93,8 % | 29,3 % | 0 % | 15,4 % | 350 € |
+
+Le premier mois à 10 000 € (série de trois mois) tombe entre le 133ᵉ et le 137ᵉ mois dans la voie retenue, soit vers 29 ans.
+Le revenu de médecin généraliste (8 000 € bruts) dépasse 10 000 € grâce au rendement de l'épargne placée ; le spécialiste
+(12 000 € bruts) l'atteint directement.
+
+**Version générale, 10 h au départ (horizon 10 ans)**
+
+| Voie | 10 k€ en 10 ans | Temps à ≥ 10 k€ (après 3 ans) | Licorne | Abandon | Revenu médian à 2 ans | Revenu médian à 5 ans |
+|---|---:|---:|---:|---:|---:|---:|
+| Alternance → salariat tech → marque e-commerce | 53,1 % | 15,1 % | 0 % | 14,0 % | 1 037 € | 4 057 € |
+
+**Calibrage** : 21 activités calées sur leur cible (écart de quelques dixièmes de point) ; les cibles sont signalées comme
+sourcées ou comme jugements dans `calibrate.py`. Tableau complet dans `results/calibrage.json` et sur le tableau de bord.
+
+## Ce que le modèle ne dit pas
+
+- Il ne dit pas que 10 000 € par mois est un objectif réaliste à 18 ans : dans le modèle, il est atteint par le revenu de
+  médecin, après une dizaine d'années.
+- Le rendement de l'ETF (6,8 % par an) est une hypothèse, versée en revenu. Si le rendement réel est plus bas, le
+  résultat de la voie retenue baisse fortement.
+- Les revenus sont bruts. Un salaire de médecin de 8 000 € bruts donne un net nettement plus bas.
+- Aucune recommandation d'investissement : le modèle compare des hypothèses, pas des placements réels.
+
+## Historique et essais écartés
+
+Les résultats des essais précédents sont archivés localement (suffixes `avant_calibrage`, `avant_correctif`,
+`avant_exclusion`, `avant_correctif_etf`, ignorés par git). Ils ne sont pas à utiliser : chacun a été écarté après
+la correction d'un défaut décrit plus haut.
+
+## Reproduire
+
+```bash
+cd simulation
+python3 calibrate.py 200            # calibrage des facteurs par activité (≈ 8 min, 4 cœurs)
+./run_final2.sh                     # campagnes, sélections, exports et variantes (≈ 1 h)
+python3 synthese.py                 # results/synthese.md
+```
+
+Les fichiers de résultats volumineux ne sont pas versionnés. Les jeux de données du tableau de bord sont dans
+`results/dash_v2/` et publiés sur l'artefact.
+
+
+Les fichiers de résultats sont dans `results/` (certains ne sont pas versionnés) ; les jeux de données du tableau de bord
+sont dans `results/dash_v2/` et publiés dans `dashboard/`.

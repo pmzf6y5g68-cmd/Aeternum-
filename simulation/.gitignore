@@ -5,7 +5,7 @@ results/*checkpoint*.json
 results/*.tmp
 results/v2_main9*.json
 dashboard/docs/
-# temporaire pendant la campagne v2 (retiré à la fin)
+# gros résultats de campagne, non versionnés (les jeux du tableau de bord sont dans results/dash_v2/)
 results/v2_locked.json
 results/v2_main1.json
 results/v2_robust.json

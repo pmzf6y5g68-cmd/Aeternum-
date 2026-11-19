@@ -87,8 +87,14 @@ def main():
         keep_name = "Ta stratégie en gardant médecine"
     roles = [("Ta stratégie retenue (≤ 10 h par semaine au début)", g10)]
     seen = {key(g10)}
+    # meilleure alternative qui arrête médecine (même critère, sous 10 h au début)
+    alt = next((r for r in h10["final"] if r["strategie"]["genome"][mm.G_BASE] not in (0, 1)), None)
+    ga = canon(np.array([alt["strategie"]["genome"]], dtype=np.int64))[0] if alt else None
     for name, g in [("Sans limite d'effort", gl), (keep_name, kg),
+                    ("Alternative : arrêter médecine (≤ 10 h)", ga),
                     ("Référence : médecine seule", ref)]:
+        if g is None:
+            continue
         if key(g) in seen:
             print(f"  « {name} » identique à une ligne précédente : non répétée", flush=True)
             continue

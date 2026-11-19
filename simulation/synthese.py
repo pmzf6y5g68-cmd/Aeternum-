@@ -54,7 +54,7 @@ for tag, titre in [("med_10h", "Ta stratégie : au plus 10 h par semaine au déb
     for e in h["etapes"]:
         P(f"| {e['etape']} | {e['vies_par_strategie']:,} | {e['strategies']} | {e['coupees']} | {e['gardees']} | "
           f"{e['relancees_par_mutation']} | {fr(e['score_meilleure'], 4)} | {pct(e['p10k_24m_meilleure_pct'])} | "
-          f"{pct(e['p10k_60m_meilleure_pct'])} | {pct(e['licorne_meilleure_pct'])} |".replace(",", " "))
+          f"{pct(e['p10k_60m_meilleure_pct'])} | {pct(e['licorne_meilleure_pct'])} |")
     P("")
     P("Finalistes (300 000 vies, puis 12 mondes perturbés) :\n")
     P("| Parcours | ≤ 24 mois | ≤ 60 mois | Part du temps ≥ 10 k€ | Licorne | Abandon | Catastrophe | Revenu médian 5 ans | Score (300 000 vies) | Score moyen mondes | Score min mondes |")

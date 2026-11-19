@@ -1,11 +1,15 @@
 {
- "campagne": "/_blob/df1b52588763376a10f306cf5e82dd8f",
- "champions": "/_blob/f5afb0cde51b577addcd8025cb744f1a",
- "evolution": "/_blob/891e57432781897d1d203eecbafb5402",
- "especes": "/_blob/403bc7244591e6a0e16fd18734f8674d",
- "moteurs": "/_blob/bd39f348ec04b42fe544537f0e412c92",
- "courbe10k": "/_blob/17775ba856f0855cdc59b753416068c1",
- "trajectoire": "/_blob/6a8d9f04859eaebf98acf763c6a2941b",
- "mondes": "/_blob/31502caa0f7e9175743283d3d0597645",
- "variantes": "/_blob/60c5f1af857122f2109a2428d78fbefb"
+ "campagne": "/_blob/b5a8c754ffb427097695d88b8e8b2704",
+ "champions": "/_blob/a90bef43c43bb52267d6efca78ddebf5",
+ "champions_med": "/_blob/c084f5f7e82966b4f7438551cd58daa7",
+ "moteurs": "/_blob/113c76e80b28458b212c5219465e4f55",
+ "evolution": "/_blob/faf94b7f73b1f44e7ec813a4f38b3f57",
+ "especes": "/_blob/053a80cf52e27f9bc32ae5554db9f1b4",
+ "courbe10k": "/_blob/4ecfa957e5b342f1ceb819cfe6c4d6bc",
+ "trajectoire": "/_blob/8b0721dcbe5c57e72fed2f055b034bb5",
+ "trajectoire_med": "/_blob/3a0ec9ad45adfb96947c46705a2c9357",
+ "variantes": "/_blob/4ecd742044e9370b03a1529a86d0f7fa",
+ "variantes_med": "/_blob/3bc32f6ac615bec0065f1bd4d8388e69",
+ "mondes": "/_blob/5362b4204f63bf0de5632558b39b9fc1",
+ "calibrage": "/_blob/f05c610af497157aa5711e9c662545bf"
 }
