@@ -46,8 +46,11 @@ def lic_score(p):
     return min(1.0, max(0.0, (np.log10(p + 1e-7) + 5) / 3))
 
 
-def has_fraud(genome):
-    return any(FAMILY[int(x)] == F_FRAUD for x in genome[:3])
+EXCLUES = (F_FRAUD, F_SPEC, F_TRADING)  # témoin de contrôle, ou résultats non fiables (voir README)
+
+
+def has_excluded(genome):
+    return any(FAMILY[int(x)] in EXCLUES for x in genome[:3])
 
 
 def strat_row(r, extra=None):
@@ -88,7 +91,7 @@ def main():
 
     # 1. Les trois stratégies à connaître + finalistes distincts
     # la fraude reste dans le modèle comme témoin de contrôle : aucune stratégie qui la contient n'est publiée
-    final = [r for r in main1["final"] if not has_fraud(r["strategie"]["genome"])]
+    final = [r for r in main1["final"] if not has_excluded(r["strategie"]["genome"])]
     rows_all = [strat_row(r) for r in final]
 
     def compromise(c):
@@ -165,7 +168,7 @@ def main():
     rows, curves = [], []
     for k, v in sorted(locked["engines"].items(), key=lambda kv: int(kv[0])):
         e = int(k)
-        if FAMILY[e] == F_FRAUD:
+        if FAMILY[e] in EXCLUES:
             continue
         r = v["final"][0]
         row = strat_row(r, {"moteur": v["moteur"], "domaine": DOMAIN[int(FAMILY[e])]})
