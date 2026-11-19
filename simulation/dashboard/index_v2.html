@@ -89,7 +89,7 @@
 
 <h2 class="ae-sep">Pour un jeune de 18 ans en général</h2>
 
-<section class="ae-tiles" id="chiffres-cles" aria-label="Chiffres clés du meilleur compromis">
+<section class="ae-tiles" id="chiffres-cles" aria-label="Chiffres clés de la stratégie retenue">
   <div class="ae-tile" id="tuile-24m">
     <span class="ae-l">10 k€/mois atteints en 2 ans</span>
     <span class="ae-v"><span data-draw="t-24" data-source="champions" data-field="p10k_24m_pct" data-row="0">—</span> %</span>
@@ -123,10 +123,10 @@
 </section>
 
 <section class="ae-sec" id="quatre">
-  <h2>Les quatre stratégies à connaître</h2>
+  <h2>Les stratégies à connaître</h2>
   <p class="ae-note">Tirées des meilleures stratégies jamais rencontrées par l'évolution, chacune réévaluée sur 300 000 vies. Aucune ne gagne sur tous les tableaux : la plus rapide vers 10 k€ n'est pas celle qui peut valoir un milliard.</p>
   <div class="ae-tablewrap">
-    <table data-source="champions" data-row-key="id" aria-label="Les quatre stratégies à connaître">
+    <table data-source="champions" data-row-key="id" aria-label="Les stratégies à connaître">
       <thead><tr>
         <th data-field="id">Rôle</th>
         <th data-field="parcours">Parcours</th>
@@ -143,7 +143,7 @@
 </section>
 
 <section class="ae-sec" id="recette">
-  <h2>La recette du meilleur compromis, gène par gène</h2>
+  <h2>La recette de la stratégie retenue, gène par gène</h2>
   <dl class="ae-recipe">
     <div class="ae-wide"><dt>Parcours</dt><dd class="ae-path" data-draw="r-parcours" data-source="champions" data-field="parcours" data-row="0">—</dd></div>
     <div><dt>À côté, au début</dt><dd data-draw="r-base" data-source="champions" data-field="activite_base" data-row="0">—</dd></div>
@@ -222,7 +222,7 @@
 
 <section class="ae-sec" id="evolution">
   <h2>Comment l'évolution a convergé</h2>
-  <p class="ae-note">Score combiné : 45 % vitesse vers 10 k€, 30 % potentiel licorne (échelle logarithmique), 25 % temps passé à ≥ 10 k€/mois. Meilleure stratégie et moyenne de toutes les îles, génération après génération.</p>
+  <p class="ae-note">Pendant l'évolution, le score combiné est : 45 % vitesse vers 10 k€, 30 % potentiel licorne (échelle logarithmique), 25 % temps passé à ≥ 10 k€/mois. La stratégie retenue est choisie ensuite par « on coupe, on relance », avec un autre critère : vitesse pondérée dans le temps, multipliée par un facteur de valorisation de 1 à 2. Meilleure stratégie et moyenne de toutes les îles, génération après génération.</p>
   <div class="ae-chart ae-short" data-draw="evo" data-source="evolution" role="img" aria-label="Meilleur score et score moyen de la population à chaque génération"></div>
 </section>
 
@@ -270,7 +270,7 @@
   <summary>Méthode, hypothèses et limites</summary>
   <p>Chaque vie démarre à 18 ans et avance mois par mois pendant 10 ans. Au départ sont tirés au hasard le talent, la ténacité, l'épargne, la chance commerciale et la qualité d'entreprise ; en cours de route, les chocs de marché, les burnouts, les associés trouvés ou perdus et les levées de fonds réussies ou ratées. Une stratégie est un génome de 23 gènes : jusqu'à trois phases parmi 50 moteurs de revenus (emploi, services, startups, commerce, audience, spéculation, placements, et la fraude comme témoin), leurs déclencheurs, l'activité de base au début, les heures au début (5 à 20 h/semaine), le seuil de passage à temps plein, le secteur, le canal, le prix, le financement, la géographie, l'associé, etc.</p>
   <p>48 populations (« îles ») évoluent en parallèle avec l'algorithme NSGA-II et échangent leurs meilleures stratégies toutes les 50 générations. À chaque génération, chaque stratégie vit les mêmes destins aléatoires que les autres ; les survivantes accumulent jusqu'à 512 vies simulées. Les meilleures jamais rencontrées sont réévaluées sur 300 000 vies.</p>
-  <p>Le modèle est calé sur des données publiques : 1 à 5,6 % des startups ayant levé un seed deviennent licornes (CB Insights, Carta), environ 97 % des day traders qui persistent perdent de l'argent (Chague et al., 2019), la productivité plafonne au-delà de 50 h/semaine (Pencavel, 2014), les entreprises de services avec salariés gardent 8 à 15 % de marge nette. Pendant le calage, l'algorithme a exploité une vingtaine de failles du modèle, toutes corrigées (voir le README).</p>
+  <p>Le modèle est calé sur des données publiques : 1 à 5,6 % des startups ayant levé un seed deviennent licornes (CB Insights, Carta), la grande majorité des day traders suivis perdent de l'argent, et 1,1 % gagnent plus que le salaire minimum (Chague, De-Losso et Giovannetti, « Day Trading for a Living? »), la productivité plafonne au-delà de 50 h/semaine (Pencavel, 2014), les entreprises de services avec salariés gardent 8 à 15 % de marge nette. Pendant le calage, l'algorithme a exploité une vingtaine de failles du modèle, toutes corrigées (voir le README).</p>
   <p>Limites : ce sont des ordres de grandeur, pas des promesses. Le revenu est avant impôts et charges (25 à 45 % en France). Les probabilités de licorne sont les chiffres les moins fiables. La « fraude » n'est qu'un témoin aux paramètres illustratifs.</p>
 </details>
 
