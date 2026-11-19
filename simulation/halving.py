@@ -41,6 +41,10 @@ ap.add_argument("--tag", required=True)
 ap.add_argument("--seed", type=int, default=2026)
 ap.add_argument("--mondes", type=int, default=12)
 ap.add_argument("--rapide", action="store_true", help="budgets réduits (essai de bon fonctionnement)")
+ap.add_argument("--sans-speculation", action="store_true",
+                help="exclut les moteurs spéculatifs (trading, paris, poker, memecoins) et la fraude")
+ap.add_argument("--garder-medecine", action="store_true",
+                help="version personnalisée seulement : médecine maintenue (activité de base 0 ou 1)")
 a = ap.parse_args()
 
 if a.modele == "med":
@@ -90,19 +94,36 @@ def seeds():
                 out += [r["strategie"]["genome"] for r in v["final"]]
     # réparation : chaque bonne stratégie reprise avec des heures de départ bornées
     rep = []
+    bases = [0, 1] if a.garder_medecine else None
     for g in out:
         for h in range(a.hstart_max + 1):
-            x = [int(v) for v in g]
-            x[M.G_HSTART] = h
-            rep.append(x)
+            for b in (bases if bases is not None else [int(g[M.G_BASE])]):
+                x = [int(v) for v in g]
+                x[M.G_HSTART] = h
+                x[M.G_BASE] = b
+                rep.append(x)
     return rep
+
+
+EXCLUS = {e for e in range(M.NE) if M.FAMILY[e] in (M.F_SPEC, M.F_TRADING, M.F_FRAUD)} if a.sans_speculation else set()
+
+
+def valide(g):
+    """Vrai si la stratégie respecte les contraintes : effort, moteurs autorisés, activité de base."""
+    if g[M.G_HSTART] > a.hstart_max:
+        return False
+    if a.garder_medecine and g[M.G_BASE] not in (0, 1):
+        return False
+    if EXCLUS and any(x in EXCLUS for x in E.path_of(g)):
+        return False
+    return True
 
 
 def canon_unique(rows):
     if len(rows) == 0:
         return np.zeros((0, M.NG), dtype=np.int64)
     G = E.canon(np.array(rows, dtype=np.int64))
-    G = G[G[:, M.G_HSTART] <= a.hstart_max]
+    G = np.array([g for g in G if valide(g)], dtype=np.int64).reshape(-1, M.NG)
     seen, out = set(), []
     for g in G:
         k = tuple(int(x) for x in g)
@@ -235,7 +256,7 @@ def main():
                      "score_min_mondes": round(float(minimum[i]), 5),
                      "score_par_monde": [round(float(x), 5) for x in by_world[i]]})
     E.save(f"halving_{a.tag}.json", {
-        "params": vars(a), "modele": a.modele, "objectif": a.objectif, "etapes": etapes,
+        "params": vars(a), "modele": a.modele, "objectif": a.objectif, "exclus": sorted(EXCLUS), "etapes": etapes,
         "champion_genome": champion_g, "final": final, "mondes": rows,
         "vies_total": int(sum(e["vies_par_strategie"] * e["strategies"] for e in etapes)
                           + max(3000, int(300_000 * ECHELLE)) * len(top) + lives(60_000) * len(top) * a.mondes),
