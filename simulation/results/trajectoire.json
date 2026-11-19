@@ -1,0 +1,1205 @@
+{
+ "n": 5000,
+ "rows": [
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 1,
+   "p10": -50,
+   "p25": -50,
+   "mediane": -50,
+   "p75": 510,
+   "p90": 1447,
+   "part_10k_pct": 0.0
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 2,
+   "p10": -50,
+   "p25": -50,
+   "mediane": 158,
+   "p75": 1160,
+   "p90": 2164,
+   "part_10k_pct": 0.0
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 3,
+   "p10": -50,
+   "p25": -50,
+   "mediane": 645,
+   "p75": 1574,
+   "p90": 2683,
+   "part_10k_pct": 0.08
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 4,
+   "p10": -50,
+   "p25": -50,
+   "mediane": 876,
+   "p75": 1862,
+   "p90": 3117,
+   "part_10k_pct": 0.02
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 5,
+   "p10": -50,
+   "p25": 250,
+   "mediane": 1033,
+   "p75": 2049,
+   "p90": 3402,
+   "part_10k_pct": 0.16
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 6,
+   "p10": -50,
+   "p25": 366,
+   "mediane": 1195,
+   "p75": 2312,
+   "p90": 3777,
+   "part_10k_pct": 0.2
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 7,
+   "p10": -50,
+   "p25": 476,
+   "mediane": 1365,
+   "p75": 2495,
+   "p90": 3965,
+   "part_10k_pct": 0.26
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 8,
+   "p10": -50,
+   "p25": 554,
+   "mediane": 1487,
+   "p75": 2668,
+   "p90": 4312,
+   "part_10k_pct": 0.34
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 9,
+   "p10": -50,
+   "p25": 602,
+   "mediane": 1615,
+   "p75": 2759,
+   "p90": 4333,
+   "part_10k_pct": 0.44
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 10,
+   "p10": -50,
+   "p25": 611,
+   "mediane": 1683,
+   "p75": 2848,
+   "p90": 4546,
+   "part_10k_pct": 0.86
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 11,
+   "p10": -50,
+   "p25": 642,
+   "mediane": 1732,
+   "p75": 2959,
+   "p90": 4807,
+   "part_10k_pct": 1.08
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 12,
+   "p10": -50,
+   "p25": 685,
+   "mediane": 1817,
+   "p75": 2990,
+   "p90": 4984,
+   "part_10k_pct": 1.78
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 13,
+   "p10": -150,
+   "p25": -150,
+   "mediane": -150,
+   "p75": 2049,
+   "p90": 2707,
+   "part_10k_pct": 1.96
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 14,
+   "p10": -150,
+   "p25": -150,
+   "mediane": -82,
+   "p75": 2393,
+   "p90": 4201,
+   "part_10k_pct": 3.1
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 15,
+   "p10": -150,
+   "p25": -150,
+   "mediane": 103,
+   "p75": 2380,
+   "p90": 5021,
+   "part_10k_pct": 4.16
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 16,
+   "p10": -150,
+   "p25": -150,
+   "mediane": 298,
+   "p75": 2601,
+   "p90": 6174,
+   "part_10k_pct": 5.7
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 17,
+   "p10": -150,
+   "p25": -150,
+   "mediane": 527,
+   "p75": 2847,
+   "p90": 7543,
+   "part_10k_pct": 6.96
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 18,
+   "p10": -150,
+   "p25": -82,
+   "mediane": 1415,
+   "p75": 3096,
+   "p90": 8901,
+   "part_10k_pct": 8.44
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 19,
+   "p10": -150,
+   "p25": -82,
+   "mediane": 1751,
+   "p75": 3396,
+   "p90": 9763,
+   "part_10k_pct": 9.6
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 20,
+   "p10": -150,
+   "p25": 36,
+   "mediane": 1968,
+   "p75": 4248,
+   "p90": 10957,
+   "part_10k_pct": 11.34
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 21,
+   "p10": -150,
+   "p25": 63,
+   "mediane": 2220,
+   "p75": 4877,
+   "p90": 12043,
+   "part_10k_pct": 12.72
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 22,
+   "p10": -150,
+   "p25": 95,
+   "mediane": 2332,
+   "p75": 5494,
+   "p90": 12516,
+   "part_10k_pct": 14.08
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 23,
+   "p10": -150,
+   "p25": 192,
+   "mediane": 2482,
+   "p75": 6164,
+   "p90": 13144,
+   "part_10k_pct": 14.86
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 24,
+   "p10": -150,
+   "p25": 275,
+   "mediane": 2634,
+   "p75": 6667,
+   "p90": 14257,
+   "part_10k_pct": 16.4
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 25,
+   "p10": -150,
+   "p25": 423,
+   "mediane": 2728,
+   "p75": 7149,
+   "p90": 15090,
+   "part_10k_pct": 17.96
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 26,
+   "p10": -150,
+   "p25": 657,
+   "mediane": 2844,
+   "p75": 7571,
+   "p90": 15801,
+   "part_10k_pct": 18.92
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 27,
+   "p10": -150,
+   "p25": 1088,
+   "mediane": 2901,
+   "p75": 7979,
+   "p90": 16507,
+   "part_10k_pct": 20.12
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 28,
+   "p10": -82,
+   "p25": 1547,
+   "mediane": 2977,
+   "p75": 8435,
+   "p90": 17159,
+   "part_10k_pct": 21.26
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 29,
+   "p10": -54,
+   "p25": 1779,
+   "mediane": 3056,
+   "p75": 8784,
+   "p90": 17408,
+   "part_10k_pct": 22.1
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 30,
+   "p10": -14,
+   "p25": 1843,
+   "mediane": 3141,
+   "p75": 9315,
+   "p90": 18628,
+   "part_10k_pct": 22.96
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 31,
+   "p10": 22,
+   "p25": 1985,
+   "mediane": 3203,
+   "p75": 9683,
+   "p90": 19032,
+   "part_10k_pct": 24.02
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 32,
+   "p10": 54,
+   "p25": 2082,
+   "mediane": 3277,
+   "p75": 10156,
+   "p90": 18874,
+   "part_10k_pct": 25.22
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 33,
+   "p10": 59,
+   "p25": 2129,
+   "mediane": 3323,
+   "p75": 10238,
+   "p90": 18909,
+   "part_10k_pct": 25.52
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 34,
+   "p10": 132,
+   "p25": 2217,
+   "mediane": 3385,
+   "p75": 10655,
+   "p90": 19753,
+   "part_10k_pct": 26.5
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 35,
+   "p10": 171,
+   "p25": 2248,
+   "mediane": 3385,
+   "p75": 10972,
+   "p90": 19936,
+   "part_10k_pct": 27.68
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 36,
+   "p10": 250,
+   "p25": 2330,
+   "mediane": 3535,
+   "p75": 11262,
+   "p90": 20284,
+   "part_10k_pct": 27.9
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 37,
+   "p10": 327,
+   "p25": 2374,
+   "mediane": 3658,
+   "p75": 11846,
+   "p90": 20741,
+   "part_10k_pct": 29.22
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 38,
+   "p10": 519,
+   "p25": 2455,
+   "mediane": 3769,
+   "p75": 12063,
+   "p90": 20952,
+   "part_10k_pct": 29.88
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 39,
+   "p10": 565,
+   "p25": 2478,
+   "mediane": 3855,
+   "p75": 12227,
+   "p90": 20775,
+   "part_10k_pct": 30.64
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 40,
+   "p10": 1003,
+   "p25": 2528,
+   "mediane": 3841,
+   "p75": 12699,
+   "p90": 20964,
+   "part_10k_pct": 31.14
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 41,
+   "p10": 1198,
+   "p25": 2590,
+   "mediane": 4133,
+   "p75": 12712,
+   "p90": 21073,
+   "part_10k_pct": 31.44
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 42,
+   "p10": 1431,
+   "p25": 2624,
+   "mediane": 4195,
+   "p75": 12847,
+   "p90": 21077,
+   "part_10k_pct": 31.8
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 43,
+   "p10": 1505,
+   "p25": 2650,
+   "mediane": 4259,
+   "p75": 12991,
+   "p90": 21315,
+   "part_10k_pct": 32.58
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 44,
+   "p10": 1712,
+   "p25": 2688,
+   "mediane": 4461,
+   "p75": 13161,
+   "p90": 21289,
+   "part_10k_pct": 32.84
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 45,
+   "p10": 1825,
+   "p25": 2718,
+   "mediane": 4604,
+   "p75": 13339,
+   "p90": 21031,
+   "part_10k_pct": 33.72
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 46,
+   "p10": 1828,
+   "p25": 2742,
+   "mediane": 4553,
+   "p75": 13496,
+   "p90": 21155,
+   "part_10k_pct": 33.96
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 47,
+   "p10": 1830,
+   "p25": 2757,
+   "mediane": 4740,
+   "p75": 13711,
+   "p90": 21244,
+   "part_10k_pct": 34.18
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 48,
+   "p10": 1871,
+   "p25": 2783,
+   "mediane": 4827,
+   "p75": 13695,
+   "p90": 21048,
+   "part_10k_pct": 34.68
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 49,
+   "p10": 1893,
+   "p25": 2817,
+   "mediane": 4965,
+   "p75": 13938,
+   "p90": 21208,
+   "part_10k_pct": 34.64
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 50,
+   "p10": 1931,
+   "p25": 2814,
+   "mediane": 4860,
+   "p75": 14107,
+   "p90": 21404,
+   "part_10k_pct": 35.12
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 51,
+   "p10": 1970,
+   "p25": 2852,
+   "mediane": 4903,
+   "p75": 14024,
+   "p90": 21338,
+   "part_10k_pct": 35.46
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 52,
+   "p10": 1993,
+   "p25": 2868,
+   "mediane": 4963,
+   "p75": 13936,
+   "p90": 21475,
+   "part_10k_pct": 35.3
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 53,
+   "p10": 2021,
+   "p25": 2907,
+   "mediane": 5144,
+   "p75": 13958,
+   "p90": 21194,
+   "part_10k_pct": 35.64
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 54,
+   "p10": 2064,
+   "p25": 2917,
+   "mediane": 5190,
+   "p75": 13873,
+   "p90": 21271,
+   "part_10k_pct": 34.96
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 55,
+   "p10": 2069,
+   "p25": 2932,
+   "mediane": 5166,
+   "p75": 13654,
+   "p90": 20887,
+   "part_10k_pct": 35.8
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 56,
+   "p10": 2078,
+   "p25": 2935,
+   "mediane": 5164,
+   "p75": 13669,
+   "p90": 20417,
+   "part_10k_pct": 35.28
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 57,
+   "p10": 2098,
+   "p25": 2963,
+   "mediane": 5262,
+   "p75": 13406,
+   "p90": 19630,
+   "part_10k_pct": 35.28
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 58,
+   "p10": 2136,
+   "p25": 2978,
+   "mediane": 5350,
+   "p75": 13185,
+   "p90": 19287,
+   "part_10k_pct": 35.32
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 59,
+   "p10": 2128,
+   "p25": 2998,
+   "mediane": 5232,
+   "p75": 12886,
+   "p90": 18725,
+   "part_10k_pct": 35.12
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 60,
+   "p10": 2144,
+   "p25": 3006,
+   "mediane": 5419,
+   "p75": 12763,
+   "p90": 18590,
+   "part_10k_pct": 34.94
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 61,
+   "p10": 1870,
+   "p25": 2783,
+   "mediane": 3816,
+   "p75": 8618,
+   "p90": 13003,
+   "part_10k_pct": 20.04
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 62,
+   "p10": 1873,
+   "p25": 2777,
+   "mediane": 3763,
+   "p75": 8336,
+   "p90": 12632,
+   "part_10k_pct": 18.98
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 63,
+   "p10": 1912,
+   "p25": 2809,
+   "mediane": 3868,
+   "p75": 8608,
+   "p90": 13363,
+   "part_10k_pct": 21.28
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 64,
+   "p10": 2007,
+   "p25": 2876,
+   "mediane": 4011,
+   "p75": 9102,
+   "p90": 13307,
+   "part_10k_pct": 21.56
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 65,
+   "p10": 2054,
+   "p25": 2913,
+   "mediane": 4056,
+   "p75": 8934,
+   "p90": 13091,
+   "part_10k_pct": 20.92
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 66,
+   "p10": 2103,
+   "p25": 2940,
+   "mediane": 4098,
+   "p75": 8840,
+   "p90": 12940,
+   "part_10k_pct": 20.7
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 67,
+   "p10": 2118,
+   "p25": 2968,
+   "mediane": 4120,
+   "p75": 8796,
+   "p90": 12788,
+   "part_10k_pct": 20.24
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 68,
+   "p10": 2153,
+   "p25": 2999,
+   "mediane": 4138,
+   "p75": 8763,
+   "p90": 12668,
+   "part_10k_pct": 20.28
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 69,
+   "p10": 2202,
+   "p25": 3023,
+   "mediane": 4172,
+   "p75": 8725,
+   "p90": 12594,
+   "part_10k_pct": 19.72
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 70,
+   "p10": 2243,
+   "p25": 3037,
+   "mediane": 4182,
+   "p75": 8697,
+   "p90": 12546,
+   "part_10k_pct": 19.6
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 71,
+   "p10": 2256,
+   "p25": 3056,
+   "mediane": 4210,
+   "p75": 8720,
+   "p90": 12528,
+   "part_10k_pct": 19.32
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 72,
+   "p10": 2276,
+   "p25": 3078,
+   "mediane": 4229,
+   "p75": 8684,
+   "p90": 12635,
+   "part_10k_pct": 19.26
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 73,
+   "p10": 2301,
+   "p25": 3098,
+   "mediane": 4259,
+   "p75": 8660,
+   "p90": 12761,
+   "part_10k_pct": 19.28
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 74,
+   "p10": 2312,
+   "p25": 3112,
+   "mediane": 4281,
+   "p75": 8656,
+   "p90": 12770,
+   "part_10k_pct": 19.28
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 75,
+   "p10": 2314,
+   "p25": 3138,
+   "mediane": 4316,
+   "p75": 8661,
+   "p90": 12929,
+   "part_10k_pct": 19.04
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 76,
+   "p10": 2322,
+   "p25": 3147,
+   "mediane": 4342,
+   "p75": 8740,
+   "p90": 13089,
+   "part_10k_pct": 18.88
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 77,
+   "p10": 2347,
+   "p25": 3158,
+   "mediane": 4364,
+   "p75": 8734,
+   "p90": 13317,
+   "part_10k_pct": 19.16
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 78,
+   "p10": 2353,
+   "p25": 3170,
+   "mediane": 4378,
+   "p75": 8718,
+   "p90": 13491,
+   "part_10k_pct": 19.32
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 79,
+   "p10": 2373,
+   "p25": 3190,
+   "mediane": 4385,
+   "p75": 8749,
+   "p90": 13670,
+   "part_10k_pct": 19.28
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 80,
+   "p10": 2387,
+   "p25": 3203,
+   "mediane": 4413,
+   "p75": 8829,
+   "p90": 13928,
+   "part_10k_pct": 19.36
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 81,
+   "p10": 2406,
+   "p25": 3215,
+   "mediane": 4433,
+   "p75": 8813,
+   "p90": 14077,
+   "part_10k_pct": 19.56
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 82,
+   "p10": 2411,
+   "p25": 3223,
+   "mediane": 4447,
+   "p75": 8779,
+   "p90": 14200,
+   "part_10k_pct": 19.86
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 83,
+   "p10": 2423,
+   "p25": 3239,
+   "mediane": 4471,
+   "p75": 8850,
+   "p90": 14250,
+   "part_10k_pct": 20.2
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 84,
+   "p10": 2437,
+   "p25": 3252,
+   "mediane": 4511,
+   "p75": 8866,
+   "p90": 14529,
+   "part_10k_pct": 20.42
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 85,
+   "p10": 2448,
+   "p25": 3259,
+   "mediane": 4530,
+   "p75": 8901,
+   "p90": 14753,
+   "part_10k_pct": 20.7
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 86,
+   "p10": 2458,
+   "p25": 3276,
+   "mediane": 4552,
+   "p75": 9021,
+   "p90": 15093,
+   "part_10k_pct": 21.44
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 87,
+   "p10": 2469,
+   "p25": 3284,
+   "mediane": 4586,
+   "p75": 9042,
+   "p90": 15403,
+   "part_10k_pct": 21.46
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 88,
+   "p10": 2474,
+   "p25": 3291,
+   "mediane": 4657,
+   "p75": 9133,
+   "p90": 15863,
+   "part_10k_pct": 21.8
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 89,
+   "p10": 2480,
+   "p25": 3299,
+   "mediane": 4732,
+   "p75": 9280,
+   "p90": 16150,
+   "part_10k_pct": 22.38
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 90,
+   "p10": 2483,
+   "p25": 3304,
+   "mediane": 4777,
+   "p75": 9345,
+   "p90": 16546,
+   "part_10k_pct": 22.68
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 91,
+   "p10": 2488,
+   "p25": 3314,
+   "mediane": 4834,
+   "p75": 9435,
+   "p90": 16663,
+   "part_10k_pct": 22.86
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 92,
+   "p10": 2503,
+   "p25": 3331,
+   "mediane": 4798,
+   "p75": 9556,
+   "p90": 16786,
+   "part_10k_pct": 23.3
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 93,
+   "p10": 2506,
+   "p25": 3338,
+   "mediane": 4760,
+   "p75": 9719,
+   "p90": 17063,
+   "part_10k_pct": 23.92
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 94,
+   "p10": 2502,
+   "p25": 3345,
+   "mediane": 4765,
+   "p75": 9764,
+   "p90": 17040,
+   "part_10k_pct": 24.12
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 95,
+   "p10": 2514,
+   "p25": 3358,
+   "mediane": 4721,
+   "p75": 9885,
+   "p90": 17557,
+   "part_10k_pct": 24.66
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 96,
+   "p10": 2517,
+   "p25": 3363,
+   "mediane": 4689,
+   "p75": 9973,
+   "p90": 18109,
+   "part_10k_pct": 24.92
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 97,
+   "p10": 2518,
+   "p25": 3371,
+   "mediane": 4717,
+   "p75": 10098,
+   "p90": 18204,
+   "part_10k_pct": 25.22
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 98,
+   "p10": 2524,
+   "p25": 3378,
+   "mediane": 4727,
+   "p75": 10255,
+   "p90": 18774,
+   "part_10k_pct": 25.58
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 99,
+   "p10": 2520,
+   "p25": 3382,
+   "mediane": 4701,
+   "p75": 10345,
+   "p90": 18802,
+   "part_10k_pct": 25.94
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 100,
+   "p10": 2532,
+   "p25": 3388,
+   "mediane": 4630,
+   "p75": 10532,
+   "p90": 19258,
+   "part_10k_pct": 26.62
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 101,
+   "p10": 2529,
+   "p25": 3392,
+   "mediane": 4636,
+   "p75": 10647,
+   "p90": 19763,
+   "part_10k_pct": 27.06
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 102,
+   "p10": 2531,
+   "p25": 3394,
+   "mediane": 4643,
+   "p75": 10832,
+   "p90": 20327,
+   "part_10k_pct": 27.28
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 103,
+   "p10": 2536,
+   "p25": 3400,
+   "mediane": 4650,
+   "p75": 11000,
+   "p90": 20992,
+   "part_10k_pct": 27.52
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 104,
+   "p10": 2534,
+   "p25": 3405,
+   "mediane": 4656,
+   "p75": 11004,
+   "p90": 21355,
+   "part_10k_pct": 27.8
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 105,
+   "p10": 2543,
+   "p25": 3411,
+   "mediane": 4663,
+   "p75": 11059,
+   "p90": 21886,
+   "part_10k_pct": 28.0
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 106,
+   "p10": 2545,
+   "p25": 3417,
+   "mediane": 4669,
+   "p75": 11163,
+   "p90": 22191,
+   "part_10k_pct": 28.44
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 107,
+   "p10": 2545,
+   "p25": 3421,
+   "mediane": 4676,
+   "p75": 11309,
+   "p90": 22559,
+   "part_10k_pct": 28.96
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 108,
+   "p10": 2545,
+   "p25": 3426,
+   "mediane": 4683,
+   "p75": 11316,
+   "p90": 22923,
+   "part_10k_pct": 28.98
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 109,
+   "p10": 2548,
+   "p25": 3431,
+   "mediane": 4689,
+   "p75": 11362,
+   "p90": 23381,
+   "part_10k_pct": 29.1
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 110,
+   "p10": 2554,
+   "p25": 3437,
+   "mediane": 4696,
+   "p75": 11430,
+   "p90": 23912,
+   "part_10k_pct": 29.28
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 111,
+   "p10": 2559,
+   "p25": 3442,
+   "mediane": 4703,
+   "p75": 11699,
+   "p90": 24113,
+   "part_10k_pct": 29.62
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 112,
+   "p10": 2559,
+   "p25": 3444,
+   "mediane": 4709,
+   "p75": 11836,
+   "p90": 24585,
+   "part_10k_pct": 29.88
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 113,
+   "p10": 2566,
+   "p25": 3449,
+   "mediane": 4716,
+   "p75": 11983,
+   "p90": 25160,
+   "part_10k_pct": 30.18
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 114,
+   "p10": 2566,
+   "p25": 3452,
+   "mediane": 4722,
+   "p75": 11985,
+   "p90": 25480,
+   "part_10k_pct": 30.26
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 115,
+   "p10": 2568,
+   "p25": 3454,
+   "mediane": 4729,
+   "p75": 12075,
+   "p90": 25852,
+   "part_10k_pct": 30.38
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 116,
+   "p10": 2570,
+   "p25": 3456,
+   "mediane": 4736,
+   "p75": 12092,
+   "p90": 26033,
+   "part_10k_pct": 30.48
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 117,
+   "p10": 2569,
+   "p25": 3458,
+   "mediane": 4742,
+   "p75": 12183,
+   "p90": 26465,
+   "part_10k_pct": 30.6
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 118,
+   "p10": 2574,
+   "p25": 3469,
+   "mediane": 4749,
+   "p75": 12240,
+   "p90": 26781,
+   "part_10k_pct": 30.74
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 119,
+   "p10": 2578,
+   "p25": 3467,
+   "mediane": 4756,
+   "p75": 12408,
+   "p90": 27038,
+   "part_10k_pct": 30.68
+  },
+  {
+   "strategie": "Stratégie gagnante",
+   "mois": 120,
+   "p10": 2582,
+   "p25": 3472,
+   "mediane": 4762,
+   "p75": 12449,
+   "p90": 27689,
+   "part_10k_pct": 30.76
+  }
+ ]
+}
