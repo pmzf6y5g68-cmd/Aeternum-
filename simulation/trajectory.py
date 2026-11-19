@@ -19,4 +19,4 @@ for label, g in specs:
                      "p75": round(q[3]), "p90": round(q[4]), "part_10k_pct": round(float((inc[:, m] >= 10000).mean() * 100), 2)})
     print(label, "médiane m24/m60/m84/m120:", [rows[-120 + k]["mediane"] for k in (23, 59, 83, 119)],
           "part≥10k:", [rows[-120 + k]["part_10k_pct"] for k in (23, 59, 83, 119)])
-save("trajectoire.json", {"n": n, "rows": rows})
+save(sys.argv[3] if len(sys.argv) > 3 else "trajectoire.json", {"n": n, "rows": rows})

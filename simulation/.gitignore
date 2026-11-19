@@ -1,3 +1,7 @@
 __pycache__/
 logs/
 results/main_seed9*.json
+results/*checkpoint*.json
+results/*.tmp
+results/v2_main9*.json
+dashboard/docs/

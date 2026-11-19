@@ -1,0 +1,592 @@
+<meta name="dash-one-writer">
+<style>
+.ae { display: grid; gap: var(--cds-gap-xl); font-family: var(--font-anthropic-sans); color: var(--color-fg); }
+.ae-head { display: grid; gap: var(--cds-gap-sm); }
+.ae-head h1 { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0; text-wrap: balance; }
+.ae-lede { font-size: var(--cds-font-size-heading); line-height: 1.45; max-width: 68ch; margin: 0; text-wrap: pretty; }
+.ae-lede b { font-weight: var(--cds-font-weight-medium); }
+.ae-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--cds-gap-md); }
+@media (max-width: 720px) { .ae-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.ae-tile { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); display: grid; gap: var(--cds-gap-xs); align-content: start; }
+.ae-tile .ae-v { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: 2.1rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.ae-tile .ae-l { font-size: var(--cds-font-size-body); }
+.ae-tile .ae-s { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+.ae-sec { display: grid; gap: var(--cds-gap-sm); min-width: 0; }
+.ae-sec h2 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0; text-wrap: balance; }
+.ae-note { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); line-height: 1.5; max-width: 78ch; margin: 0; }
+.ae-chart { position: relative; min-height: 300px; }
+.ae-chart.ae-short { min-height: 190px; }
+.ae-chart svg { display: block; overflow: visible; }
+.ae-tip { position: absolute; z-index: 2; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); box-shadow: var(--cds-shadow-popover); border-radius: var(--cds-radius); padding: 6px 9px; font-size: var(--cds-font-size-caption); line-height: 1.45; max-width: 290px; }
+.ae-tip b { font-weight: var(--cds-font-weight-medium); }
+.ae-tip .ae-k { color: var(--cds-text-secondary); }
+.ae .axis text { fill: var(--cds-text-secondary); font-size: var(--cds-font-size-caption); font-family: var(--font-anthropic-sans); }
+.ae .axis path, .ae .axis line { stroke: var(--cds-chart-axis); }
+.ae .grid line { stroke: var(--cds-chart-grid); }
+.ae .grid path { display: none; }
+.ae-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin-top: var(--cds-gap-xs); }
+.ae-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.ae-legend i { display: inline-block; width: 12px; height: 3px; border-radius: 2px; }
+.ae-legend i.ae-sq { height: 10px; width: 10px; }
+.ae-recipe { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: var(--cds-gap-md) var(--cds-gap-lg); background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); margin: 0; }
+.ae-recipe div { display: grid; gap: 2px; min-width: 0; }
+.ae-recipe dt { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+.ae-recipe dd { margin: 0; overflow-wrap: anywhere; }
+.ae-recipe .ae-wide { grid-column: 1 / -1; }
+.ae-recipe .ae-path { font-family: var(--font-anthropic-serif); font-size: var(--cds-font-size-heading); }
+.ae-tablewrap { overflow-x: auto; }
+.ae table { border-collapse: collapse; width: 100%; font-size: var(--cds-font-size-caption); font-variant-numeric: tabular-nums; }
+.ae th, .ae td { text-align: left; padding: 7px 9px; border-bottom: 1px solid var(--color-border-line); white-space: nowrap; vertical-align: top; }
+.ae th { color: var(--color-fg-muted); font-weight: var(--cds-font-weight-medium); }
+.ae th.n, .ae td.n { text-align: right; }
+.ae td.ae-wrap { white-space: normal; min-width: 210px; }
+.ae tr.ae-dead td { color: var(--color-fg-muted); }
+.ae-pill { display: inline-block; padding: 1px 7px; border-radius: 999px; font-size: var(--cds-font-size-caption); border: 1px solid var(--color-border-line); }
+.ae-pill.ok { color: var(--color-ok); border-color: currentColor; }
+.ae-pill.bad { color: var(--color-bad); border-color: currentColor; }
+.ae-pill.warn { color: var(--color-warn); border-color: currentColor; }
+.ae details { border-top: 1px solid var(--color-border-line); padding-top: var(--cds-gap-md); }
+.ae details summary { cursor: pointer; font-weight: var(--cds-font-weight-medium); }
+.ae details p, .ae details li { color: var(--color-fg-muted); font-size: var(--cds-font-size-body); line-height: 1.55; max-width: 78ch; }
+.ae-fail { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); padding: var(--cds-pad-md) 0; }
+.ae-duo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--cds-gap-lg); }
+@media (max-width: 720px) { .ae-duo { grid-template-columns: minmax(0, 1fr); } }
+.ae-h3 { font-size: var(--cds-font-size-body); font-weight: var(--cds-font-weight-medium); margin: 0; color: var(--color-fg-muted); }
+.ae-chart.ae-bars { min-height: 120px; }
+</style>
+
+<div class="ae" lang="fr" data-read>
+
+<header class="ae-head" id="entete">
+  <h1>Évolution Aeternum</h1>
+  <p class="ae-lede">Après <b data-draw="nb-gen" data-source="campagne" data-field="generations" data-row="0">—</b> générations d'évolution et <b data-draw="nb-vies" data-source="campagne" data-field="vies_simulees" data-row="0">—</b> vies simulées mois par mois, le meilleur compromis pour toi est : <b data-draw="champion" data-source="champions" data-field="parcours" data-row="0">—</b>.</p>
+  <p class="ae-note">Profil simulé : 18 ans, sans expérience ni réseau, en France, quelques centaines d'euros d'épargne, 5 à 20 h/semaine au début à côté d'une activité de base (études, petit job, job ou rien) ; temps plein seulement une fois que le projet rapporte. « 10 k€/mois » = revenu total avant impôts (projet + activité de base), tenu 3 mois de suite. « Licorne » = entreprise valorisée au moins 1 milliard de dollars.</p>
+</header>
+
+<section class="ae-tiles" id="chiffres-cles" aria-label="Chiffres clés du meilleur compromis">
+  <div class="ae-tile" id="tuile-24m">
+    <span class="ae-l">10 k€/mois atteints en 2 ans</span>
+    <span class="ae-v"><span data-draw="t-24" data-source="champions" data-field="p10k_24m_pct" data-row="0">—</span> %</span>
+    <span class="ae-s">des vies simulées</span>
+  </div>
+  <div class="ae-tile" id="tuile-60m">
+    <span class="ae-l">10 k€/mois atteints en 5 ans</span>
+    <span class="ae-v"><span data-draw="t-60" data-source="champions" data-field="p10k_60m_pct" data-row="0">—</span> %</span>
+    <span class="ae-s">des vies simulées</span>
+  </div>
+  <div class="ae-tile" id="tuile-part">
+    <span class="ae-l">Temps passé à ≥ 10 k€/mois</span>
+    <span class="ae-v"><span data-draw="t-part" data-source="champions" data-field="part_temps_10k_pct" data-row="0">—</span> %</span>
+    <span class="ae-s">en moyenne, de 21 à 28 ans</span>
+  </div>
+  <div class="ae-tile" id="tuile-licorne">
+    <span class="ae-l">Potentiel licorne</span>
+    <span class="ae-v"><span data-draw="t-lic" data-source="champions" data-field="p_licorne_pct" data-row="0">—</span> %</span>
+    <span class="ae-s">probabilité modélisée, sur 10 ans</span>
+  </div>
+  <div class="ae-tile" id="tuile-seed">
+    <span class="ae-l">Lèvent des fonds (seed)</span>
+    <span class="ae-v"><span data-draw="t-seed" data-source="champions" data-field="p_levee_seed_pct" data-row="0">—</span> %</span>
+    <span class="ae-s">auprès d'investisseurs</span>
+  </div>
+  <div class="ae-tile" id="tuile-abandon">
+    <span class="ae-l">Abandonnent en route</span>
+    <span class="ae-v"><span data-draw="t-ab" data-source="champions" data-field="p_abandon_pct" data-row="0">—</span> %</span>
+    <span class="ae-s">et reprennent un emploi</span>
+  </div>
+</section>
+
+<section class="ae-sec" id="quatre">
+  <h2>Les quatre stratégies à connaître</h2>
+  <p class="ae-note">Tirées des meilleures stratégies jamais rencontrées par l'évolution, chacune réévaluée sur 300 000 vies. Aucune ne gagne sur tous les tableaux : la plus rapide vers 10 k€ n'est pas celle qui peut valoir un milliard.</p>
+  <div class="ae-tablewrap">
+    <table data-source="champions" data-row-key="id" aria-label="Les quatre stratégies à connaître">
+      <thead><tr>
+        <th data-field="id">Rôle</th>
+        <th data-field="parcours">Parcours</th>
+        <th data-field="activite_base">À côté au début</th>
+        <th class="n" data-field="p10k_24m_pct">10 k€ en 2 ans</th>
+        <th class="n" data-field="p10k_60m_pct">en 5 ans</th>
+        <th class="n" data-field="part_temps_10k_pct">Temps à ≥ 10 k€</th>
+        <th class="n" data-field="p_licorne_pct">Licorne</th>
+        <th class="n" data-field="revenu_median_24m">Revenu médian à 2 ans</th>
+      </tr></thead>
+      <tbody data-draw="tb-quatre"></tbody>
+    </table>
+  </div>
+</section>
+
+<section class="ae-sec" id="recette">
+  <h2>La recette du meilleur compromis, gène par gène</h2>
+  <dl class="ae-recipe">
+    <div class="ae-wide"><dt>Parcours</dt><dd class="ae-path" data-draw="r-parcours" data-source="champions" data-field="parcours" data-row="0">—</dd></div>
+    <div><dt>À côté, au début</dt><dd data-draw="r-base" data-source="champions" data-field="activite_base" data-row="0">—</dd></div>
+    <div><dt>Heures par semaine au début</dt><dd data-draw="r-hdebut" data-source="champions" data-field="heures_debut" data-row="0">—</dd></div>
+    <div><dt>Passage à temps plein</dt><dd data-draw="r-tp" data-source="champions" data-field="passage_temps_plein" data-row="0">—</dd></div>
+    <div><dt>Heures par semaine à temps plein</dt><dd data-draw="r-htp" data-source="champions" data-field="heures_temps_plein" data-row="0">—</dd></div>
+    <div><dt>Passage phase 1 → 2</dt><dd data-draw="r-p12" data-source="champions" data-field="passage_1_2" data-row="0">—</dd></div>
+    <div><dt>Passage phase 2 → 3</dt><dd data-draw="r-p23" data-source="champions" data-field="passage_2_3" data-row="0">—</dd></div>
+    <div><dt>Secteur visé</dt><dd data-draw="r-secteur" data-source="champions" data-field="secteur" data-row="0">—</dd></div>
+    <div><dt>Canal d'acquisition</dt><dd data-draw="r-canal" data-source="champions" data-field="canal" data-row="0">—</dd></div>
+    <div><dt>Niveau de prix</dt><dd data-draw="r-prix" data-source="champions" data-field="prix" data-row="0">—</dd></div>
+    <div><dt>Associé</dt><dd data-draw="r-associe" data-source="champions" data-field="associe" data-row="0">—</dd></div>
+    <div><dt>Géographie</dt><dd data-draw="r-geo" data-source="champions" data-field="geographie" data-row="0">—</dd></div>
+    <div><dt>Financement</dt><dd data-draw="r-fin" data-source="champions" data-field="financement" data-row="0">—</dd></div>
+    <div><dt>Levée déclenchée à</dt><dd data-draw="r-levee" data-source="champions" data-field="declencheur_levee" data-row="0">—</dd></div>
+    <div><dt>Positionnement</dt><dd data-draw="r-pos" data-source="champions" data-field="positionnement" data-row="0">—</dd></div>
+    <div><dt>Garder l'activité de services en lançant le produit</dt><dd data-draw="r-garder" data-source="champions" data-field="garder_services" data-row="0">—</dd></div>
+    <div><dt>Réinvestissement des bénéfices</dt><dd data-draw="r-reinv" data-source="champions" data-field="reinvestissement" data-row="0">—</dd></div>
+    <div><dt>Temps d'apprentissage</dt><dd data-draw="r-learn" data-source="champions" data-field="apprentissage" data-row="0">—</dd></div>
+    <div><dt>Temps sur le contenu</dt><dd data-draw="r-contenu" data-source="champions" data-field="contenu" data-row="0">—</dd></div>
+  </dl>
+</section>
+
+<section class="ae-sec" id="trajectoire">
+  <h2>Le revenu de la stratégie gagnante, mois par mois sur 10 ans</h2>
+  <p class="ae-note">Bénéfice mensuel du fondateur avant impôts, sur 5 000 vies tracées. Ligne : médiane. Bande foncée : 25 % à 75 % des vies. Bande claire : 10 % à 90 %. Les vies qui abandonnent comptent avec leur salaire de repli. Le creux vers la 5ᵉ année correspond au lancement de la startup : on échange du revenu contre une chance de bâtir une entreprise de grande valeur.</p>
+  <div class="ae-chart" data-draw="traj" data-source="trajectoire" role="img" aria-label="Quantiles du revenu mensuel de la stratégie gagnante sur 120 mois"></div>
+</section>
+
+<section class="ae-sec" id="et-si">
+  <h2>Et si on change un seul réglage ?</h2>
+  <p class="ae-note">Chaque ligne modifie un seul gène de la stratégie gagnante et la réévalue sur 100 000 vies. Les écarts sont en points de pourcentage par rapport à la référence.</p>
+  <div class="ae-tablewrap">
+    <table data-source="variantes" data-row-key="variante" aria-label="Effet d'un changement de réglage">
+      <thead><tr>
+        <th data-field="variante">Changement</th>
+        <th class="n" data-field="p10k_24m_pct">10 k€ en 24 mois</th>
+        <th class="n" data-field="delta_24m_pts">écart</th>
+        <th class="n" data-field="p_durable_60m_pct">≥ 10 k€ à 5 ans</th>
+        <th class="n" data-field="delta_durable_pts">écart</th>
+        <th class="n" data-field="part_temps_10k_pct">Temps à ≥ 10 k€, ans 3 à 10</th>
+        <th class="n" data-field="p_licorne_pct">Licorne</th>
+        <th class="n" data-field="p_abandon_pct">Abandon</th>
+      </tr></thead>
+      <tbody data-draw="tb-variantes"></tbody>
+    </table>
+  </div>
+</section>
+
+<section class="ae-sec" id="course-10k">
+  <h2>Probabilité d'avoir atteint 10 k€/mois, mois après mois</h2>
+  <p class="ae-note">Pour chaque voie, la meilleure version trouvée par l'évolution, évaluée sur 50 000 à 200 000 vies. Les vies qui abandonnent restent dans le calcul.</p>
+  <div class="ae-chart" data-draw="courbe" data-source="courbe10k" role="img" aria-label="Probabilité cumulée d'atteindre 10 000 euros par mois selon la stratégie, sur 120 mois"></div>
+</section>
+
+<section class="ae-sec" id="toutes-les-voies">
+  <h2>Les 50 voies testées, chacune dans sa meilleure version</h2>
+  <p class="ae-note">Une évolution séparée par voie, pour la juger dans les meilleures conditions possibles, avec les mêmes contraintes que toi (18 ans, peu de temps au début). Les gains d'une fraude détectée sont saisis et ne comptent pas.</p>
+  <div class="ae-tablewrap">
+    <table data-source="moteurs" data-row-key="moteur" aria-label="Meilleure version de chaque voie">
+      <thead><tr>
+        <th data-field="moteur">Voie</th>
+        <th data-field="domaine">Domaine</th>
+        <th class="n" data-field="p10k_24m_pct">10 k€ en 2 ans</th>
+        <th class="n" data-field="p10k_60m_pct">en 5 ans</th>
+        <th class="n" data-field="part_temps_10k_pct">Temps à ≥ 10 k€</th>
+        <th class="n" data-field="p_licorne_pct">Licorne</th>
+        <th class="n" data-field="p_abandon_pct">Abandon</th>
+        <th class="n" data-field="p_catastrophe_pct">Prison, saisie</th>
+        <th class="n" data-field="revenu_median_60m">Revenu médian à 5 ans</th>
+      </tr></thead>
+      <tbody data-draw="tb-moteurs"></tbody>
+    </table>
+  </div>
+</section>
+
+<section class="ae-sec" id="evolution">
+  <h2>Comment l'évolution a convergé</h2>
+  <p class="ae-note">Score combiné : 45 % vitesse vers 10 k€, 30 % potentiel licorne (échelle logarithmique), 25 % temps passé à ≥ 10 k€/mois. Meilleure stratégie et moyenne de toutes les îles, génération après génération.</p>
+  <div class="ae-chart ae-short" data-draw="evo" data-source="evolution" role="img" aria-label="Meilleur score et score moyen de la population à chaque génération"></div>
+</section>
+
+<section class="ae-sec" id="especes">
+  <h2>Les espèces qui survivent</h2>
+  <p class="ae-note">Part de la population (toutes îles confondues) occupée par chaque parcours, génération après génération.</p>
+  <div class="ae-chart" data-draw="especes" data-source="especes" role="img" aria-label="Part de la population par parcours au fil des générations"></div>
+</section>
+
+<section class="ae-sec" id="robustesse">
+  <h2>Et si mes hypothèses sont fausses ?</h2>
+  <p class="ae-note">L'évolution complète relancée dans <span data-draw="nb-mondes" data-source="campagne" data-field="mondes_perturbes" data-row="0">—</span> mondes où les hypothèses clés varient au hasard de ±30 à 50 % : facilité de vendre, de lever des fonds, multiples de valorisation, viralité, burnout, baisse des prix due à l'IA… Le parcours exact change d'un monde à l'autre ; voici par où il commence et par où il finit.</p>
+  <div class="ae-duo">
+    <div class="ae-sec">
+      <h3 class="ae-h3">Dernière étape du parcours gagnant</h3>
+      <div class="ae-chart ae-bars" data-draw="fin" data-source="fin_parcours" role="img" aria-label="Nombre de mondes selon la dernière étape du parcours gagnant"></div>
+    </div>
+    <div class="ae-sec">
+      <h3 class="ae-h3">Première étape du parcours gagnant</h3>
+      <div class="ae-chart ae-bars" data-draw="debut" data-source="debut_parcours" role="img" aria-label="Nombre de mondes selon la première étape du parcours gagnant"></div>
+    </div>
+  </div>
+</section>
+
+<section class="ae-sec" id="finalistes">
+  <h2>Les autres finalistes</h2>
+  <div class="ae-tablewrap">
+    <table data-source="champions" data-row-key="id" aria-label="Finalistes">
+      <thead><tr>
+        <th data-field="id">Rang</th>
+        <th data-field="parcours">Parcours</th>
+        <th data-field="secteur">Secteur</th>
+        <th class="n" data-field="p10k_24m_pct">10 k€ en 24 mois</th>
+        <th class="n" data-field="p_durable_60m_pct">≥ 10 k€ à 5 ans</th>
+        <th class="n" data-field="part_temps_10k_pct">Temps à ≥ 10 k€, ans 3 à 10</th>
+        <th class="n" data-field="p_licorne_pct">Licorne</th>
+        <th class="n" data-field="revenu_median_60m">Revenu médian à 5 ans</th>
+      </tr></thead>
+      <tbody data-draw="tb-champions"></tbody>
+    </table>
+  </div>
+</section>
+
+<details id="methode">
+  <summary>Méthode, hypothèses et limites</summary>
+  <p>Chaque vie démarre à 18 ans et avance mois par mois pendant 10 ans. Au départ sont tirés au hasard le talent, la ténacité, l'épargne, la chance commerciale et la qualité d'entreprise ; en cours de route, les chocs de marché, les burnouts, les associés trouvés ou perdus et les levées de fonds réussies ou ratées. Une stratégie est un génome de 23 gènes : jusqu'à trois phases parmi 50 moteurs de revenus (emploi, services, startups, commerce, audience, spéculation, placements, et la fraude comme témoin), leurs déclencheurs, l'activité de base au début, les heures au début (5 à 20 h/semaine), le seuil de passage à temps plein, le secteur, le canal, le prix, le financement, la géographie, l'associé, etc.</p>
+  <p>48 populations (« îles ») évoluent en parallèle avec l'algorithme NSGA-II et échangent leurs meilleures stratégies toutes les 50 générations. À chaque génération, chaque stratégie vit les mêmes destins aléatoires que les autres ; les survivantes accumulent jusqu'à 512 vies simulées. Les meilleures jamais rencontrées sont réévaluées sur 300 000 vies.</p>
+  <p>Le modèle est calé sur des données publiques : 1 à 5,6 % des startups ayant levé un seed deviennent licornes (CB Insights, Carta), environ 97 % des day traders qui persistent perdent de l'argent (Chague et al., 2019), la productivité plafonne au-delà de 50 h/semaine (Pencavel, 2014), les entreprises de services avec salariés gardent 8 à 15 % de marge nette. Pendant le calage, l'algorithme a exploité une vingtaine de failles du modèle, toutes corrigées (voir le README).</p>
+  <p>Limites : ce sont des ordres de grandeur, pas des promesses. Le revenu est avant impôts et charges (25 à 45 % en France). Les probabilités de licorne sont les chiffres les moins fiables. La « fraude » n'est qu'un témoin aux paramètres illustratifs.</p>
+</details>
+
+</div>
+
+<script>
+// Formats partagés (français)
+window.AE = (function () {
+  const fr = d3.formatLocale({ decimal: ',', thousands: ' ', grouping: [3], currency: ['', ' €'] });
+  const pct = (v) => (v == null || isNaN(v) ? '—' : fr.format(v >= 10 ? '.0f' : v >= 1 ? '.1f' : '.2f')(v));
+  const eur = (v) => (v == null || isNaN(v) ? '—' : fr.format(',.0f')(Math.round(v)) + ' €');
+  const big = (v) => {
+    if (v == null || isNaN(v)) return '—';
+    if (v >= 1e9) return fr.format(',.2f')(v / 1e9).replace(/,?0+$/, '') + ' milliards';
+    if (v >= 1e6) return fr.format(',.0f')(v / 1e6) + ' millions';
+    return fr.format(',.0f')(v);
+  };
+  const ok = (id) => dash.data(id).status === 'ok' && Array.isArray(dash.data(id).data) && dash.data(id).data.length > 0;
+  const fail = (el, id) => {
+    const s = dash.data(id).status;
+    if (s === 'error' || s === 'missing') { el.replaceChildren(); const p = document.createElement('div'); p.className = 'ae-fail'; p.textContent = 'Échec du chargement'; el.appendChild(p); return true; }
+    return false;
+  };
+  const tip = (el) => { let t = el.querySelector('.ae-tip'); if (!t) { t = document.createElement('div'); t.className = 'ae-tip'; t.hidden = true; el.appendChild(t); } return t; };
+  const place = (el, t, x, y) => {
+    const w = el.clientWidth, tw = t.offsetWidth, th = t.offsetHeight;
+    let left = x + 14; if (left + tw > w) left = Math.max(0, x - tw - 14);
+    let top = y - th - 10; if (top < 0) top = y + 14;
+    t.style.left = left + 'px'; t.style.top = top + 'px';
+  };
+  const colors = () => (dash.colors && dash.colors.length ? dash.colors : ['currentColor']);
+  return { fr, pct, eur, big, ok, fail, tip, place, colors };
+})();
+</script>
+
+<script>
+// Chiffres dans le texte et tuiles
+(function () {
+  const cell = (id, field, fmt) => (el) => {
+    const d = dash.data(id);
+    if (d.status !== 'ok' || !d.data || !d.data.length) { el.textContent = '—'; return; }
+    const v = d.data[0][field];
+    el.textContent = fmt ? fmt(v) : (v == null || v === '' ? '—' : String(v));
+  };
+  dash.draw('nb-gen', cell('campagne', 'generations', (v) => AE.fr.format(',.0f')(v)));
+  dash.draw('nb-vies', cell('campagne', 'vies_simulees', (v) => AE.fr.format(',.0f')(v)));
+  dash.draw('nb-mondes', cell('campagne', 'mondes_perturbes', (v) => String(v)));
+  dash.draw('champion', cell('champions', 'parcours'));
+  dash.draw('t-24', cell('champions', 'p10k_24m_pct', AE.pct));
+  dash.draw('t-60', cell('champions', 'p10k_60m_pct', AE.pct));
+  dash.draw('t-part', cell('champions', 'part_temps_10k_pct', AE.pct));
+  dash.draw('t-seed', cell('champions', 'p_levee_seed_pct', AE.pct));
+  dash.draw('t-lic', cell('champions', 'p_licorne_pct', AE.pct));
+  dash.draw('t-ab', cell('champions', 'p_abandon_pct', AE.pct));
+  const txt = (f) => cell('champions', f, (v) => (v == null || v === '' ? 'sans objet' : String(v)));
+  [['r-parcours', 'parcours'], ['r-p12', 'passage_1_2'], ['r-p23', 'passage_2_3'], ['r-secteur', 'secteur'],
+   ['r-canal', 'canal'], ['r-prix', 'prix'], ['r-associe', 'associe'], ['r-geo', 'geographie'],
+   ['r-base', 'activite_base'], ['r-hdebut', 'heures_debut'], ['r-tp', 'passage_temps_plein'], ['r-htp', 'heures_temps_plein'],
+   ['r-fin', 'financement'], ['r-levee', 'declencheur_levee'], ['r-pos', 'positionnement'], ['r-garder', 'garder_services'],
+   ['r-reinv', 'reinvestissement'], ['r-learn', 'apprentissage'], ['r-contenu', 'contenu']].forEach(([n, f]) => dash.draw(n, txt(f)));
+})();
+</script>
+
+<script>
+// Tables
+(function () {
+  const td = (tr, text, cls) => { const c = document.createElement('td'); c.textContent = text; if (cls) c.className = cls; tr.appendChild(c); return c; };
+  dash.draw('tb-moteurs', (tb) => {
+    tb.replaceChildren();
+    if (!AE.ok('moteurs')) return;
+    dash.data('moteurs').data.forEach((r) => {
+      const tr = document.createElement('tr');
+      if (r.p10k_120m < 0.005 && r.p_licorne < 0.0005 && r.p_catastrophe < 0.05) tr.className = 'ae-dead';
+      td(tr, r.moteur);
+      td(tr, r.domaine);
+      td(tr, AE.pct(r.p10k_24m_pct) + ' %', 'n');
+      td(tr, AE.pct(r.p10k_60m_pct) + ' %', 'n');
+      td(tr, AE.pct(r.part_temps_10k_pct) + ' %', 'n');
+      td(tr, AE.pct(r.p_licorne_pct) + ' %', 'n');
+      td(tr, AE.pct(r.p_abandon_pct) + ' %', 'n');
+      const c = td(tr, AE.pct(r.p_catastrophe_pct) + ' %', 'n');
+      if (r.p_catastrophe_pct >= 5) c.style.color = 'var(--color-bad)';
+      td(tr, AE.eur(r.revenu_median_60m), 'n');
+      tb.appendChild(tr);
+    });
+  });
+  dash.draw('tb-quatre', (tb) => {
+    tb.replaceChildren();
+    if (!AE.ok('champions')) return;
+    dash.data('champions').data.filter((r) => r.role !== 'Finaliste').forEach((r) => {
+      const tr = document.createElement('tr');
+      tr.dataset.key = r.id;
+      td(tr, r.id);
+      td(tr, r.parcours, 'ae-wrap');
+      td(tr, r.activite_base);
+      td(tr, AE.pct(r.p10k_24m_pct) + ' %', 'n');
+      td(tr, AE.pct(r.p10k_60m_pct) + ' %', 'n');
+      td(tr, AE.pct(r.part_temps_10k_pct) + ' %', 'n');
+      td(tr, AE.pct(r.p_licorne_pct) + ' %', 'n');
+      td(tr, AE.eur(r.revenu_median_24m), 'n');
+      tb.appendChild(tr);
+    });
+  });
+  dash.draw('tb-champions', (tb) => {
+    tb.replaceChildren();
+    if (!AE.ok('champions')) return;
+    dash.data('champions').data.filter((r) => r.role === 'Finaliste').forEach((r) => {
+      const tr = document.createElement('tr');
+      tr.dataset.key = r.id;
+      td(tr, r.id);
+      td(tr, r.parcours, 'ae-wrap');
+      td(tr, r.secteur);
+      td(tr, AE.pct(r.p10k_24m_pct) + ' %', 'n');
+      td(tr, AE.pct(r.p_durable_60m_pct) + ' %', 'n');
+      td(tr, AE.pct(r.part_temps_10k_pct) + ' %', 'n');
+      td(tr, AE.pct(r.p_licorne_pct) + ' %', 'n');
+      td(tr, AE.eur(r.revenu_median_60m), 'n');
+      tb.appendChild(tr);
+    });
+  });
+  const pts = (v) => (v == null ? '—' : (v > 0 ? '+' : v < 0 ? '−' : '') + AE.pct(Math.abs(v)));
+  dash.draw('tb-variantes', (tb) => {
+    tb.replaceChildren();
+    if (!AE.ok('variantes')) return;
+    dash.data('variantes').data.forEach((r, i) => {
+      const tr = document.createElement('tr');
+      td(tr, r.variante, 'ae-wrap');
+      td(tr, AE.pct(r.p10k_24m_pct) + ' %', 'n');
+      const a = td(tr, i === 0 ? '' : pts(r.delta_24m_pts), 'n');
+      if (i > 0) a.style.color = r.delta_24m_pts > 0.5 ? 'var(--color-ok)' : r.delta_24m_pts < -0.5 ? 'var(--color-bad)' : '';
+      td(tr, AE.pct(r.p_durable_60m_pct) + ' %', 'n');
+      const b = td(tr, i === 0 ? '' : pts(r.delta_durable_pts), 'n');
+      if (i > 0) b.style.color = r.delta_durable_pts > 0.5 ? 'var(--color-ok)' : r.delta_durable_pts < -0.5 ? 'var(--color-bad)' : '';
+      td(tr, AE.pct(r.part_temps_10k_pct) + ' %', 'n');
+      td(tr, AE.pct(r.p_licorne_pct) + ' %', 'n');
+      td(tr, AE.pct(r.p_abandon_pct) + ' %', 'n');
+      if (i === 0) tr.style.fontWeight = 'var(--cds-font-weight-medium)';
+      tb.appendChild(tr);
+    });
+  });
+})();
+</script>
+
+<script>
+// Courbes : probabilité cumulée d'atteindre 10 k€/mois
+dash.draw('courbe', (el) => {
+  if (!AE.ok('courbe10k')) { if (!AE.fail(el, 'courbe10k')) el.replaceChildren(); return; }
+  const rows = dash.data('courbe10k').data;
+  const names = Array.from(new Set(rows.map((r) => r.strategie)));
+  const series = names.map((n) => ({ n, pts: rows.filter((r) => r.strategie === n).sort((a, b) => a.mois - b.mois) }));
+  const W = el.clientWidth || 600, H = 300, m = { t: 12, r: 16, b: 30, l: 40 };
+  el.replaceChildren();
+  const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img')
+    .attr('aria-label', 'Probabilité cumulée d’atteindre 10 000 € par mois');
+  const yMax = Math.max(5, d3.max(rows, (r) => r.p_10k_pct) * 1.08);
+  const x = d3.scaleLinear().domain([1, 120]).range([m.l, W - m.r]);
+  const y = d3.scaleLinear().domain([0, yMax]).nice().range([H - m.b, m.t]);
+  svg.append('g').attr('class', 'grid').attr('transform', `translate(${m.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(-(W - m.l - m.r)).tickFormat(''));
+  svg.append('g').attr('class', 'axis').attr('transform', `translate(0,${H - m.b})`).call(d3.axisBottom(x).tickValues([12, 24, 36, 48, 60, 84, 120]).tickFormat((d) => d + ' m'));
+  svg.append('g').attr('class', 'axis').attr('transform', `translate(${m.l},0)`).call(d3.axisLeft(y).ticks(5).tickFormat((d) => d + ' %'));
+  const C = AE.colors();
+  const line = d3.line().x((d) => x(d.mois)).y((d) => y(d.p_10k_pct));
+  series.forEach((s, i) => {
+    svg.append('path').datum(s.pts).attr('fill', 'none').style('stroke', C[i % C.length]).attr('stroke-width', i === 0 ? 3 : 1.6).attr('d', line);
+  });
+  const leg = document.createElement('div'); leg.className = 'ae-legend';
+  series.forEach((s, i) => { const sp = document.createElement('span'); const ic = document.createElement('i'); ic.style.background = C[i % C.length]; sp.appendChild(ic); sp.appendChild(document.createTextNode(s.n)); leg.appendChild(sp); });
+  el.appendChild(leg);
+  const t = AE.tip(el);
+  const vline = svg.append('line').attr('y1', m.t).attr('y2', H - m.b).style('stroke', 'var(--cds-chart-reference)').attr('opacity', 0);
+  svg.append('rect').attr('x', m.l).attr('y', m.t).attr('width', W - m.l - m.r).attr('height', H - m.t - m.b).attr('fill', 'transparent')
+    .on('pointermove', (ev) => {
+      const [px] = d3.pointer(ev);
+      const mo = Math.round(x.invert(px));
+      const vals = series.map((s, i) => { const p = s.pts.reduce((a, b) => (Math.abs(b.mois - mo) < Math.abs(a.mois - mo) ? b : a)); return { n: s.n, v: p.p_10k_pct, mois: p.mois, c: C[i % C.length] }; })
+        .sort((a, b) => b.v - a.v);
+      vline.attr('x1', x(vals[0].mois)).attr('x2', x(vals[0].mois)).attr('opacity', 1);
+      t.replaceChildren();
+      const h = document.createElement('div'); h.innerHTML = ''; const hb = document.createElement('b'); hb.textContent = 'Mois ' + vals[0].mois; h.appendChild(hb); t.appendChild(h);
+      vals.forEach((v) => { const d = document.createElement('div'); const k = document.createElement('span'); k.className = 'ae-k'; k.textContent = v.n + ' : '; d.appendChild(k); d.appendChild(document.createTextNode(AE.pct(v.v) + ' %')); t.appendChild(d); });
+      t.hidden = false;
+      const r = el.getBoundingClientRect(), sr = svg.node().getBoundingClientRect();
+      AE.place(el, t, ev.clientX - r.left, ev.clientY - r.top);
+    })
+    .on('pointerleave', () => { t.hidden = true; vline.attr('opacity', 0); });
+});
+</script>
+
+<script>
+// Convergence de l'évolution
+dash.draw('evo', (el) => {
+  if (!AE.ok('evolution')) { if (!AE.fail(el, 'evolution')) el.replaceChildren(); return; }
+  const rows = dash.data('evolution').data;
+  const runs = Array.from(new Set(rows.map((r) => r.run)));
+  const W = el.clientWidth || 600, H = 190, m = { t: 10, r: 16, b: 30, l: 40 };
+  el.replaceChildren();
+  const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Score par génération');
+  const x = d3.scaleLinear().domain(d3.extent(rows, (r) => r.generation)).range([m.l, W - m.r]);
+  const y = d3.scaleLinear().domain([0, d3.max(rows, (r) => r.meilleure_utilite) * 1.1]).nice().range([H - m.b, m.t]);
+  svg.append('g').attr('class', 'grid').attr('transform', `translate(${m.l},0)`).call(d3.axisLeft(y).ticks(4).tickSize(-(W - m.l - m.r)).tickFormat(''));
+  svg.append('g').attr('class', 'axis').attr('transform', `translate(0,${H - m.b})`).call(d3.axisBottom(x).ticks(Math.max(2, Math.floor(W / 110))).tickFormat((d) => AE.fr.format(',.0f')(d)));
+  svg.append('g').attr('class', 'axis').attr('transform', `translate(${m.l},0)`).call(d3.axisLeft(y).ticks(4).tickFormat(AE.fr.format('.2f')));
+  const C = AE.colors();
+  const leg = document.createElement('div'); leg.className = 'ae-legend';
+  runs.forEach((run, i) => {
+    const pts = rows.filter((r) => r.run === run).sort((a, b) => a.generation - b.generation);
+    svg.append('path').datum(pts).attr('fill', 'none').style('stroke', C[i % C.length]).attr('stroke-width', 2.2).attr('d', d3.line().x((d) => x(d.generation)).y((d) => y(d.meilleure_utilite)));
+    svg.append('path').datum(pts).attr('fill', 'none').style('stroke', C[i % C.length]).attr('stroke-width', 1.2).attr('stroke-dasharray', '3 3').attr('opacity', 0.8).attr('d', d3.line().x((d) => x(d.generation)).y((d) => y(d.utilite_moyenne)));
+    [['meilleure stratégie', ''], ['moyenne de la population', 'dash']].forEach(([lab, kind]) => {
+      const sp = document.createElement('span'); const ic = document.createElement('i'); ic.style.background = C[i % C.length]; if (kind) ic.style.opacity = '0.5'; sp.appendChild(ic); sp.appendChild(document.createTextNode(run + ' : ' + lab)); leg.appendChild(sp);
+    });
+  });
+  el.appendChild(leg);
+  const t = AE.tip(el);
+  svg.append('rect').attr('x', m.l).attr('y', m.t).attr('width', W - m.l - m.r).attr('height', H - m.t - m.b).attr('fill', 'transparent')
+    .on('pointermove', (ev) => {
+      const [px] = d3.pointer(ev); const g = x.invert(px);
+      t.replaceChildren();
+      runs.forEach((run) => {
+        const pts = rows.filter((r) => r.run === run);
+        const p = pts.reduce((a, b) => (Math.abs(b.generation - g) < Math.abs(a.generation - g) ? b : a));
+        const d = document.createElement('div'); const b = document.createElement('b'); b.textContent = run + ', génération ' + AE.fr.format(',.0f')(p.generation); d.appendChild(b); t.appendChild(d);
+        const e = document.createElement('div'); e.textContent = 'meilleur score ' + AE.fr.format('.3f')(p.meilleure_utilite) + ' · ' + p.meilleur_parcours; t.appendChild(e);
+        const f = document.createElement('div'); f.className = 'ae-k'; f.textContent = AE.big(p.vies_millions * 1e6) + ' vies simulées à ce stade'; t.appendChild(f);
+      });
+      t.hidden = false; const r = el.getBoundingClientRect(); AE.place(el, t, ev.clientX - r.left, ev.clientY - r.top);
+    })
+    .on('pointerleave', () => { t.hidden = true; });
+});
+</script>
+
+<script>
+// Espèces : aires empilées
+dash.draw('especes', (el) => {
+  if (!AE.ok('especes')) { if (!AE.fail(el, 'especes')) el.replaceChildren(); return; }
+  const rows = dash.data('especes').data;
+  const keys = Array.from(new Set(rows.map((r) => r.parcours)));
+  const gens = Array.from(new Set(rows.map((r) => r.generation))).sort((a, b) => a - b);
+  const table = gens.map((g) => { const o = { generation: g }; keys.forEach((k) => { o[k] = 0; }); rows.filter((r) => r.generation === g).forEach((r) => { o[r.parcours] = r.part; }); return o; });
+  const W = el.clientWidth || 600, H = 300, m = { t: 8, r: 16, b: 30, l: 40 };
+  el.replaceChildren();
+  const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Part de la population par parcours');
+  const x = d3.scaleLinear().domain(d3.extent(gens)).range([m.l, W - m.r]);
+  const y = d3.scaleLinear().domain([0, 1]).range([H - m.b, m.t]);
+  const C = AE.colors();
+  const col = (k, i) => (k === 'Autres' ? 'var(--cds-chart-muted)' : C[i % C.length]);
+  const st = d3.stack().keys(keys)(table);
+  svg.selectAll('path.a').data(st).join('path').attr('class', 'a').style('fill', (d, i) => col(d.key, i)).attr('opacity', 0.9)
+    .attr('d', d3.area().x((d) => x(d.data.generation)).y0((d) => y(d[0])).y1((d) => y(d[1])));
+  svg.append('g').attr('class', 'axis').attr('transform', `translate(0,${H - m.b})`).call(d3.axisBottom(x).ticks(Math.max(2, Math.floor(W / 110))).tickFormat((d) => AE.fr.format(',.0f')(d)));
+  svg.append('g').attr('class', 'axis').attr('transform', `translate(${m.l},0)`).call(d3.axisLeft(y).ticks(5).tickFormat((d) => Math.round(d * 100) + ' %'));
+  const leg = document.createElement('div'); leg.className = 'ae-legend';
+  keys.forEach((k, i) => { const sp = document.createElement('span'); const ic = document.createElement('i'); ic.className = 'ae-sq'; ic.style.background = col(k, i); sp.appendChild(ic); sp.appendChild(document.createTextNode(k)); leg.appendChild(sp); });
+  el.appendChild(leg);
+  const t = AE.tip(el);
+  svg.append('rect').attr('x', m.l).attr('y', m.t).attr('width', W - m.l - m.r).attr('height', H - m.t - m.b).attr('fill', 'transparent')
+    .on('pointermove', (ev) => {
+      const [px] = d3.pointer(ev); const g = x.invert(px);
+      const o = table.reduce((a, b) => (Math.abs(b.generation - g) < Math.abs(a.generation - g) ? b : a));
+      t.replaceChildren();
+      const h = document.createElement('div'); const b = document.createElement('b'); b.textContent = 'Génération ' + AE.fr.format(',.0f')(o.generation); h.appendChild(b); t.appendChild(h);
+      keys.filter((k) => o[k] > 0.005).sort((a, c) => o[c] - o[a]).forEach((k) => { const d = document.createElement('div'); const s = document.createElement('span'); s.className = 'ae-k'; s.textContent = k + ' : '; d.appendChild(s); d.appendChild(document.createTextNode(Math.round(o[k] * 100) + ' %')); t.appendChild(d); });
+      t.hidden = false; const r = el.getBoundingClientRect(); AE.place(el, t, ev.clientX - r.left, ev.clientY - r.top);
+    })
+    .on('pointerleave', () => { t.hidden = true; });
+});
+</script>
+
+<script>
+// Robustesse : première et dernière étape du parcours gagnant dans chaque monde perturbé
+const etapes = (mondes, pick) => {
+  const c = {};
+  mondes.forEach((m) => { const parts = String(m.parcours).split(' → '); const k = pick(parts); c[k] = (c[k] || 0) + 1; });
+  return Object.keys(c).map((k) => ({ etape: k, mondes: c[k] })).sort((a, b) => b.mondes - a.mondes);
+};
+dash.calc('fin_parcours', {
+  inputs: ['mondes'], title: 'Dernière étape du parcours gagnant',
+  description: 'Nombre de mondes perturbés selon la dernière étape du parcours qui y gagne.',
+  fn: (mondes) => etapes(mondes, (parts) => parts[parts.length - 1]),
+});
+dash.calc('debut_parcours', {
+  inputs: ['mondes'], title: 'Première étape du parcours gagnant',
+  description: 'Nombre de mondes perturbés selon la première étape du parcours qui y gagne.',
+  fn: (mondes) => etapes(mondes, (parts) => parts[0]),
+});
+const barres = (id) => (el) => {
+  const d = dash.data(id);
+  if (d.status !== 'ok' || !Array.isArray(d.data) || !d.data.length) { if (d.status === 'error') AE.fail(el, id); else el.replaceChildren(); return; }
+  const rows = d.data, tot = d3.sum(rows, (r) => r.mondes);
+  const W = el.clientWidth || 300, bh = 26, m = { t: 2, r: 8, b: 4, l: 4 };
+  const H = m.t + m.b + rows.length * bh;
+  el.replaceChildren();
+  const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Mondes gagnés');
+  const x = d3.scaleLinear().domain([0, d3.max(rows, (r) => r.mondes)]).range([0, Math.max(40, (W - m.l - m.r) * 0.42)]);
+  const C = AE.colors();
+  const g = svg.selectAll('g.r').data(rows).join('g').attr('class', 'r').attr('transform', (r, i) => `translate(${m.l},${m.t + i * bh})`);
+  g.append('rect').attr('y', 4).attr('height', bh - 10).attr('width', (r) => x(r.mondes)).style('fill', (r, i) => (i === 0 ? C[0] : 'var(--cds-chart-muted)')).attr('rx', 2);
+  g.append('text').attr('x', (r) => x(r.mondes) + 8).attr('y', bh / 2 + 1).attr('dominant-baseline', 'middle')
+    .style('fill', 'var(--color-fg)').style('font-size', 'var(--cds-font-size-caption)')
+    .text((r) => r.etape + ' · ' + r.mondes + ' sur ' + tot);
+};
+dash.draw('fin', barres('fin_parcours'));
+dash.draw('debut', barres('debut_parcours'));
+</script>
+
+<script>
+// Revenu mois par mois (bandes de quantiles)
+dash.draw('traj', (el) => {
+  if (!AE.ok('trajectoire')) { if (!AE.fail(el, 'trajectoire')) el.replaceChildren(); return; }
+  const rows = dash.data('trajectoire').data.slice().sort((a, b) => a.mois - b.mois);
+  const W = el.clientWidth || 600, H = 300, m = { t: 12, r: 16, b: 30, l: 48 };
+  el.replaceChildren();
+  const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Revenu mensuel par mois');
+  const x = d3.scaleLinear().domain([1, 120]).range([m.l, W - m.r]);
+  const lo = Math.min(0, d3.min(rows, (r) => r.p10)), hi = d3.max(rows, (r) => r.p90) * 1.05;
+  const y = d3.scaleLinear().domain([lo, hi]).nice().range([H - m.b, m.t]);
+  svg.append('g').attr('class', 'grid').attr('transform', `translate(${m.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(-(W - m.l - m.r)).tickFormat(''));
+  const C = AE.colors();
+  svg.append('path').datum(rows).style('fill', C[0]).attr('opacity', 0.14).attr('d', d3.area().x((d) => x(d.mois)).y0((d) => y(d.p10)).y1((d) => y(d.p90)));
+  svg.append('path').datum(rows).style('fill', C[0]).attr('opacity', 0.28).attr('d', d3.area().x((d) => x(d.mois)).y0((d) => y(d.p25)).y1((d) => y(d.p75)));
+  svg.append('path').datum(rows).attr('fill', 'none').style('stroke', C[0]).attr('stroke-width', 2.2).attr('d', d3.line().x((d) => x(d.mois)).y((d) => y(d.mediane)));
+  svg.append('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', y(10000)).attr('y2', y(10000)).style('stroke', 'var(--cds-chart-reference)').attr('stroke-dasharray', '4 3');
+  svg.append('text').attr('x', W - m.r).attr('y', y(10000) - 5).attr('text-anchor', 'end').style('fill', 'var(--cds-text-secondary)').style('font-size', 'var(--cds-font-size-caption)').text('10 k€/mois');
+  svg.append('g').attr('class', 'axis').attr('transform', `translate(0,${H - m.b})`).call(d3.axisBottom(x).tickValues([12, 24, 36, 48, 60, 72, 84, 96, 108, 120]).tickFormat((d) => (d / 12) + ' an' + (d > 12 ? 's' : '')));
+  svg.append('g').attr('class', 'axis').attr('transform', `translate(${m.l},0)`).call(d3.axisLeft(y).ticks(5).tickFormat((d) => AE.fr.format(',.0f')(d / 1000) + ' k€'));
+  const t = AE.tip(el);
+  const vline = svg.append('line').attr('y1', m.t).attr('y2', H - m.b).style('stroke', 'var(--cds-chart-reference)').attr('opacity', 0);
+  svg.append('rect').attr('x', m.l).attr('y', m.t).attr('width', W - m.l - m.r).attr('height', H - m.t - m.b).attr('fill', 'transparent')
+    .on('pointermove', (ev) => {
+      const [px] = d3.pointer(ev); const mo = Math.max(1, Math.min(120, Math.round(x.invert(px))));
+      const r = rows.find((d) => d.mois === mo) || rows[0];
+      vline.attr('x1', x(r.mois)).attr('x2', x(r.mois)).attr('opacity', 1);
+      t.replaceChildren();
+      const h = document.createElement('div'); const b = document.createElement('b'); b.textContent = 'Mois ' + r.mois; h.appendChild(b); t.appendChild(h);
+      [['médiane', r.mediane], ['25 % à 75 %', null], ['10 % à 90 %', null]].forEach(([k, v], i) => {
+        const d = document.createElement('div'); const s = document.createElement('span'); s.className = 'ae-k'; s.textContent = k + ' : '; d.appendChild(s);
+        d.appendChild(document.createTextNode(i === 0 ? AE.eur(v) : i === 1 ? AE.eur(r.p25) + ' à ' + AE.eur(r.p75) : AE.eur(r.p10) + ' à ' + AE.eur(r.p90)));
+        t.appendChild(d);
+      });
+      const e = document.createElement('div'); const s2 = document.createElement('span'); s2.className = 'ae-k'; s2.textContent = 'vies à ≥ 10 k€ ce mois-là : '; e.appendChild(s2); e.appendChild(document.createTextNode(AE.pct(r.part_10k_pct) + ' %')); t.appendChild(e);
+      t.hidden = false; const rr = el.getBoundingClientRect(); AE.place(el, t, ev.clientX - rr.left, ev.clientY - rr.top);
+    })
+    .on('pointerleave', () => { t.hidden = true; vline.attr('opacity', 0); });
+});
+</script>

@@ -28,11 +28,54 @@ ENGINES = [
     "Formations / info-produits",
     "Trading / crypto (spéculation)",
     "Arnaques / fraude (témoin, voir README)",
+    "Agence réseaux sociaux (community management)",
+    "Montage vidéo / contenus UGC pour marques",
+    "Cours particuliers / soutien scolaire",
+    "Services à domicile (ménage, jardinage, bricolage)",
+    "Conciergerie Airbnb",
+    "Réparation de smartphones / PC",
+    "Coaching sportif (BPJEPS)",
+    "Photo / vidéo de mariages et d'événements",
+    "Organisation de soirées / événements",
+    "Mandataire immobilier",
+    "Artisan du bâtiment (formation puis entreprise)",
+    "Food truck / restauration",
+    "Jeux vidéo indé / jeux mobiles",
+    "Outils IA pour développeurs",
+    "Startup cleantech / énergie",
+    "Startup santé / medtech",
+    "Startup défense / dual-use",
+    "Startup edtech",
+    "Startup hardware / robotique / drones",
+    "Achat-revente (Vinted, Leboncoin, sneakers)",
+    "Marque e-commerce / Amazon FBA",
+    "Print on demand / produits numériques",
+    "Achat-revente de voitures d'occasion",
+    "Streaming / gaming (Twitch)",
+    "Sites de niche SEO / affiliation",
+    "Newsletter payante",
+    "Musique / artiste",
+    "Paris sportifs",
+    "Poker en ligne",
+    "Memecoins / NFT",
+    "Alternance",
+    "CDI / fonction publique",
+    "Livreur / VTC",
+    "Bourse long terme (ETF)",
+    "Immobilier locatif",
 ]
 ENGINES_SHORT = [
-    "Salariat", "Freelance", "Agence IA", "Closer", "Micro-SaaS",
+    "Salariat tech", "Freelance", "Agence IA", "Closer", "Micro-SaaS",
     "Startup IA verticale", "App IA B2C", "Marketplace", "Fintech", "Deeptech",
     "E-commerce", "Contenu", "Info-produits", "Trading", "Fraude",
+    "Agence réseaux sociaux", "Montage vidéo / UGC", "Cours particuliers", "Services à domicile",
+    "Conciergerie Airbnb", "Réparation smartphones", "Coaching sportif", "Photo / vidéo mariages",
+    "Soirées / événements", "Mandataire immobilier", "Artisan du bâtiment", "Food truck",
+    "Jeux vidéo", "Outils IA dev", "Cleantech", "Medtech", "Défense", "Edtech", "Hardware / robotique",
+    "Achat-revente", "Marque e-commerce", "Print on demand", "Voitures d'occasion",
+    "Streaming", "Sites SEO", "Newsletter", "Musique",
+    "Paris sportifs", "Poker", "Memecoins / NFT",
+    "Alternance", "CDI", "Livreur / VTC", "Bourse (ETF)", "Immobilier locatif",
 ]
 
 SECTORS = [
@@ -65,7 +108,12 @@ GENE_LABELS = {
     "geo": ["France uniquement", "France → Europe", "France → Europe → USA", "Mondial dès le jour 1"],
     "cof": ["jamais", "au lancement du produit", "dès le jour 1"],
     "niche": ["niche étroite (puis élargir)", "marché large"],
-    "keep": ["non (on vend/arrête l'agence)", "oui (l'agence finance le produit)"],
+    "keep": ["non (on arrête l'activité de services)", "oui (les services financent le produit)"],
+    "base": ["études courtes (3 ans)", "études longues (5 ans, école)", "petit job à temps partiel",
+             "job à temps plein", "rien à côté (chez les parents)"],
+    "hstart": ["5 h", "10 h", "15 h", "20 h"],
+    "ramp": ["dès 500 €/mois", "dès 1 000 €/mois", "dès 2 000 €/mois", "dès 3 000 €/mois", "dès 5 000 €/mois",
+             "jamais (reste à temps partiel)"],
 }
 
 # --------------------------------------------------------------------------
@@ -122,21 +170,30 @@ _Z = [0.0] * 19
 ENG = np.array([
     _Z, _Z, _Z, _Z,
     #  build mint  capital  pmf   insexp b2b arpu  acq    gorg  churn  marg  ceil   m0  m1  mcap vchot payb moat el
-    [250, 0.25, 300,     0.090, 1.0, 1, 59,    12.0, 0.06, 0.035, 0.85, 6e6,   3,  2,  6,  0.15, 6,  0, 1],   # micro-SaaS
-    [450, 0.35, 1500,    0.015, 1.6, 1, 450,   0.9,  0.07, 0.020, 0.72, -1,    4,  14, 60, 1.3,  10, 1, 0],   # IA verticale
+    [250, 0.25, 300,     0.050, 1.0, 1, 59,    6.0,  0.045, 0.035, 0.85, 6e6,  3,  2,  6,  0.15, 6,  0, 1],   # micro-SaaS
+    [450, 0.35, 1500,    0.009, 1.6, 1, 450,   0.6,  0.055, 0.020, 0.72, -1,   4,  14, 60, 1.3,  10, 1, 0],   # IA verticale
     [350, 0.30, 2000,    0.015, 0.3, 0, 8,     120,  0.12, 0.100, 0.65, 3e9,   2,  9,  35, 0.9,  4,  0, 2],   # app B2C
     [500, 0.30, 2000,    0.020, 1.0, 0, 12,    30,   0.09, 0.050, 0.80, -2,    3,  10, 40, 0.8,  6,  1, 2],   # marketplace
     [1500, 0.50, 250e3,  0.020, 1.2, 0, 6,     80,   0.09, 0.030, 0.45, 5e9,   3,  8,  30, 0.9,  8,  0, 2],   # fintech
     [4000, 0.85, 2e6,    0.020, 0.5, 1, 15000, 0.04, 0.10, 0.015, 0.55, 10e9,  6,  15, 80, 1.4,  12, 1, 0],   # deeptech
-    _Z, _Z, _Z, _Z, _Z,
-], dtype=np.float64)
+] + [_Z] * 17 + [
+    [600, 0.35, 1000,    0.010, 0.3, 0, 4,     200,  0.15, 0.120, 0.70, 2e9,   2,  6,  20, 0.6,  3,  0, 2],   # jeux vidéo
+    [400, 0.50, 1000,    0.012, 0.6, 1, 40,    4.0,  0.08, 0.050, 0.60, 5e9,   4,  14, 60, 1.4,  6,  0, 1],   # outils IA dev
+    [1500, 0.50, 50e3,   0.012, 1.2, 1, 2000,  0.2,  0.025, 0.010, 0.35, 4e9,  3,  6,  25, 1.0,  12, 1, 0],   # cleantech
+    [2000, 0.50, 100e3,  0.012, 1.5, 1, 800,   0.3,  0.025, 0.015, 0.70, 4e9,  4,  8,  30, 1.2,  12, 1, 0],   # medtech
+    [3000, 0.70, 500e3,  0.006, 1.5, 1, 12000, 0.01, 0.02, 0.010, 0.40, 2e9,   4,  6,  20, 1.2,  12, 1, 0],   # défense
+    [400, 0.30, 1000,    0.020, 0.8, 0, 12,    80,   0.08, 0.080, 0.75, 1.5e9, 2,  6,  20, 0.6,  5,  0, 2],   # edtech
+    [2500, 0.60, 80e3,   0.012, 1.0, 1, 1500,  0.2,  0.025, 0.020, 0.40, 3e9,  3,  6,  25, 1.1,  12, 1, 0],   # hardware
+] + [_Z] * 16, dtype=np.float64)
+assert ENG.shape == (50, 19)
 
 # Monde « nominal » : multiplicateurs (voir model.py, W_*). W_TRADE est additif.
-WORLD_NOMINAL = np.array([1.0] * 12 + [0.0, 1.0], dtype=np.float64)
+WORLD_NOMINAL = np.array([1.0] * 12 + [0.0, 1.0, 1.0, 1.0, 0.0], dtype=np.float64)
 WORLD_NAMES = [
     "conversion commerciale (services)", "probabilité de PMF", "croissance organique",
     "facilité de lever des fonds", "multiples de valorisation", "attrition clients",
     "viralité du contenu", "revenus de closer", "chance e-commerce", "risque de burnout",
     "baisse des prix due à l'IA", "poids de la connaissance métier",
     "alpha du trader (additif)", "taux de détection de la fraude",
+    "marges du commerce / revente", "monétisation de l'audience", "avantage aux jeux d'argent (additif)",
 ]
