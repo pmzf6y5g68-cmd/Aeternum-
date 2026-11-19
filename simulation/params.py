@@ -194,7 +194,7 @@ assert ENG.shape == (50, 19)
 # (3 mois de suite) dans 10 ans avec une probabilité proche des données publiques
 # (enquêtes créateurs, Insee non-salariés et micro-entrepreneurs, Chague et al. 2019…).
 # Cibles et sources : calibrate.py et README. 1.0 = pas de correction.
-CALIBRAGE = {}
+CALIBRAGE = {1: 0.5428, 2: 0.4442, 3: 0.6084, 4: 0.3916, 5: 0.5458, 10: 0.1191, 11: 0.4377, 12: 0.3582, 13: 0.6198, 15: 0.2822, 19: 0.389, 24: 0.1511, 25: 0.4675, 35: 0.7838, 38: 0.7025, 39: 0.5408, 40: 0.4194, 41: 0.2522, 42: 0.6385, 43: 0.5163, 44: 0.5939}
 CAL = np.ones(50)
 for _e, _k in CALIBRAGE.items():
     CAL[_e] = _k

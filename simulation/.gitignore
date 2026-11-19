@@ -13,3 +13,5 @@ results/v2_variants.json
 results/v2_trajectoire.json
 results/dash_v2/
 results/med_*.json
+# résultats archivés (avant un calibrage ou un correctif)
+results/*avant*.json
