@@ -97,3 +97,22 @@ créneaux visibles dès les résultats, carte, fiche avec réservation pas à pa
 - `tsc` ✅ · `npm test` 102 ✅ · `build` ✅ · `py_compile` ✅ · `scripts/test_prospector.py` ✅ · `scripts/test-sql.sh` ✅
 - HTTP : manifest, icônes 180/192/512/maskable, `sw.js` (en-têtes dédiés), `/offline`, désinscription, webhooks
   Resend non signé 401, calendrier inconnu 404 ; service worker enregistré dans Chromium, aucune erreur JS.
+
+## W — Paiement, monétisation, assistant IA, autopilote ✅
+- Recherche : assistants IA (Doctolib, Bank of America Erica), modèles économiques (Doctolib abonnement, Treatwell
+  commission nouveaux clients, Uber Eats commissions + frais + publicité + abonnement).
+- **Paiement intégré** : Stripe Embedded Checkout (`ui_mode: embedded_page`) sur le compte Connect, page `/paiement/[token]`
+  (récap, compte à rebours du créneau tenu, carte / Apple Pay / Google Pay / PayPal / Link), retour `/paiement/[token]/retour`,
+  domaine wallets enregistré automatiquement (`paymentMethodDomains`) quand le compte Connect est activé.
+- **Monétisation** : `bookings.source` (marketplace / direct / assistant), commission plan Gratuit 20 % max 20 € sur le 1er RDV
+  d'un nouveau client marketplace (365 j), 0 % via `?via=pro` (liens, QR et bouton du pro), cron `billing` (facture Stripe le 1er
+  du mois, RDV honorés uniquement), bonus Pro étiqueté « Mis en avant » en tri pertinence, CGU mises à jour.
+- **Assistant IA** (`/api/assistant`, widget global) : boucle d'outils Messages API (`claude-opus-5-5`, effort bas, fallbacks
+  serveur), outils `search_businesses`, `get_availability`, `get_my_appointments`, `handoff_to_human`, cartes cliquables,
+  limite 20 msg / 10 min / IP, 5 tours d'outils max puis conclusion forcée.
+- **Autopilote** : `/api/health/readiness` (secrets, schéma, Stripe live + prix + webhook, domaine Resend vérifié, site en ligne),
+  prospection `DRY_RUN=auto`, plafond étendu jusqu'à `HARD_MAX_EMAILS_PER_DAY` (6 000) si rebonds < 1 % et plaintes < 0,03 %,
+  alerte « mise en service incomplète » dans le bilan de 20 h, workflow `db-migrate.yml`.
+- Bug corrigé : dépassement numérique de la montée en charge après plusieurs années (`1.3 ** jours`).
+- Vérifs : `tsc` ✅ · 111 tests ✅ · build ✅ · `py_compile` + `test_prospector.py` ✅ · SQL ✅ · HTTP (assistant 503 sans clé,
+  readiness 401 / « non prêt » détaillé, pages paiement, cron billing 401) · captures assistant mobile/desktop sans erreur JS.

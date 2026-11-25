@@ -92,12 +92,13 @@ Complétez `src/config/site.ts` (raison sociale, SIREN, adresse) : pages légale
 | Secrets | Usage |
 | --- | --- |
 | `APP_URL`, `CRON_SECRET` | `crons.yml` |
-| `APP_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SERPER_API_KEY`, `ANTHROPIC_API_KEY`, `RESEND_API_KEY`, `UNSUBSCRIBE_SECRET` | `prospector.yml` |
+| `APP_URL`, `CRON_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SERPER_API_KEY`, `ANTHROPIC_API_KEY`, `RESEND_API_KEY`, `UNSUBSCRIBE_SECRET` | `prospector.yml` |
+| `SUPABASE_DB_URL` (chaîne de connexion Postgres) | `db-migrate.yml` |
 
 | Variables (optionnelles) | Défaut |
 | --- | --- |
-| `DRY_RUN` | `true` |
-| `MAX_EMAILS_PER_DAY` (plafond absolu) | `1500` |
+| `DRY_RUN` | `auto` |
+| `MAX_EMAILS_PER_DAY` / `HARD_MAX_EMAILS_PER_DAY` | `1500` / `6000` (extension +25 %/semaine si santé excellente) |
 | `WARMUP_START` / `WARMUP_GROWTH` | `40` / `1.3` (≈ plafond atteint en 14 jours ouvrés si la santé est bonne) |
 | `CONCURRENCY` / `MAX_SEARCHES_PER_RUN` | `8` / auto |
 | `PROSPECT_CATEGORIES` (slugs séparés par des virgules) | tous les métiers |
@@ -118,6 +119,39 @@ Gmail et Yahoo bloquent un domaine qui envoie en masse sans engagement. Pour pas
 jour : laissez le warm-up atteindre le plafond avec des taux sains, vérifiez Google Postmaster (réputation
 « High »), puis relevez `MAX_EMAILS_PER_DAY` par paliers (+50 % par semaine). Le robot n'utilise volontairement
 ni rotation de domaines, ni listes achetées, ni pixels de suivi : ce sont les pratiques qui font blacklister.
+
+## Ce qui est automatique, ce qui reste à faire une fois
+
+**Une seule fois (comptes à votre nom, impossible à créer à votre place)** : créer les comptes Supabase, Stripe
+(activation live, KYC), Resend (DNS), Cloudflare, Vercel, nom de domaine, et coller les clés (étapes 1 à 6).
+
+**Ensuite, tout tourne seul** :
+- déploiement Vercel à chaque push (intégration GitHub de Vercel) et migration SQL automatique (`db-migrate.yml`, secret `SUPABASE_DB_URL`) ;
+- `/api/health/readiness` vérifie chaque jour paiements live, prix Pro, webhooks, domaine d'envoi, schéma, secrets ;
+  le bilan de 20 h vous dit exactement ce qui manque ;
+- la prospection (`DRY_RUN=auto`) **démarre seule** en envoi réel dès que tout est vert, monte en charge, freine seule ;
+- rappels, alertes, avis, fidélisation, liste d'attente, facturation des commissions, réponses email par Claude.
+
+## Paiement intégré
+L'acompte se paie **sur le site** (Stripe Embedded Checkout, compte Connect du pro) : carte, Apple Pay, Google Pay,
+PayPal, Link, Bancontact… Dans Stripe → *Paramètres → Moyens de paiement* → **Comptes connectés**, activez ceux que
+vous voulez proposer (PayPal requiert l'éligibilité du compte). Le domaine Apple Pay / Google Pay est enregistré
+automatiquement sur chaque compte connecté. `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` obligatoire.
+
+## Modèle économique
+| Source | Inspiration | Détail |
+| --- | --- | --- |
+| Abonnement Pro 49 €/mois | Doctolib, Planity | 0 % de commission, RDV illimités, rappels, mise en avant |
+| Commission plan Gratuit | Treatwell | 20 % (max 20 €) du 1er RDV honoré d'un nouveau client marketplace ; 0 % sur les clients du pro (`?via=pro`) |
+| Mise en avant Pro | Uber Eats Ads | bonus en tri « Pertinence » uniquement, mention « Mis en avant » |
+| Frais sur acompte (option) | Uber Eats frais de service | `PLATFORM_DEPOSIT_FEE_PERCENT` (0 par défaut) via `application_fee_amount` |
+
+L'usager ne paie jamais pour réserver : c'est ce qui fait grossir la marketplace (et donc la valeur pour les pros).
+
+## Assistant IA
+Bouton « Assistant » sur toutes les pages publiques (plein écran sur mobile). Il cherche, montre de vrais
+créneaux cliquables, prépare la réservation, lit « Mes rendez-vous » et passe la main à l'équipe pour les litiges.
+Modèle : `ASSISTANT_MODEL` (défaut `claude-opus-5-5`, effort bas pour la réactivité, repli automatique en cas de refus).
 
 ## Application (iPhone, Android, Windows, macOS)
 Rendez-vous est une web app installable (manifest, icônes, service worker, page hors ligne) :
