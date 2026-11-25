@@ -1,13 +1,21 @@
 @import "tailwindcss";
 
 @theme {
-  --color-surface: #ffffff;
-  --color-muted: #f8fafc;
-  --color-ink: #0f172a;
-  --color-accent: #0f766e;
-  --color-accent-dark: #115e59;
-  --color-accent-soft: #ccfbf1;
+  --color-brand: #1758e6;
+  --color-brand-dark: #0f43b8;
+  --color-brand-deep: #0a2f86;
+  --color-brand-soft: #e8effd;
+  --color-brand-softer: #f3f7fe;
+  --color-ink: #0b1f3a;
+  --color-ink-soft: #4a5b75;
+  --color-canvas: #f2f5f9;
+  --color-line: #dce3ec;
+  --color-sun: #ffc93c;
+  --color-success: #0f8a5f;
+  --color-danger: #d92d3a;
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --shadow-card: 0 1px 2px rgb(11 31 58 / 0.06), 0 2px 8px rgb(11 31 58 / 0.05);
+  --shadow-pop: 0 12px 32px rgb(11 31 58 / 0.14);
 }
 
 html {
@@ -15,28 +23,62 @@ html {
 }
 
 body {
-  background: var(--color-surface);
+  background: var(--color-canvas);
   color: var(--color-ink);
 }
 
 @utility input {
-  @apply w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-[15px] text-ink outline-none transition placeholder:text-slate-400 focus:border-accent focus:ring-2 focus:ring-accent/20;
+  @apply w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-[15px] text-ink outline-none transition placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20;
 }
 @utility label {
-  @apply mb-1.5 block text-sm font-medium text-slate-700;
+  @apply mb-1.5 block text-sm font-semibold text-ink;
 }
 @utility btn {
-  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[15px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-50;
+  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-[15px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-50;
 }
 @utility btn-primary {
-  @apply btn bg-accent text-white hover:bg-accent-dark;
+  @apply btn bg-brand text-white hover:bg-brand-dark;
 }
 @utility btn-secondary {
-  @apply btn border border-slate-200 bg-white text-ink hover:bg-muted;
+  @apply btn border border-line bg-white text-ink hover:border-brand hover:text-brand;
 }
 @utility btn-ghost {
-  @apply btn text-slate-600 hover:bg-muted hover:text-ink;
+  @apply btn text-ink-soft hover:bg-brand-softer hover:text-brand;
+}
+@utility btn-sun {
+  @apply btn bg-sun text-ink hover:brightness-95;
 }
 @utility card {
-  @apply rounded-2xl border border-slate-200 bg-white p-5 shadow-sm;
+  @apply rounded-xl border border-line bg-white p-5 shadow-(--shadow-card);
+}
+@utility chip {
+  @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1.5 text-sm font-medium text-ink transition hover:border-brand hover:text-brand;
+}
+@utility chip-active {
+  @apply chip border-brand bg-brand-soft text-brand;
+}
+@utility slot {
+  @apply inline-flex w-full items-center justify-center rounded-md bg-brand-soft px-2 py-2 text-sm font-semibold text-brand transition hover:bg-brand hover:text-white;
+}
+
+.leaflet-container {
+  font-family: var(--font-sans);
+}
+.price-pin {
+  background: white;
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--color-ink);
+  box-shadow: var(--shadow-card);
+  white-space: nowrap;
+  transform: translate(-50%, -50%);
+  display: inline-block;
+}
+.price-pin.active {
+  background: var(--color-brand);
+  color: white;
+  border-color: var(--color-brand);
 }

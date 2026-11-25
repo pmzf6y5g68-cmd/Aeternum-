@@ -30,7 +30,7 @@ export interface SendEmailResult {
 }
 
 export function generateMessageId(): string {
-  const domain = (process.env.APP_DOMAIN ?? "slotly.fr").replace(/^https?:\/\//, "");
+  const domain = (process.env.APP_DOMAIN ?? "rendez-vous.app").replace(/^https?:\/\//, "");
   return `<${randomUUID()}@${domain}>`;
 }
 
@@ -69,7 +69,7 @@ export function layoutHtml(title: string, paragraphs: string[], cta?: { label: s
     .map(
       (b, i) =>
         `<a href="${escapeHtml(b.url)}" style="display:inline-block;margin:8px 8px 0 0;padding:12px 18px;border-radius:10px;text-decoration:none;font-weight:600;${
-          i === 0 ? "background:#0F766E;color:#ffffff" : "background:#F8FAFC;color:#0F172A;border:1px solid #E2E8F0"
+          i === 0 ? "background:#1758E6;color:#ffffff" : "background:#F8FAFC;color:#0F172A;border:1px solid #E2E8F0"
         }">${escapeHtml(b.label)}</a>`,
     )
     .join("");
@@ -78,5 +78,5 @@ export function layoutHtml(title: string, paragraphs: string[], cta?: { label: s
 <h1 style="font-size:20px;margin:0 0 16px">${escapeHtml(title)}</h1>
 ${paragraphs.map((p) => `<p style="font-size:15px;line-height:1.6;margin:0 0 12px">${escapeHtml(p)}</p>`).join("")}
 ${buttons}
-</div><p style="font-size:12px;color:#64748B;text-align:center;margin-top:16px">Envoyé avec Slotly</p></div></body></html>`;
+</div><p style="font-size:12px;color:#64748B;text-align:center;margin-top:16px">Envoyé par Rendez-vous</p></div></body></html>`;
 }

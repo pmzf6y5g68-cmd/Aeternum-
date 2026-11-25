@@ -34,7 +34,7 @@ export function buildIcs(event: IcsEvent, now: Date = new Date()): string {
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Slotly//Booking//FR",
+    "PRODID:-//Rendez-vous//Booking//FR",
     "CALSCALE:GREGORIAN",
     "METHOD:REQUEST",
     "BEGIN:VEVENT",

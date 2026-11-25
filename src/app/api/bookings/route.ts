@@ -1,0 +1,205 @@
+import { z } from "zod";
+import { siteConfig } from "@/config/site";
+import { BookingInputError, locationSchema, resolveSelection } from "@/lib/booking-request";
+import { rankStaffByLoad } from "@/lib/domain/availability";
+import { centsToEur, computeQuote } from "@/lib/domain/pricing";
+import { zonedDateString } from "@/lib/domain/time";
+import { BUSINESS_CONTACT_COLUMNS, sendBookingConfirmation, type BusinessContact } from "@/lib/email/booking-emails";
+import { env } from "@/lib/env";
+import { errorMessage, logEvent } from "@/lib/events";
+import { json, jsonError } from "@/lib/http";
+import { computeSlotWindow, loadPublicBusiness, pricingOf, resolveDistance } from "@/lib/marketplace";
+import { businessPath } from "@/lib/slug";
+import { getStripe } from "@/lib/stripe";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { createSessionClient } from "@/lib/supabase/server";
+import type { Booking } from "@/lib/supabase/types";
+
+const schema = z
+  .object({
+    business: z.string().min(3).max(60),
+    service_id: z.uuid(),
+    variant_key: z.string().max(40).nullable().default(null),
+    addon_ids: z.array(z.uuid()).max(20).default([]),
+    seats: z.number().int().min(1).max(50).default(1),
+    staff_id: z.uuid().nullable().default(null),
+    location_type: locationSchema,
+    client_address: z.string().trim().max(200).optional().default(""),
+    start_at: z.iso.datetime({ offset: true }),
+    client_name: z.string().trim().min(2).max(80),
+    client_email: z.email().trim().toLowerCase(),
+    client_phone: z.string().trim().min(6).max(30),
+    client_notes: z.string().trim().max(500).optional().default(""),
+  })
+  .refine((v) => v.location_type !== "at_home" || v.client_address.length >= 5, { path: ["client_address"] });
+
+const RPC_ERRORS: Record<string, { code: string; status: number }> = {
+  SLOT_TAKEN: { code: "slot_taken", status: 409 },
+  QUOTA_EXCEEDED: { code: "quota_exceeded", status: 403 },
+  BUSINESS_NOT_FOUND: { code: "business_not_found", status: 404 },
+};
+
+export async function POST(request: Request) {
+  const parsed = schema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return jsonError("invalid_request");
+  const input = parsed.data;
+
+  const business = await loadPublicBusiness(input.business);
+  if (!business) return jsonError("business_not_found", 404);
+
+  // 1. Sélection validée contre le catalogue réel.
+  let sel;
+  try {
+    sel = await resolveSelection(business, {
+      serviceId: input.service_id,
+      variantKey: input.variant_key,
+      location: input.location_type,
+      addonIds: input.addon_ids,
+      staffId: input.staff_id,
+      seats: input.seats,
+    });
+  } catch (err) {
+    if (err instanceof BookingInputError) return jsonError(err.message);
+    throw err;
+  }
+
+  // 2. Distance et frais km recalculés côté serveur.
+  let distanceKm: number | null = null;
+  let clientAddress: string | null = null;
+  if (input.location_type === "at_home") {
+    const distance = await resolveDistance(business, input.client_address);
+    if (!distance) return jsonError("address_not_found", 422);
+    if (distance.outOfZone) return jsonError("out_of_zone", 422);
+    distanceKm = distance.distanceKm;
+    clientAddress = distance.label;
+  }
+  const quote = computeQuote({
+    service: sel.service,
+    variantKey: input.variant_key,
+    addons: sel.addons,
+    seats: sel.seats,
+    locationType: input.location_type,
+    distanceKm,
+    business: pricingOf(business),
+  });
+
+  // 3. Le créneau doit correspondre exactement à un créneau libre recalculé.
+  const startAt = new Date(input.start_at);
+  const date = zonedDateString(startAt, siteConfig.booking.timeZone);
+  const window = await computeSlotWindow({
+    business,
+    serviceId: sel.service.id,
+    capacity: sel.service.capacity,
+    durationMinutes: quote.blockedMinutes,
+    staffIds: sel.staffIds,
+    requestedStaffId: sel.requestedStaffId,
+    seats: sel.seats,
+    startDate: date,
+    days: 1,
+  });
+  const slot = window.days[0]?.slots.find((s) => new Date(s.startAt).getTime() === startAt.getTime());
+  if (!slot) return jsonError("slot_taken", 409);
+  const freeStaff = slot.staffIds.filter((s): s is string => s !== null);
+  const candidates = sel.requestedStaffId ? [] : rankStaffByLoad(freeStaff, window.bookings, date, new Date(), siteConfig.booking.timeZone);
+
+  // Usager connecté : le RDV est rattaché à son compte.
+  const session = await createSessionClient();
+  const { data: auth } = await session.auth.getUser();
+
+  const needsDeposit = quote.depositCents > 0;
+  const admin = createAdminClient();
+
+  // 4. Création atomique (verrou, quota, équipe, capacité, congés).
+  const { data: booking, error } = await admin
+    .rpc("create_booking_atomic", {
+      p_business_id: business.id,
+      p_service_id: sel.service.id,
+      p_service_name: sel.service.name,
+      p_variant_key: quote.variant?.key ?? null,
+      p_variant_label: quote.variant?.label ?? null,
+      p_addon_ids: sel.addons.map((a) => a.id),
+      p_seats: sel.seats,
+      p_staff_id: sel.requestedStaffId,
+      p_candidate_staff: candidates,
+      p_capacity: sel.service.capacity,
+      p_location_type: input.location_type,
+      p_client_address: clientAddress,
+      p_distance_km: distanceKm,
+      p_travel_fee_eur: centsToEur(quote.travelFeeCents),
+      p_total_price_eur: centsToEur(quote.totalCents),
+      p_deposit_amount_eur: centsToEur(quote.depositCents),
+      p_client_user_id: auth.user?.id ?? null,
+      p_client_name: input.client_name,
+      p_client_email: input.client_email,
+      p_client_phone: input.client_phone,
+      p_client_notes: input.client_notes || null,
+      p_start_at: slot.startAt,
+      p_end_at: slot.endAt,
+      p_status: needsDeposit ? "pending_deposit" : "scheduled",
+      p_free_monthly_limit: siteConfig.pricing.freeMonthlyBookings,
+      p_pending_ttl_minutes: siteConfig.booking.pendingDepositTtlMinutes,
+    })
+    .single<Booking>();
+
+  if (error || !booking) {
+    const known = Object.entries(RPC_ERRORS).find(([key]) => error?.message.includes(key));
+    if (known) return jsonError(known[1].code, known[1].status);
+    await logEvent("api.bookings", error?.message ?? "rpc returned no row", { business: input.business });
+    return jsonError("server_error", 500);
+  }
+
+  // Profil usager mémorisé pour pré-remplir les prochaines réservations.
+  if (auth.user) {
+    await admin.from("customer_profiles").upsert({ user_id: auth.user.id, full_name: input.client_name, phone: input.client_phone, ...(clientAddress ? { default_address: clientAddress } : {}) });
+  }
+
+  const path = businessPath(business);
+
+  // 5a. Acompte : Checkout en charge directe sur le compte Connect de l'établissement.
+  if (needsDeposit) {
+    const { data: acct } = await admin.from("businesses").select("stripe_connect_account_id").eq("id", business.id).single<{ stripe_connect_account_id: string | null }>();
+    try {
+      if (!acct?.stripe_connect_account_id) throw new Error("connect account missing");
+      const session = await getStripe().checkout.sessions.create(
+        {
+          mode: "payment",
+          customer_email: input.client_email,
+          line_items: [
+            {
+              quantity: 1,
+              price_data: {
+                currency: "eur",
+                unit_amount: quote.depositCents,
+                product_data: { name: `Acompte — ${sel.service.name}`, description: `${business.name}, rendez-vous du ${date}` },
+              },
+            },
+          ],
+          metadata: { booking_id: booking.id, business_id: business.id },
+          payment_intent_data: { metadata: { booking_id: booking.id, business_id: business.id } },
+          // Minimum imposé par Stripe : 30 min. Le cron cleanup-pending expire la session plus tôt.
+          expires_at: Math.floor(Date.now() / 1000) + 31 * 60,
+          success_url: `${env.appUrl()}${path}?reservation=ok`,
+          cancel_url: `${env.appUrl()}${path}?reservation=annulee`,
+          locale: "fr",
+        },
+        { stripeAccount: acct.stripe_connect_account_id },
+      );
+      await admin.from("bookings").update({ stripe_checkout_session_id: session.id }).eq("id", booking.id);
+      return json({ booking_id: booking.id, checkout_url: session.url });
+    } catch (err) {
+      await admin.from("bookings").update({ status: "cancelled", cancelled_by: "system" }).eq("id", booking.id);
+      await logEvent("api.bookings.checkout", errorMessage(err), { booking_id: booking.id });
+      return jsonError("payment_unavailable", 502);
+    }
+  }
+
+  // 5b. Sans acompte : confirmation immédiate par email avec invitation .ics.
+  try {
+    const { data: contact } = await admin.from("businesses").select(BUSINESS_CONTACT_COLUMNS).eq("id", business.id).single<BusinessContact>();
+    const staffName = booking.staff_id ? (sel.catalog.staff.find((s) => s.id === booking.staff_id)?.name ?? null) : null;
+    if (contact) await sendBookingConfirmation(booking, contact, sel.addons.map((a) => a.name), staffName);
+  } catch (err) {
+    await logEvent("api.bookings.email", errorMessage(err), { booking_id: booking.id }, "warning");
+  }
+  return json({ booking_id: booking.id, status: booking.status });
+}
