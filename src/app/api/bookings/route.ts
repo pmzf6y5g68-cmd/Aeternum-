@@ -2,6 +2,7 @@ import { z } from "zod";
 import { siteConfig } from "@/config/site";
 import { BookingInputError, locationSchema, resolveSelection } from "@/lib/booking-request";
 import { rankStaffByLoad } from "@/lib/domain/availability";
+import { commissionCents } from "@/lib/domain/commission";
 import { centsToEur, computeQuote } from "@/lib/domain/pricing";
 import { zonedDateString } from "@/lib/domain/time";
 import { BUSINESS_CONTACT_COLUMNS, sendBookingConfirmation, type BusinessContact } from "@/lib/email/booking-emails";
@@ -29,6 +30,7 @@ const schema = z
     client_email: z.email().trim().toLowerCase(),
     client_phone: z.string().trim().min(6).max(30),
     client_notes: z.string().trim().max(500).optional().default(""),
+    source: z.enum(["marketplace", "direct", "assistant"]).default("marketplace"),
   })
   .refine((v) => v.location_type !== "at_home" || v.client_address.length >= 5, { path: ["client_address"] });
 
@@ -161,6 +163,26 @@ export async function POST(request: Request) {
     await logEvent("api.bookings", error?.message ?? "rpc returned no row", { business: input.business });
     return jsonError("server_error", 500);
   }
+
+  // Monétisation : origine + commission « nouveau client marketplace » (plan Gratuit uniquement).
+  const windowStart = new Date(Date.now() - siteConfig.pricing.newClientWindowDays * 86_400_000).toISOString();
+  const { count: previous } = await admin
+    .from("bookings")
+    .select("id", { count: "exact", head: true })
+    .eq("business_id", business.id)
+    .eq("client_email", input.client_email)
+    .neq("id", booking.id)
+    .neq("status", "cancelled")
+    .gte("start_at", windowStart);
+  const commission = commissionCents({
+    plan: business.plan,
+    source: input.source,
+    isNewClient: (previous ?? 0) === 0,
+    totalCents: quote.totalCents,
+    percent: siteConfig.pricing.newClientCommissionPercent,
+    capEur: siteConfig.pricing.newClientCommissionCapEur,
+  });
+  await admin.from("bookings").update({ source: input.source, commission_eur: centsToEur(commission) }).eq("id", booking.id);
 
   // Profil usager mémorisé pour pré-remplir les prochaines réservations.
   if (auth.user) {

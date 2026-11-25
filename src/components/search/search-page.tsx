@@ -84,6 +84,7 @@ export async function SearchPage({ params, fixedCategory, fixedCity, title, intr
     rating_count: r.rating_count,
     distance_km: r.distance_km,
     path: businessPath(r),
+    sponsored: Boolean(r.sponsored),
     nextSlotAt: r.nextSlotAt,
     preview: r.preview.map((d) => ({ date: d.date, slots: d.slots.map((s) => ({ time: s.time, startAt: s.startAt })) })),
   }));

@@ -16,6 +16,7 @@ export interface SerializedResult {
   rating_count: number;
   distance_km: number | null;
   path: string;
+  sponsored: boolean;
   nextSlotAt: string | null;
   preview: { date: string; slots: { time: string; startAt: string }[] }[];
 }

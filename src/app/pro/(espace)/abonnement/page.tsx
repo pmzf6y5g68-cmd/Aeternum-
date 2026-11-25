@@ -13,6 +13,16 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
   const limit = siteConfig.pricing.freeMonthlyBookings;
   const isPro = business.plan === "pro";
   const pct = Math.min(100, Math.round((used / limit) * 100));
+  const { data: commissions } = await supabase
+    .from("bookings")
+    .select("commission_eur, commission_invoiced, status")
+    .eq("business_id", business.id)
+    .gt("commission_eur", 0)
+    .neq("status", "cancelled")
+    .eq("commission_invoiced", false)
+    .returns<{ commission_eur: number; commission_invoiced: boolean; status: string }[]>();
+  const pendingCommission = (commissions ?? []).filter((c) => c.status === "completed").reduce((s, c) => s + Number(c.commission_eur), 0);
+  const upcomingCommission = (commissions ?? []).filter((c) => c.status !== "completed" && c.status !== "no_show").reduce((s, c) => s + Number(c.commission_eur), 0);
 
   return (
     <div className="space-y-5">
@@ -36,6 +46,16 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
             </div>
           )}
         </div>
+        {!isPro && (
+          <div className="rounded-lg bg-canvas p-3 text-sm">
+            <p className="font-semibold">
+              Commissions nouveaux clients : {pendingCommission.toFixed(2).replace(".", ",")} € à facturer · {upcomingCommission.toFixed(2).replace(".", ",")} € sur des RDV à venir
+            </p>
+            <p className="mt-1 text-ink-soft">
+              Plan Gratuit : {siteConfig.pricing.newClientCommissionPercent} % du premier rendez-vous honoré d&apos;un nouveau client venu de Rendez-vous (max {siteConfig.pricing.newClientCommissionCapEur} €). Vos propres clients (lien ?via=pro, QR code) : 0 %. Plan Pro : 0 % sur tout.
+            </p>
+          </div>
+        )}
         {isPro ? (
           <PostRedirectButton endpoint="/api/stripe/portal" label="Gérer mon abonnement" className="btn-secondary" />
         ) : (

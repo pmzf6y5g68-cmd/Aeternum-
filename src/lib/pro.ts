@@ -58,3 +58,8 @@ export async function countMonthlyBookings(client: SupabaseClient, businessId: s
 export function publicBusinessUrl(b: Pick<Business, "category" | "city_slug" | "slug">): string {
   return `${siteConfig.url.replace(/\/$/, "")}${businessPath(b)}`;
 }
+
+/** Lien à diffuser par le professionnel lui-même : ses clients réservent sans commission. */
+export function shareBusinessUrl(b: Pick<Business, "category" | "city_slug" | "slug">): string {
+  return `${publicBusinessUrl(b)}?via=pro`;
+}

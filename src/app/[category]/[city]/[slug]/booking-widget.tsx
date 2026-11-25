@@ -79,6 +79,15 @@ function Waitlist({ businessSlug, serviceId, from, prefill }: { businessSlug: st
   );
 }
 
+/** Origine du client : « direct » s'il est arrivé par le lien du professionnel (?via=pro), sinon marketplace. */
+function readSource(slug: string): "direct" | "marketplace" {
+  try {
+    return sessionStorage.getItem(`rdv_src_${slug}`) === "direct" ? "direct" : "marketplace";
+  } catch {
+    return "marketplace";
+  }
+}
+
 function addDays(date: string, n: number): string {
   const d = new Date(`${date}T12:00:00Z`);
   d.setUTCDate(d.getUTCDate() + n);
@@ -319,6 +328,7 @@ export function BookingWidget({
           client_email: contact.email,
           client_phone: contact.phone,
           client_notes: contact.notes,
+          source: readSource(business.slug),
         }),
       });
       const data = (await res.json()) as { payment_url?: string; error?: string };

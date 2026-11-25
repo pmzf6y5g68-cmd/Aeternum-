@@ -27,7 +27,8 @@ export default function CguPage() {
         {
           title: "3. Professionnels",
           paragraphs: [
-            `Plan Gratuit : jusqu'à ${p.freeMonthlyBookings} rendez-vous par mois civil. Plan Pro : ${p.proMonthlyPriceEur} € TTC par mois, rendez-vous illimités et fonctions avancées, avec ${p.proTrialDays} jours d'essai offerts, sans engagement, résiliable à tout moment depuis le portail de facturation.`,
+            `Plan Gratuit : 0 € par mois, jusqu'à ${p.freeMonthlyBookings} rendez-vous par mois civil, et une commission de ${p.newClientCommissionPercent} % (plafonnée à ${p.newClientCommissionCapEur} € HT) sur le premier rendez-vous honoré de chaque nouveau client venu de la plateforme. Est « nouveau » un client sans rendez-vous chez le Professionnel depuis ${p.newClientWindowDays} jours. Aucune commission sur les clients arrivés par les liens, QR codes ou boutons propres au Professionnel. Facturation mensuelle par Stripe, payable sous 14 jours.`,
+            `Plan Pro : ${p.proMonthlyPriceEur} € TTC par mois, sans commission, rendez-vous illimités et fonctions avancées, avec ${p.proTrialDays} jours d'essai offerts, sans engagement, résiliable à tout moment depuis le portail de facturation.`,
             "Le Professionnel est seul responsable des informations publiées (prestations, prix, horaires, adresse), de la prestation réalisée et du respect de ses obligations légales et réglementaires.",
           ],
         },
@@ -48,7 +49,7 @@ export default function CguPage() {
         {
           title: "6. Classement des résultats",
           paragraphs: [
-            "Les résultats sont classés selon la pertinence par rapport à la recherche (nom, métier, prestations), puis la note moyenne pondérée par le nombre d'avis et la distance. L'Usager peut trier par distance, prix, note ou disponibilité. Aucune rémunération n'influence le classement.",
+            "Par défaut (tri « Pertinence »), les résultats sont classés selon la correspondance avec la recherche (nom, métier, prestations), puis la note moyenne pondérée par le nombre d'avis et la distance. Les établissements abonnés au plan Pro bénéficient d'un léger bonus dans ce seul tri et portent la mention « Mis en avant ». Les tris par distance, prix, note ou disponibilité ne sont influencés par aucune rémunération.",
           ],
         },
         {

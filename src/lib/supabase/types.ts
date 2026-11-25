@@ -139,6 +139,9 @@ export interface Booking {
   risk_alert_sent: boolean;
   rebooking_sent: boolean;
   review_requested: boolean;
+  source: "marketplace" | "direct" | "assistant";
+  commission_eur: number;
+  commission_invoiced: boolean;
   created_at: string;
 }
 
@@ -181,6 +184,7 @@ export interface SearchRow {
   plan: Plan;
   distance_km: number | null;
   relevance: number;
+  sponsored: boolean;
   total_count: number;
 }
 

@@ -293,6 +293,12 @@ alter table public.businesses add column if not exists calendar_token uuid not n
 create unique index if not exists businesses_calendar_token_idx on public.businesses (calendar_token);
 create index if not exists bookings_noshow_idx on public.bookings (business_id, lower(client_email)) where status = 'no_show';
 
+-- Monétisation : origine du client et commission « nouveau client marketplace » (plan Gratuit).
+alter table public.bookings add column if not exists source text not null default 'marketplace' check (source in ('marketplace', 'direct', 'assistant'));
+alter table public.bookings add column if not exists commission_eur numeric(10,2) not null default 0 check (commission_eur >= 0);
+alter table public.bookings add column if not exists commission_invoiced boolean not null default false;
+create index if not exists bookings_commission_idx on public.bookings (business_id) where commission_eur > 0 and not commission_invoiced;
+
 -- Liste d'attente : prévenue par email dès qu'un créneau se libère (annulation, acompte expiré).
 create table if not exists public.waitlist_entries (
   id uuid primary key default gen_random_uuid(),
@@ -504,7 +510,7 @@ returns table (
   id uuid, slug text, name text, category text, tagline text, city text, city_slug text, address text,
   lat double precision, lng double precision, modes location_type[], cover_url text, min_price_eur numeric,
   rating_avg numeric, rating_count integer, plan business_plan, distance_km double precision,
-  relevance real, total_count bigint
+  relevance real, sponsored boolean, total_count bigint
 )
 language sql
 stable
@@ -541,7 +547,7 @@ as $$
   )
   select base.id, base.slug, base.name, base.category, base.tagline, base.city, base.city_slug, base.address,
          base.lat, base.lng, base.modes, base.cover_url, base.min_price_eur, base.rating_avg, base.rating_count,
-         base.plan, base.dist, base.rel, count(*) over ()
+         base.plan, base.dist, base.rel, base.plan = 'pro', count(*) over ()
     from base
    where p_radius_km is null or p_mode = 'online' or base.dist is null or base.dist <= p_radius_km
          or ('at_home' = any(base.modes) and base.dist <= greatest(p_radius_km, base.max_radius_km))
@@ -550,7 +556,8 @@ as $$
      case when p_sort = 'price_asc' then base.min_price_eur end asc nulls last,
      case when p_sort = 'price_desc' then base.min_price_eur end desc nulls last,
      case when p_sort = 'rating' then base.rating_avg end desc,
-     base.rel desc,
+     -- Tri « pertinence » uniquement : léger bonus aux établissements Pro, signalé « Mis en avant » (CGU § 6).
+     base.rel + case when p_sort = 'relevance' and base.plan = 'pro' then 0.15 else 0 end desc,
      (base.rating_avg * ln(base.rating_count + 1)) desc,
      base.dist asc nulls last,
      base.created_at asc

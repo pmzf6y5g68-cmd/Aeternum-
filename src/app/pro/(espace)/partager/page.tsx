@@ -2,13 +2,13 @@ import QRCode from "qrcode";
 import { AtSign, Download, MapPinned, Mic } from "lucide-react";
 import { CopyButton } from "@/components/copy-button";
 import { fr } from "@/i18n/fr";
-import { publicBusinessUrl, requireBusiness } from "@/lib/pro";
+import { requireBusiness, shareBusinessUrl } from "@/lib/pro";
 
 export default async function SharePage() {
   const { business } = await requireBusiness();
-  const url = publicBusinessUrl(business);
+  const url = shareBusinessUrl(business);
   const qr = await QRCode.toDataURL(url, { width: 640, margin: 2, color: { dark: "#0B1F3A", light: "#FFFFFF" } });
-  const short = url.replace(/^https?:\/\//, "");
+  const short = url.replace(/^https?:\/\//, "").replace("?via=pro", "");
   const voicemail = `Bonjour, vous êtes bien chez ${business.name}. Je ne peux pas vous répondre pour le moment. Le plus rapide pour prendre rendez-vous, c'est en ligne sur ${short} : vous verrez le prix et mes disponibilités en temps réel. À très vite !`;
   const widget = `<a href="${url}" style="display:inline-block;padding:12px 20px;border-radius:8px;background:#1758E6;color:#fff;font:600 15px system-ui;text-decoration:none">Prendre rendez-vous</a>`;
 
@@ -17,6 +17,7 @@ export default async function SharePage() {
       <h1 className="text-2xl font-bold tracking-tight">{fr.dashboard.nav.share}</h1>
       <section className="card">
         <h2 className="label">Votre lien de réservation</h2>
+        <p className="mb-2 text-sm text-ink-soft">Les clients qui réservent par ce lien, votre QR code ou votre bouton sont les vôtres : jamais de commission, quel que soit votre plan.</p>
         <div className="flex flex-col gap-2 sm:flex-row">
           <input readOnly value={url} className="input font-medium" aria-label="Lien" />
           <CopyButton value={url} />

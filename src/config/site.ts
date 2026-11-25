@@ -23,6 +23,11 @@ export const siteConfig = {
     freeMonthlyBookings: 30,
     proMonthlyPriceEur: 49,
     proTrialDays: 14,
+    /** Plan Gratuit : commission sur la 1re réservation d'un nouveau client venu de la marketplace. */
+    newClientCommissionPercent: 20,
+    newClientCommissionCapEur: 20,
+    /** Un client redevient « nouveau » après ce délai sans rendez-vous chez l'établissement. */
+    newClientWindowDays: 365,
   },
   booking: {
     pendingDepositTtlMinutes: 20,

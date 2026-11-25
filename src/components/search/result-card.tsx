@@ -39,7 +39,14 @@ export function ResultCard({ r, active, onHover }: { r: SerializedResult; active
           <Link href={r.path} className="block text-lg font-bold leading-snug text-brand hover:underline">
             {r.name}
           </Link>
-          <p className="text-sm font-medium text-ink">{category?.label}</p>
+          <p className="flex items-center gap-2 text-sm font-medium text-ink">
+            {category?.label}
+            {r.sponsored && (
+              <span className="rounded bg-sun/30 px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-ink" title="Établissement abonné Pro, mis en avant dans le tri « Pertinence »">
+                Mis en avant
+              </span>
+            )}
+          </p>
           {r.tagline && <p className="line-clamp-1 text-sm text-ink-soft">{r.tagline}</p>}
           <p className="flex items-start gap-1.5 text-sm text-ink-soft">
             <MapPin className="mt-0.5 size-3.5 shrink-0" aria-hidden />

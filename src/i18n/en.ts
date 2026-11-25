@@ -217,11 +217,11 @@ export const en: Dictionary = {
     pricingTitle: "Simple pricing",
     freeName: "Free",
     freePrice: "€0",
-    freeFeatures: ["30 appointments per month", "Public page & visibility", "Calendar, team, time off", "Deposits via Stripe Connect"],
+    freeFeatures: ["€0 per month", "20% commission (max €20) only on the 1st appointment of a new client from Rendez-vous", "0% on your own clients", "Public page, calendar, team, deposits"],
     proName: "Pro",
     proPrice: "€49",
     proBadge: "14-day free trial",
-    proFeatures: ["Unlimited appointments", "Upsell add-ons", "Day-before reminder + 1-click confirmation", "6-hour alert if unconfirmed", "Loyalty follow-up", "Boosted in results"],
+    proFeatures: ["0% commission on all clients", "Unlimited appointments", "Featured in results", "Upsell add-ons", "Day-before reminder + 1-click confirmation", "6-hour alert if unconfirmed", "Loyalty follow-up"],
     start: "Get started",
   },
   onboarding: {

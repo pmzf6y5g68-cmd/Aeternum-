@@ -35,6 +35,11 @@ do $$ declare r record; begin
   assert (select slug from search_businesses(p_sort => 'price_asc') limit 1) = 'yoga-flow', 'tri prix';
   assert (select count(*) from search_businesses(p_max_price => 20)) = 1, 'filtre prix max';
   assert (select total_count from search_businesses() limit 1) = 2, 'total';
+  update businesses set plan = 'pro' where slug = 'yoga-flow';
+  assert (select slug from search_businesses() limit 1) = 'yoga-flow', 'Pro mis en avant en pertinence';
+  assert (select sponsored from search_businesses() limit 1), 'drapeau sponsored';
+  assert (select slug from search_businesses(p_lat => 45.75, p_lng => 4.85, p_sort => 'distance') limit 1) = 'salon-elegance', 'tri distance non influencé';
+  update businesses set plan = 'free' where slug = 'yoga-flow';
 end $$;
 
 -- Réservation avec équipe : « peu importe » prend le premier membre libre puis le suivant

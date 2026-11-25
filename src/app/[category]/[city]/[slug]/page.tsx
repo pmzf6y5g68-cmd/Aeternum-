@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { Clock, CreditCard, House, Info, MapPin, Monitor, Navigation, Phone, ShieldCheck, Store, UserRound } from "lucide-react";
+import { Attribution } from "@/components/attribution";
 import { BusinessAvatar } from "@/components/business-avatar";
 import { FavoriteButton, ShareButton } from "@/components/favorite-button";
 import { LocationMap } from "@/components/location-map";
@@ -41,7 +42,7 @@ function hhmm(v: string | null): string {
   return v ? v.slice(0, 5).replace(":", "h") : "";
 }
 
-export default async function BusinessPage({ params, searchParams }: { params: Params; searchParams: Promise<{ date?: string; service?: string; reservation?: string }> }) {
+export default async function BusinessPage({ params, searchParams }: { params: Params; searchParams: Promise<{ date?: string; service?: string; reservation?: string; via?: string }> }) {
   const [{ category, city, slug }, sp] = await Promise.all([params, searchParams]);
   const biz = await loadPublicBusiness(slug);
   if (!biz) notFound();
@@ -79,6 +80,7 @@ export default async function BusinessPage({ params, searchParams }: { params: P
   return (
     <>
       <SiteHeader variant="white" search={{ defaultCategory: biz.category, defaultPlaceLabel: biz.city ?? "" }} />
+      <Attribution slug={biz.slug} via={sp.via} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
 
       <section className="bg-brand">

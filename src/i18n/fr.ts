@@ -222,11 +222,11 @@ export const fr = {
     pricingTitle: "Des tarifs simples",
     freeName: "Gratuit",
     freePrice: "0 €",
-    freeFeatures: ["30 rendez-vous par mois", "Page publique & visibilité", "Agenda, équipe, congés", "Acomptes via Stripe Connect"],
+    freeFeatures: ["0 € par mois", "Commission de 20 % (max 20 €) uniquement sur le 1er RDV d'un nouveau client venu de Rendez-vous", "0 % sur vos propres clients", "Page publique, agenda, équipe, acomptes"],
     proName: "Pro",
     proPrice: "49 €",
     proBadge: "14 jours offerts",
-    proFeatures: ["Rendez-vous illimités", "Options upsell", "Rappel J-1 + confirmation 1 clic", "Alerte H-6 si non confirmé", "Relance de fidélisation", "Mise en avant dans les résultats"],
+    proFeatures: ["0 % de commission sur tous vos clients", "Rendez-vous illimités", "Mis en avant dans les résultats", "Options upsell", "Rappel J-1 + confirmation 1 clic", "Alerte H-6 si non confirmé", "Relance de fidélisation"],
     start: "Démarrer",
   },
   onboarding: {
