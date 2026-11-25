@@ -1,92 +1,71 @@
-# PROGRESS — Slotly
+# PROGRESS — Rendez-vous
 
-## Phase 1 — Socle, Base & Tests Domaine ✅
-- Next.js 16 (App Router, TS strict + `noUncheckedIndexedAccess`), Tailwind v4, Vitest.
-- `.env.example`, `src/config/site.ts`, `src/i18n/{fr,en,index}.ts` (même forme typée `Dictionary`).
-- `supabase/schema.sql` idempotent : 8 tables + `system_events`, enums, index, RLS stricte
-  (studios/services/addons/opening_hours/bookings via `owner_id`, tables prospection service_role only),
-  grants colonne par colonne (le studio ne peut pas modifier plan / Stripe), RPC `create_booking_atomic`
-  (`FOR UPDATE`, quota free 15/mois civil Paris, chevauchement strict en ignorant les `pending_deposit` > 20 min),
-  `reactivate_paid_booking`, `increment_ai_reply_count`.
-- Clients Supabase : `admin.ts` (service_role), `server.ts` (session), `browser.ts`, `src/proxy.ts`.
-- Domaine pur : `pricing.ts`, `availability.ts`, `time.ts` (Europe/Paris sans dépendance), `geocode.ts` (BAN + Nominatim).
-- Garde-fous : `src/lib/ai/email-guardrails.ts`, jeton HMAC `src/lib/prefill.ts`.
-- Utilitaires : `src/lib/email/send.ts` (Resend + Message-ID/In-Reply-To/References), `ics.ts`, `stripe.ts`, `events.ts`.
-- `npm test` : 65 tests verts (pricing, availability, email-guardrails + prefill HMAC).
+Refonte complète de Slotly (detailing uniquement) en **Rendez-vous** : plateforme universelle de prise de
+rendez-vous, tous métiers hors médical, avec une ergonomie de marketplace (recherche « Quoi / Où »,
+créneaux visibles dès les résultats, carte, fiche avec réservation pas à pas).
 
-## Phase 2 — Expérience Pro & Onboarding Pré-rempli ✅
-- `/` : landing B2B (hero, calculateur interactif CA sauvé lapins + upsell, tunnel en 4 étapes, features, tarifs Gratuit 15 RDV / Pro 49 € 14 j offerts).
-- `/login` : lien magique Supabase (`signInWithOtp`) + `/auth/callback` (échange PKCE, `next` sécurisé).
-- `/onboarding` : décodage HMAC `?prefill=` (nom, ville, email), conservation du jeton à travers le login,
-  création serveur (service_role) du studio + géocodage BAN/Nominatim + slug unique + 4 prestations (tarifs par gabarit),
-  4 options, horaires standard ; `prospects.status = 'converted'` et rattachement des `email_threads`.
-- `/dashboard` : agenda jour/semaine (badges Acompte payé / Confirmé / En attente / À risque / Terminé, véhicule, options,
-  lien Maps, actions 1 clic + email d'annulation au client), `/share` (lien, QR code téléchargeable, script répondeur,
-  guides Google Maps / Instagram), `/services` (CRUD prestations + prix/durée par gabarit, options, zone mobile, horaires),
-  `/billing` (quota mensuel, upgrade Pro, Customer Portal, Stripe Connect, réglages d'acompte).
-- Emails transactionnels : `src/lib/email/booking-emails.ts`.
-- `tsc`, `npm test`, `npm run build` verts.
+## R1 — Socle universel ✅
+- `src/config/categories.ts` : 43 métiers dans 10 univers (beauté, bien-être, sport, auto, maison, animaux, cours,
+  conseil, loisirs, services). Chaque métier définit ses modes (sur place / à domicile / visio), sa dimension de
+  variante (longueur de cheveux, gabarit, taille de l'animal, surface, nombre de personnes…), sa capacité
+  (cours collectifs, tables) et son catalogue de démarrage. Aucune catégorie médicale (vérifié par test).
+- `supabase/schema.sql` (idempotent) : `businesses`, `staff`, `services` (variantes jsonb, capacité, modes),
+  `addons`, `opening_hours`, `time_off`, `bookings`, `reviews`, `favorites`, `customer_profiles`, prospection,
+  `system_events`. Index plein texte français + trigrammes (`unaccent`, `pg_trgm`), prix « à partir de » et notes
+  dénormalisés par triggers. RPC `search_businesses` (texte, catégorie, ville, rayon, mode, prix, note, tris),
+  `create_booking_atomic` (verrou, quota, attribution d'équipe, capacité, congés), `reactivate_paid_booking`,
+  `claim_guest_bookings`, `increment_ai_reply_count`. RLS stricte + grants par colonne.
+- Domaine pur : `pricing.ts` (variantes, places, modes, frais km, acompte), `availability.ts` (équipe, capacité,
+  congés, plages multi-jours, répartition de charge), `catalog.ts`, `slug.ts`.
+- `supabase/tests/` + `scripts/test-sql.sh` : schéma rejoué 2 fois puis 30+ assertions comportementales sur Postgres 16.
 
-## Phase 3 — Tunnel Client, APIs & Stripe ✅
-- `/[slug]` : tunnel 4 étapes sans compte (Atelier/Domicile + frais km temps réel → Gabarit + Prestation →
-  Options si Pro → Créneau + coordonnées + récap → acompte Stripe Connect ou confirmation directe + email `.ics`).
-- `src/lib/booking-engine.ts` : colonnes publiques uniquement, catalogue, distance serveur, créneaux recalculés depuis la base.
-- `POST /api/distance`, `GET /api/availability`, `POST /api/bookings` : recalcul serveur intégral (prix, durée, frais km,
-  créneau exact), puis `create_booking_atomic` ; codes `slot_taken` / `quota_exceeded` / `out_of_zone`.
-- Acompte : Checkout en **charge directe** sur le compte Connect (`stripeAccount`), `expires_at` 31 min (minimum Stripe),
-  annulation automatique si la session ne peut être créée.
-- `/confirm/[token]` (GET idempotent) et `/cancel/[token]` (bouton POST, anti-scanners de liens) + notifications.
-- Pages légales `/cgu`, `/confidentialite`, `/mentions-legales` pilotées par `src/config/site.ts`.
-- Stripe : `POST /api/stripe/subscription` (Pro 49 €, 14 j d'essai), `/portal`, `/connect` (Express FR, MCC 7542),
-  `POST /api/webhooks/stripe` (double secret plateforme + Connect) : `checkout.session.completed` (abonnement / acompte,
-  idempotent, paiement tardif → réactivation atomique ou remboursement auto), `customer.subscription.*`, `account.updated`.
-- `tsc`, `npm test`, `npm run build` verts.
+## R2 — Marketplace usager ✅
+- Accueil : barre « Quoi / Où » avec autocomplétion (métiers instantanés + établissements via `/api/suggest`,
+  communes via la Base Adresse Nationale, « Autour de moi »), métiers populaires, univers, fonctionnement.
+- `/recherche`, `/[métier]`, `/[métier]/[ville]` : filtres (métier, disponibilité aujourd'hui / 3 j / semaine,
+  lieu, prix max, distance, note), tris (pertinence, distance, disponibilité, prix, note), pagination, cartes avec
+  4 jours de créneaux cliquables, carte OpenStreetMap synchronisée (pastilles de prix), bascule liste/carte mobile.
+- Fiche `/[métier]/[ville]/[établissement]` : bandeau, favoris, partage, présentation, prestations et tarifs,
+  équipe, infos pratiques (adresse, itinéraire, modes, paiement, politique d'annulation, horaires, carte), avis,
+  JSON-LD LocalBusiness, URL canonique. Module de réservation fixe en 8 étapes repliables : prestation → variante →
+  lieu (adresse + frais km) → avec qui (« peu importe » ou un membre) → options → places → semaine de créneaux
+  (« voir plus d'horaires », « prochaine disponibilité ») → coordonnées pré-remplies + récap → confirmation ou acompte.
+- APIs : `/api/slots`, `/api/distance`, `/api/bookings` (recalcul serveur intégral, rattachement au compte), `/api/favorites`.
 
-## Phase 4 — Agent Répondeur IA & Cloudflare Email Worker ✅
-- `src/lib/ai/knowledge.ts` : base de faits produit stricte (y compris la liste de ce qui N'EXISTE PAS).
-- `src/lib/ai/email-agent.ts` : Claude (`ANTHROPIC_MODEL`, défaut `claude-haiku-4-5`) avec outil `strict: true`
-  et `tool_choice` forcé (bascule automatique sur `auto` pour les modèles qui refusent le forçage), sortie validée par Zod,
-  escalade par défaut si sortie invalide / refus / panne. Post-traitement déterministe `finalizeDecision` :
-  ≤ 110 mots, aucun lien inventé, lien d'onboarding signé ajouté seulement pour un prospect intéressé/objection, signature.
-- `src/lib/ai/inbound-pipeline.ts` : idempotence `message_id`, garde-fous avant IA, rattachement du fil
-  (In-Reply-To/References puis repli par contact), stockage, opt-out → `stopped`, OOO → `ooo_paused`,
-  prospect → `replied` (stoppe la relance J+4), envoi Resend avec `In-Reply-To`/`References`, `increment_ai_reply_count`,
-  escalade (fil `escalated`) avec fil complet + brouillon vers `OWNER_ALERT_EMAIL`, jamais d'envoi au contact.
-- `POST /api/webhooks/inbound-email` : `X-Inbound-Secret` en temps constant, payload Zod.
-- `workers/email-inbound/` : `wrangler.toml`, `package.json` (postal-mime v4), `src/index.ts` (parse, en-têtes anti-boucle,
-  HTML → texte, 3 essais avec backoff, transfert de secours optionnel). `tsc` du worker vert.
-- `npm test` : 80 tests (dont 15 sur l'agent avec client Anthropic simulé).
+## R3 — Compte usager ✅
+- `/compte` : à venir / passés, ajout au calendrier (`/api/ics/[token]`), annulation selon la politique de
+  l'établissement, reprise de rendez-vous, avis vérifiés ; `/compte/favoris`, `/compte/profil`.
+- Connexion par lien magique ; à la connexion, les RDV pris en invité avec le même email sont rattachés.
+- `/confirm/[token]`, `/cancel/[token]` (bouton POST anti-scanners), `/avis/[token]` (clients venus uniquement).
 
-## Phase 5 — Crons, Robot Python & GitHub Actions ✅
-- `src/lib/cron.ts` : `Authorization: Bearer ${CRON_SECRET}` en temps constant, garde horaire Paris (`?force=1` pour forcer).
-- `GET /api/cron/cleanup-pending` (30 min) : `pending_deposit` > 25 min → `cancelled` + expiration des sessions Checkout Connect.
-- `GET /api/cron/reminders` (horaire, Pro) : rappel J-1 (fenêtre H+6 → H+24) avec boutons confirmer / annuler, envoi « réservé » atomiquement.
-- `GET /api/cron/risk-check` (horaire, Pro) : RDV non confirmé à H-6 → `at_risk` + alerte au detailer.
-- `GET /api/cron/rebooking` (10h Paris, Pro) : relance entretien après `rebooking_days`, une fois par client, pas si un RDV ultérieur existe.
-- `GET /api/cron/health-digest` (20h Paris) : email à `OWNER_ALERT_EMAIL` seulement si escalades / erreurs, + récap dominical (MRR, studios, prospects, RDV).
-- `scripts/prospector.py` + `scripts/requirements.txt` : Serper Places multi-villes (FR/UK/US), exclusion des outils
-  (planity, planero, booksy, fresha, urable, orbisx, mobiletechrx, calendly, treatwell, resaclick, square.site…),
-  extraction d'email, qualification + rédaction < 80 mots par Claude (outil strict), envoi Resend avec Message-ID fixé,
-  création immédiate `prospects` + `email_threads` + `email_messages`, relance unique J+4 dans le même fil
-  (jamais si réponse, STOP ou OOO), `DRY_RUN=true` par défaut, `MAX_EMAILS_PER_DAY=25`, pauses aléatoires.
-- `.github/workflows/crons.yml`, `.github/workflows/prospector.yml`, `.github/workflows/ci.yml` (4 vérifications).
+## R4 — Espace pro ✅
+- `/pro` (landing), `/pro/inscription` (choix du métier avec recherche, prérempli par le lien signé de l'agent
+  email, catalogue/horaires du métier créés en 1 clic, prospect → `converted`).
+- `/pro/agenda` (jour/semaine, filtre par membre, KPI, actions 1 clic, réattribution), `/pro/prestations`
+  (variantes, places, modes, options), `/pro/equipe`, `/pro/horaires` (horaires + congés/fermetures),
+  `/pro/ma-page` (vitrine + règles : pas, délai, horizon, annulation, zone), `/pro/partager` (lien, QR, bouton
+  site web, répondeur), `/pro/avis` (réponses publiques), `/pro/abonnement` (quota, Pro, portail, Connect, acomptes).
 
-## Phase 6 — Vérification End-to-End & Guide Zéro-Friction ✅
-- `npx tsc --noEmit` ✅ · `npm test` ✅ (80 tests) · `npm run build` ✅ · `python3 -m py_compile scripts/prospector.py` ✅ · `tsc` du Worker ✅.
-- `supabase/schema.sql` exécuté **deux fois** sur un PostgreSQL 16 réel (stubs `auth.*` + rôles Supabase) : idempotent.
-  RPC vérifiée : chevauchement refusé (`SLOT_TAKEN`), créneau contigu accepté, `pending_deposit` > 20 min ignoré,
-  paiement tardif sur créneau repris → `reactivate_paid_booking = false`, 16ᵉ RDV gratuit du mois refusé (`QUOTA_EXCEEDED`),
-  mois suivant accepté. RLS vérifiée : studio A ne voit que ses RDV, studio B aucun, anon rien, prospects invisibles,
-  `plan` / prix non modifiables par le studio, RPC non appelable par `authenticated`.
-- Serveur de production testé en HTTP : pages publiques 200, crons et webhook entrant 401 sans secret, payloads invalides 400,
-  webhook Stripe sans signature 400, `/dashboard` sans session → `/login`, landing mobile sans débordement ni erreur JS.
-- Robot Python testé (venv, `anthropic` 2.x) : variables manquantes → sortie 2, extraction d'email, détection d'outil, outil Claude simulé.
-- `README.md` : configuration unique en 7 étapes (Supabase, Stripe Pro + Connect, Resend DNS, Cloudflare Email Routing + `wrangler deploy`,
-  Vercel, GitHub Secrets, passage `DRY_RUN=false`).
+## R5 — Intégrations généralisées ✅
+- Stripe (abonnement, portail, Connect Express, webhook double secret, paiement tardif réactivé ou remboursé).
+- Crons : `cleanup-pending`, `reminders`, `risk-check`, `rebooking` (auto-« terminé » à +48 h, demandes d'avis
+  vérifiés tous plans, fidélisation Pro), `health-digest`.
+- Agent email : base de connaissances tous métiers, contexte `prospect` / `business`, lien `/pro/inscription?prefill=`
+  signé incluant le métier. Garde-fous inchangés (filtres avant IA, STOP, plafond 4, escalade avec brouillon).
+- `scripts/prospector.py` : 44 métiers × villes en rotation aléatoire, 34 outils concurrents détectés, rédaction
+  adaptée au métier ; liste synchronisée avec le catalogue TS par `__tests__/prospector-sync.test.ts`.
+- CI : job `sql` sur un service Postgres 16 en plus des 4 vérifications.
 
-### Points à connaître
-- Le webhook Stripe est servi sur `/api/webhooks/stripe` (même dossier que le webhook entrant).
-- Stripe impose 30 min minimum pour expirer une session Checkout : la session est créée à 31 min et le cron l'expire à 25 min ;
-  un paiement qui passerait malgré tout est réactivé ou remboursé automatiquement.
-- Table additionnelle `system_events` (journal d'erreurs lu par `health-digest`).
-- Non exécutés ici faute de comptes réels : appels Stripe / Resend / Anthropic / Serper en conditions réelles et `wrangler deploy`.
+## R6 — Vérification ✅
+- `npx tsc --noEmit` ✅ · `npm test` ✅ (97 tests) · `npm run build` ✅ (43 routes) · `python3 -m py_compile scripts/prospector.py` ✅
+- `scripts/test-sql.sh` sur PostgreSQL 16 réel : « ALL SQL TESTS PASSED ».
+- Serveur de production en HTTP : pages publiques 200, métier inconnu / établissement inconnu 404, `/compte` et
+  `/pro/agenda` → `/login`, APIs invalides 400, crons/webhooks 401/400 sans secret, favoris anonymes 401.
+- Captures desktop + mobile (accueil, autocomplétion, recherche, page métier, pro, inscription) : aucun débordement
+  horizontal, aucune erreur JS.
+
+### Non testé ici
+- Parcours complet contre un vrai Supabase (PostgREST + Auth) : le téléchargement d'un binaire PostgREST a été
+  refusé par le bac à sable. La logique SQL est testée directement sur Postgres, l'API Next.js par tests unitaires
+  et HTTP. À valider sur le projet Supabase réel (README, étape 1).
+- Appels réels Stripe / Resend / Anthropic / Serper et `wrangler deploy`.

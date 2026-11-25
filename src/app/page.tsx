@@ -38,7 +38,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="mx-auto -mt-10 max-w-6xl px-4">
+        <section className="relative z-10 mx-auto -mt-10 max-w-6xl px-4">
           <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
             {featured.map((c) => (
               <Link key={c.slug} href={`/${c.slug}`} className="card flex flex-col items-center gap-2 p-4 text-center transition hover:-translate-y-0.5 hover:border-brand">

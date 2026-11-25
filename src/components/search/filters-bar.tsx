@@ -91,7 +91,7 @@ export function FiltersBar({ showCategory }: { showCategory: boolean }) {
         <option value="3">★ 3 et +</option>
       </Select>
       <span className="mx-1 h-6 w-px shrink-0 bg-line" />
-      <label className="chip shrink-0 cursor-pointer">
+      <label className="chip relative shrink-0 cursor-pointer">
         <ArrowUpDown className="size-3.5" aria-hidden />
         <span className="sr-only">{t.sort}</span>
         <select value={get("tri")} onChange={(e) => update("tri", e.target.value)} className="cursor-pointer appearance-none bg-transparent font-medium outline-none">
