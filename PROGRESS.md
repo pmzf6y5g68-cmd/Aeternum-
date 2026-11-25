@@ -26,3 +26,18 @@
   `/billing` (quota mensuel, upgrade Pro, Customer Portal, Stripe Connect, réglages d'acompte).
 - Emails transactionnels : `src/lib/email/booking-emails.ts`.
 - `tsc`, `npm test`, `npm run build` verts.
+
+## Phase 3 — Tunnel Client, APIs & Stripe ✅
+- `/[slug]` : tunnel 4 étapes sans compte (Atelier/Domicile + frais km temps réel → Gabarit + Prestation →
+  Options si Pro → Créneau + coordonnées + récap → acompte Stripe Connect ou confirmation directe + email `.ics`).
+- `src/lib/booking-engine.ts` : colonnes publiques uniquement, catalogue, distance serveur, créneaux recalculés depuis la base.
+- `POST /api/distance`, `GET /api/availability`, `POST /api/bookings` : recalcul serveur intégral (prix, durée, frais km,
+  créneau exact), puis `create_booking_atomic` ; codes `slot_taken` / `quota_exceeded` / `out_of_zone`.
+- Acompte : Checkout en **charge directe** sur le compte Connect (`stripeAccount`), `expires_at` 31 min (minimum Stripe),
+  annulation automatique si la session ne peut être créée.
+- `/confirm/[token]` (GET idempotent) et `/cancel/[token]` (bouton POST, anti-scanners de liens) + notifications.
+- Pages légales `/cgu`, `/confidentialite`, `/mentions-legales` pilotées par `src/config/site.ts`.
+- Stripe : `POST /api/stripe/subscription` (Pro 49 €, 14 j d'essai), `/portal`, `/connect` (Express FR, MCC 7542),
+  `POST /api/webhooks/stripe` (double secret plateforme + Connect) : `checkout.session.completed` (abonnement / acompte,
+  idempotent, paiement tardif → réactivation atomique ou remboursement auto), `customer.subscription.*`, `account.updated`.
+- `tsc`, `npm test`, `npm run build` verts.

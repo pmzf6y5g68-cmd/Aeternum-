@@ -1,0 +1,147 @@
+import type Stripe from "stripe";
+import { siteConfig } from "@/config/site";
+import { notifyClientLatePaymentRefunded, sendBookingConfirmation } from "@/lib/email/booking-emails";
+import { env } from "@/lib/env";
+import { errorMessage, logEvent } from "@/lib/events";
+import { json, jsonError } from "@/lib/http";
+import { getStripe } from "@/lib/stripe";
+import { createAdminClient } from "@/lib/supabase/admin";
+import type { Booking, Studio } from "@/lib/supabase/types";
+
+/**
+ * Un seul endpoint pour les deux sources Stripe :
+ * - "Your account" (abonnements Pro)          -> STRIPE_WEBHOOK_SECRET
+ * - "Connected accounts" (acomptes, comptes)  -> STRIPE_CONNECT_WEBHOOK_SECRET
+ */
+function verify(payload: string, signature: string): Stripe.Event | null {
+  const stripe = getStripe();
+  for (const secret of [env.stripeWebhookSecret(), env.stripeConnectWebhookSecret()]) {
+    if (!secret) continue;
+    try {
+      return stripe.webhooks.constructEvent(payload, signature, secret);
+    } catch {
+      // Essai du secret suivant.
+    }
+  }
+  return null;
+}
+
+const PRO_STATUSES: Stripe.Subscription.Status[] = ["active", "trialing", "past_due"];
+
+async function syncSubscription(subscription: Stripe.Subscription): Promise<void> {
+  const admin = createAdminClient();
+  const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
+  const plan = PRO_STATUSES.includes(subscription.status) ? "pro" : "free";
+  const studioId = subscription.metadata?.studio_id;
+
+  const query = admin.from("studios").update({ plan, stripe_subscription_id: plan === "pro" ? subscription.id : null, stripe_customer_id: customerId });
+  const { error } = studioId ? await query.eq("id", studioId) : await query.eq("stripe_customer_id", customerId);
+  if (error) throw new Error(error.message);
+}
+
+async function handleSubscriptionCheckout(session: Stripe.Checkout.Session): Promise<void> {
+  if (!session.subscription) return;
+  const subscriptionId = typeof session.subscription === "string" ? session.subscription : session.subscription.id;
+  const subscription = await getStripe().subscriptions.retrieve(subscriptionId);
+  if (!subscription.metadata?.studio_id && session.metadata?.studio_id) {
+    subscription.metadata = { ...subscription.metadata, studio_id: session.metadata.studio_id };
+  }
+  await syncSubscription(subscription);
+}
+
+async function confirmDeposit(session: Stripe.Checkout.Session, connectedAccount: string | undefined): Promise<void> {
+  const bookingId = session.metadata?.booking_id;
+  if (!bookingId || session.payment_status !== "paid") return;
+
+  const admin = createAdminClient();
+  const { data: booking } = await admin.from("bookings").select("*").eq("id", bookingId).maybeSingle<Booking>();
+  if (!booking || booking.deposit_paid) return; // Idempotence : déjà traité.
+
+  const { data: studio } = await admin.from("studios").select("*").eq("id", booking.studio_id).single<Studio>();
+  if (!studio) return;
+  if (connectedAccount && studio.stripe_connect_account_id !== connectedAccount) {
+    await logEvent("stripe.webhook", "account mismatch on deposit", { booking_id: bookingId, connectedAccount });
+    return;
+  }
+
+  let confirmed = false;
+  if (booking.status === "pending_deposit") {
+    const { data } = await admin
+      .from("bookings")
+      .update({ status: "scheduled", deposit_paid: true, stripe_checkout_session_id: session.id })
+      .eq("id", booking.id)
+      .eq("status", "pending_deposit")
+      .select("id");
+    confirmed = (data ?? []).length > 0;
+  }
+  if (!confirmed && booking.status === "cancelled") {
+    // Paiement arrivé après la libération du créneau : on le réactive s'il est toujours libre.
+    const { data } = await admin.rpc("reactivate_paid_booking", {
+      p_booking_id: booking.id,
+      p_pending_ttl_minutes: siteConfig.booking.pendingDepositTtlMinutes,
+    });
+    confirmed = data === true;
+    if (!confirmed) {
+      const paymentIntent = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id;
+      if (paymentIntent && studio.stripe_connect_account_id) {
+        await getStripe().refunds.create({ payment_intent: paymentIntent }, { stripeAccount: studio.stripe_connect_account_id });
+      }
+      await admin.from("bookings").update({ stripe_checkout_session_id: session.id }).eq("id", booking.id);
+      await notifyClientLatePaymentRefunded(booking, studio);
+      await logEvent("stripe.webhook", "late deposit refunded: slot taken", { booking_id: booking.id }, "warning");
+      return;
+    }
+  }
+  if (!confirmed) return;
+
+  const fresh = { ...booking, status: "scheduled" as const, deposit_paid: true };
+  const [{ data: service }, { data: addons }] = await Promise.all([
+    admin.from("services").select("name").eq("id", booking.service_id ?? "").maybeSingle<{ name: string }>(),
+    booking.addon_ids.length
+      ? admin.from("addons").select("name").in("id", booking.addon_ids).returns<{ name: string }[]>()
+      : Promise.resolve({ data: [] as { name: string }[] }),
+  ]);
+  await sendBookingConfirmation(fresh, studio, service?.name ?? "Prestation", (addons ?? []).map((a) => a.name));
+}
+
+async function syncConnectAccount(account: Stripe.Account): Promise<void> {
+  const onboarded = Boolean(account.charges_enabled && account.details_submitted);
+  const patch: Record<string, unknown> = { stripe_connect_onboarded: onboarded };
+  if (!onboarded) patch.deposit_enabled = false;
+  const { error } = await createAdminClient().from("studios").update(patch).eq("stripe_connect_account_id", account.id);
+  if (error) throw new Error(error.message);
+}
+
+export async function POST(request: Request) {
+  const signature = request.headers.get("stripe-signature");
+  if (!signature) return jsonError("missing_signature", 400);
+  const payload = await request.text();
+  const event = verify(payload, signature);
+  if (!event) return jsonError("invalid_signature", 400);
+
+  try {
+    switch (event.type) {
+      case "checkout.session.completed":
+      case "checkout.session.async_payment_succeeded": {
+        const session = event.data.object;
+        if (session.mode === "subscription") await handleSubscriptionCheckout(session);
+        else if (session.mode === "payment") await confirmDeposit(session, event.account);
+        break;
+      }
+      case "customer.subscription.created":
+      case "customer.subscription.updated":
+      case "customer.subscription.deleted":
+        await syncSubscription(event.data.object);
+        break;
+      case "account.updated":
+        await syncConnectAccount(event.data.object);
+        break;
+      default:
+        break;
+    }
+  } catch (err) {
+    await logEvent("stripe.webhook", errorMessage(err), { type: event.type, id: event.id });
+    return jsonError("handler_error", 500);
+  }
+  return json({ received: true });
+}
