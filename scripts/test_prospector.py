@@ -29,6 +29,14 @@ def test_health_brakes() -> None:
     assert p.compute_daily_cap(old, 50, 40, 5, NOW)[0] == p.MAX_EMAILS_PER_DAY  # échantillon trop petit
 
 
+def test_ceiling_grows_only_with_excellent_health() -> None:
+    old = NOW - timedelta(days=60)
+    grown = p.compute_daily_cap(old, 10000, 20, 1, NOW)[0]
+    assert p.MAX_EMAILS_PER_DAY < grown <= p.HARD_MAX_EMAILS_PER_DAY
+    assert p.compute_daily_cap(old, 10000, 200, 1, NOW)[0] == p.MAX_EMAILS_PER_DAY  # rebonds 2 % : pas d'extension
+    assert p.compute_daily_cap(NOW - timedelta(days=3650), 10000, 0, 0, NOW)[0] == p.HARD_MAX_EMAILS_PER_DAY
+
+
 def test_footer_has_one_click_unsubscribe() -> None:
     assert "/desinscription?t=" in p.footer("a@b.fr")
 

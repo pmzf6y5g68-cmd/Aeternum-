@@ -5,6 +5,7 @@ import { env } from "@/lib/env";
 import { errorMessage, logEvent } from "@/lib/events";
 import { json, jsonError } from "@/lib/http";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { readiness } from "@/lib/readiness";
 
 const DAY = 86_400_000;
 
@@ -54,14 +55,19 @@ export async function GET(request: Request) {
     count("prospects", [["eq", "status", "error"], ["gte", "last_contacted_at", since24h]]),
   ]);
 
+  const go = await readiness().catch(() => ({ ready: false, checks: [{ name: "readiness", ok: false, detail: "vérification impossible" }] }));
   const escalations = escalated.data ?? [];
   const systemErrors = errors.data ?? [];
   const isSunday = new URL(request.url).searchParams.get("weekly") === "1" || isSundayInParis(new Date(now));
-  const hasAnomaly = escalations.length > 0 || systemErrors.length > 0 || prospectErrors > 0;
+  const hasAnomaly = escalations.length > 0 || systemErrors.length > 0 || prospectErrors > 0 || !go.ready;
 
   if (!hasAnomaly && !isSunday) return json({ sent: false, reason: "all_good" });
 
   const lines: string[] = [];
+  if (!go.ready) {
+    lines.push("🟠 Mise en service incomplète : la prospection automatique reste en simulation tant que ces points ne sont pas verts :");
+    for (const c of go.checks.filter((x) => !x.ok)) lines.push(`• ${c.name} : ${c.detail}`);
+  }
   if (escalations.length) {
     lines.push(`🔴 ${escalations.length} fil(s) escaladé(s) en attente de réponse humaine :`);
     for (const t of escalations) lines.push(`• ${t.contact_email} — ${t.subject ?? "(sans objet)"} — ${t.updated_at.slice(0, 16).replace("T", " ")}`);

@@ -51,9 +51,15 @@ def env_bool(name: str, default: bool) -> bool:
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
-DRY_RUN = env_bool("DRY_RUN", True)
+# DRY_RUN : "true" (simulation), "false" (envoi réel) ou "auto" : envoi réel seulement quand
+# /api/health/readiness confirme que la plateforme est commercialement prête (paiements, domaine, webhooks).
+SEND_MODE = (os.environ.get("DRY_RUN") or "true").strip().lower()
+DRY_RUN = SEND_MODE != "auto" and env_bool("DRY_RUN", True)
+CRON_SECRET = os.environ.get("CRON_SECRET", "")
 # Plafond quotidien absolu ; le plafond effectif suit la montée en charge et la santé d'envoi.
 MAX_EMAILS_PER_DAY = int(os.environ.get("MAX_EMAILS_PER_DAY", "1500"))
+# Au-delà du plafond, le débit continue de croître (+25 %/semaine) tant que la santé est excellente.
+HARD_MAX_EMAILS_PER_DAY = int(os.environ.get("HARD_MAX_EMAILS_PER_DAY", "6000"))
 WARMUP_START = int(os.environ.get("WARMUP_START", "40"))
 WARMUP_GROWTH = float(os.environ.get("WARMUP_GROWTH", "1.3"))
 RUNS_PER_DAY = max(1, int(os.environ.get("RUNS_PER_DAY", "5")))
@@ -301,7 +307,15 @@ def has_mx(email: str) -> bool:
 def compute_daily_cap(first_send_at: datetime | None, sends_7d: int, bounces_7d: int, complaints_7d: int, now: datetime) -> tuple[int, str]:
     """Plafond du jour : montée en charge exponentielle, freinée par les rebonds et plaintes des 7 derniers jours."""
     days = 0 if first_send_at is None else max(0, (now - first_send_at).days)
-    cap = min(MAX_EMAILS_PER_DAY, int(WARMUP_START * (WARMUP_GROWTH ** days)))
+    # Exposant borné : 1,3 ** jours déborderait (OverflowError) après quelques années d'activité.
+    cap = min(MAX_EMAILS_PER_DAY, int(WARMUP_START * (WARMUP_GROWTH ** min(days, 365))))
+    days_to_max = math.ceil(math.log(max(MAX_EMAILS_PER_DAY, WARMUP_START) / WARMUP_START) / math.log(WARMUP_GROWTH))
+    excellent = sends_7d >= 500 and bounces_7d / sends_7d < 0.01 and complaints_7d / sends_7d < 0.0003
+    if excellent and days > days_to_max:
+        weeks = (days - days_to_max) // 7
+        cap = min(HARD_MAX_EMAILS_PER_DAY, int(MAX_EMAILS_PER_DAY * (1.25 ** min(weeks, 52))))
+        if weeks > 0:
+            return cap, f"santé excellente : plafond étendu ({weeks} sem.)"
     if sends_7d >= 100:
         complaint_rate = complaints_7d / sends_7d
         bounce_rate = bounces_7d / sends_7d
@@ -684,12 +698,32 @@ def send_first_email(db: Supabase, client: anthropic.Anthropic, c: Candidate) ->
     return True
 
 
+def platform_ready() -> bool:
+    """Mode auto : passe en envoi réel uniquement si la plateforme est commercialement prête."""
+    if not RESEND_API_KEY or not CRON_SECRET:
+        log("Mode auto : RESEND_API_KEY ou CRON_SECRET absent -> simulation.")
+        return False
+    try:
+        res = requests.get(f"{APP_URL}/api/health/readiness", headers={"Authorization": f"Bearer {CRON_SECRET}"}, timeout=60)
+        data = res.json() if res.ok else {}
+    except (requests.RequestException, ValueError) as err:
+        log(f"Mode auto : vérification impossible ({err}) -> simulation.")
+        return False
+    if data.get("ready") is True:
+        log("Mode auto : plateforme prête -> envoi réel.")
+        return True
+    failing = [f"{c.get('name')}: {c.get('detail')}" for c in data.get("checks", []) if not c.get("ok")]
+    log("Mode auto : plateforme pas encore prête -> simulation. " + " | ".join(failing))
+    return False
+
+
 def main() -> int:
+    global MIN_PAUSE_S, MAX_PAUSE_S, DRY_RUN
     missing = [name for name, value in {
         "SUPABASE_URL": SUPABASE_URL, "SUPABASE_SERVICE_ROLE_KEY": SUPABASE_KEY, "SERPER_API_KEY": SERPER_API_KEY,
         "ANTHROPIC_API_KEY": os.environ.get("ANTHROPIC_API_KEY", ""), "UNSUBSCRIBE_SECRET": UNSUBSCRIBE_SECRET,
     }.items() if not value]
-    if not DRY_RUN and not RESEND_API_KEY:
+    if SEND_MODE in ("false", "0", "no", "off") and not RESEND_API_KEY:
         missing.append("RESEND_API_KEY")
     if COUNTRY not in MARKETS:
         print(f"PROSPECT_COUNTRY inconnu : {COUNTRY} (valeurs : {', '.join(MARKETS)})", file=sys.stderr)
@@ -700,7 +734,8 @@ def main() -> int:
 
     db = Supabase(SUPABASE_URL, SUPABASE_KEY)
     client = anthropic.Anthropic()
-    global MIN_PAUSE_S, MAX_PAUSE_S
+    if SEND_MODE == "auto":
+        DRY_RUN = not platform_ready()
     if DRY_RUN:
         MIN_PAUSE_S, MAX_PAUSE_S = 0, 0
         daily_cap, reason = min(MAX_EMAILS_PER_DAY, WARMUP_START), "dry run"
