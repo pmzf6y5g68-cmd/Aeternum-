@@ -45,6 +45,8 @@ export interface Business {
   min_price_eur: number | null;
   rating_avg: number;
   rating_count: number;
+  no_show_block_threshold: number;
+  calendar_token: string;
   locale: "fr" | "en";
   created_at: string;
 }
@@ -55,7 +57,7 @@ export const PUBLIC_BUSINESS_COLUMNS =
 
 export type PublicBusiness = Omit<
   Business,
-  "owner_id" | "email" | "stripe_customer_id" | "stripe_subscription_id" | "stripe_connect_account_id" | "rebooking_days" | "created_at"
+  "owner_id" | "email" | "stripe_customer_id" | "stripe_subscription_id" | "stripe_connect_account_id" | "rebooking_days" | "created_at" | "calendar_token" | "no_show_block_threshold"
 >;
 
 export interface Staff {
@@ -227,5 +229,18 @@ export interface EmailMessage {
   in_reply_to: string | null;
   body_text: string | null;
   ai_intent: string | null;
+  created_at: string;
+}
+
+export interface WaitlistEntry {
+  id: string;
+  business_id: string;
+  service_id: string | null;
+  user_id: string | null;
+  name: string;
+  email: string;
+  date_from: string;
+  date_to: string;
+  notified_at: string | null;
   created_at: string;
 }

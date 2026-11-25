@@ -47,6 +47,14 @@ export async function POST(request: Request) {
   const business = await loadPublicBusiness(input.business);
   if (!business) return jsonError("business_not_found", 404);
 
+  // 0. Anti-absences : réservation en ligne bloquée après N absences chez cet établissement.
+  const adminCheck = createAdminClient();
+  const { data: rules } = await adminCheck.from("businesses").select("no_show_block_threshold").eq("id", business.id).single<{ no_show_block_threshold: number }>();
+  if (rules && rules.no_show_block_threshold > 0) {
+    const { count } = await adminCheck.from("bookings").select("id", { count: "exact", head: true }).eq("business_id", business.id).eq("status", "no_show").eq("client_email", input.client_email);
+    if ((count ?? 0) >= rules.no_show_block_threshold) return jsonError("blocked_no_show", 403);
+  }
+
   // 1. Sélection validée contre le catalogue réel.
   let sel;
   try {

@@ -285,6 +285,52 @@ create table if not exists public.system_events (
 create index if not exists system_events_created_idx on public.system_events (created_at desc);
 
 -- ---------------------------------------------------------------------
+-- Évolutions (idempotentes) : anti-absence, synchronisation calendrier, liste d'attente, délivrabilité
+-- ---------------------------------------------------------------------
+alter table public.businesses add column if not exists no_show_block_threshold integer not null default 2
+  check (no_show_block_threshold between 0 and 10);
+alter table public.businesses add column if not exists calendar_token uuid not null default gen_random_uuid();
+create unique index if not exists businesses_calendar_token_idx on public.businesses (calendar_token);
+create index if not exists bookings_noshow_idx on public.bookings (business_id, lower(client_email)) where status = 'no_show';
+
+-- Liste d'attente : prévenue par email dès qu'un créneau se libère (annulation, acompte expiré).
+create table if not exists public.waitlist_entries (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid not null references public.businesses(id) on delete cascade,
+  service_id uuid references public.services(id) on delete cascade,
+  user_id uuid references auth.users(id) on delete cascade,
+  name text not null,
+  email text not null,
+  date_from date not null,
+  date_to date not null,
+  notified_at timestamptz,
+  created_at timestamptz not null default now(),
+  check (date_to >= date_from and date_to <= date_from + 31)
+);
+create index if not exists waitlist_business_idx on public.waitlist_entries (business_id, date_from, date_to) where notified_at is null;
+create unique index if not exists waitlist_unique_idx on public.waitlist_entries (business_id, lower(email), coalesce(service_id, '00000000-0000-0000-0000-000000000000'::uuid), date_from);
+
+-- Désinscriptions, bounces et plaintes : plus aucun envoi de prospection vers ces adresses.
+create table if not exists public.email_suppressions (
+  email text primary key check (email = lower(email)),
+  reason text not null check (reason in ('unsubscribe', 'bounce', 'complaint', 'manual')),
+  created_at timestamptz not null default now()
+);
+
+alter table public.email_messages add column if not exists provider_id text;
+create index if not exists email_messages_provider_idx on public.email_messages (provider_id);
+
+-- Événements renvoyés par Resend (délivré, rebond, plainte) : pilotent le débit de prospection.
+create table if not exists public.email_events (
+  id uuid primary key default gen_random_uuid(),
+  provider_id text,
+  email text,
+  type text not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists email_events_type_created_idx on public.email_events (type, created_at desc);
+
+-- ---------------------------------------------------------------------
 -- Dénormalisations : index de recherche, prix « à partir de », notes
 -- ---------------------------------------------------------------------
 create or replace function public.refresh_business_listing(p_business_id uuid)
@@ -375,6 +421,9 @@ alter table public.prospects enable row level security;
 alter table public.email_threads enable row level security;
 alter table public.email_messages enable row level security;
 alter table public.system_events enable row level security;
+alter table public.waitlist_entries enable row level security;
+alter table public.email_suppressions enable row level security;
+alter table public.email_events enable row level security;
 
 create or replace function public.owns_business(p_business_id uuid)
 returns boolean language sql stable security definer set search_path = public
@@ -390,7 +439,7 @@ revoke insert, update, delete on public.businesses from anon, authenticated;
 grant update (name, tagline, description, email, phone, website, address, postal_code, city, city_slug, lat, lng, modes,
   cover_url, highlights, payment_methods, free_radius_km, max_radius_km, price_per_extra_km, travel_buffer_minutes,
   slot_step_minutes, min_lead_minutes, max_days_ahead, cancellation_hours, deposit_enabled, deposit_percent,
-  rebooking_days, published, locale) on public.businesses to authenticated;
+  rebooking_days, published, locale, no_show_block_threshold) on public.businesses to authenticated;
 
 do $$
 declare t text;
@@ -425,7 +474,13 @@ create policy reviews_owner_reply on public.reviews for update using (public.own
 revoke insert, update, delete on public.reviews from anon, authenticated;
 grant update (reply) on public.reviews to authenticated;
 
--- prospects / email_threads / email_messages / system_events : aucune policy => service_role uniquement.
+-- Liste d'attente : l'usager connecté voit ses inscriptions ; l'établissement voit les siennes.
+drop policy if exists waitlist_own_select on public.waitlist_entries;
+create policy waitlist_own_select on public.waitlist_entries for select using (auth.uid() = user_id or public.owns_business(business_id));
+revoke insert, update, delete on public.waitlist_entries from anon, authenticated;
+
+-- prospects / email_threads / email_messages / email_suppressions / email_events / system_events :
+-- aucune policy => service_role uniquement.
 
 -- ---------------------------------------------------------------------
 -- Recherche : texte (FTS + trigrammes), catégorie, distance, prix, mode, note

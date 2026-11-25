@@ -39,7 +39,45 @@ const ERRORS: Record<string, string> = {
   quota_exceeded: t.quotaExceeded,
   out_of_zone: t.outOfZone,
   address_not_found: t.addressNotFound,
+  blocked_no_show: t.blocked,
 };
+
+function Waitlist({ businessSlug, serviceId, from, prefill }: { businessSlug: string; serviceId: string | null; from: string; prefill: { name: string; email: string } }) {
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState(prefill);
+  const [state, setState] = useState<"idle" | "busy" | "done" | "error">("idle");
+  if (state === "done") return <p className="mt-3 rounded-lg bg-green-50 p-3 text-center text-sm font-semibold text-success">{t.waitlistDone}</p>;
+  if (!open) {
+    return (
+      <button type="button" onClick={() => setOpen(true)} className="mt-3 w-full text-center text-sm font-semibold text-brand hover:underline">
+        {t.waitlistCta}
+      </button>
+    );
+  }
+  return (
+    <form
+      className="mt-3 space-y-2 rounded-lg border border-line bg-canvas p-3"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        setState("busy");
+        const res = await fetch("/api/waitlist", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ business: businessSlug, service_id: serviceId, name: form.name, email: form.email, date_from: from, days: 14 }),
+        }).catch(() => null);
+        setState(res?.ok ? "done" : "error");
+      }}
+    >
+      <p className="text-sm font-bold">{t.waitlistTitle}</p>
+      <input required minLength={2} placeholder={t.name} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input py-2 text-sm" />
+      <input required type="email" placeholder={t.email} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="input py-2 text-sm" />
+      {state === "error" && <p className="text-xs text-danger">{fr.common.error}</p>}
+      <button type="submit" disabled={state === "busy"} className="btn-secondary w-full py-2 text-sm">
+        {t.waitlistSubmit}
+      </button>
+    </form>
+  );
+}
 
 function addDays(date: string, n: number): string {
   const d = new Date(`${date}T12:00:00Z`);
@@ -634,6 +672,7 @@ export function BookingWidget({
               )}
             </>
           )}
+          {days !== null && service && <Waitlist businessSlug={business.slug} serviceId={service.id} from={weekStart} prefill={{ name: prefill.name, email: prefill.email }} />}
         </div>
       </Step>
 

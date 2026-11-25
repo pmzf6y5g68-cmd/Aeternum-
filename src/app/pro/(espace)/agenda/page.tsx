@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CheckCircle2, ChevronLeft, ChevronRight, House, Mail, MapPin, MessageSquareText, Monitor, PartyPopper, Phone, UserRound } from "lucide-react";
+import { CalendarSync, CheckCircle2, ChevronLeft, ChevronRight, House, Mail, MapPin, MessageSquareText, Monitor, PartyPopper, Phone, UserRound } from "lucide-react";
 import { siteConfig } from "@/config/site";
 import { fr } from "@/i18n/fr";
 import type { BookingStatus } from "@/lib/domain/availability";
@@ -7,7 +7,8 @@ import { eurToCents, formatEur } from "@/lib/domain/pricing";
 import { addDays, dayOfWeek, isValidDateString, zonedDateString, zonedTimeString, zonedTimeToUtc } from "@/lib/domain/time";
 import { publicBusinessUrl, requireBusiness } from "@/lib/pro";
 import type { Addon, Booking, Staff } from "@/lib/supabase/types";
-import { reassignBooking, updateBookingStatus } from "../actions";
+import { CopyButton } from "@/components/copy-button";
+import { reassignBooking, rotateCalendarToken, updateBookingStatus } from "../actions";
 
 const t = fr.dashboard.agenda;
 const TZ = siteConfig.booking.timeZone;
@@ -75,6 +76,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
     byDay.set(key, [...(byDay.get(key) ?? []), b]);
   }
   const days = Array.from({ length: span }, (_, i) => addDays(start, i));
+  const calendarUrl = `${siteConfig.url.replace(/\/$/, "")}/api/calendar/${business.calendar_token}.ics`;
   const href = (params: { date?: string; vue?: string; membre?: string | null }) => {
     const q = new URLSearchParams({ vue: params.vue ?? view, date: params.date ?? anchor });
     const m = params.membre === undefined ? member : params.membre;
@@ -144,6 +146,32 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
           </div>
         ))}
       </dl>
+
+      <details className="card p-0">
+        <summary className="flex cursor-pointer list-none items-center gap-2 p-4 text-sm font-semibold">
+          <CalendarSync className="size-4 text-brand" aria-hidden /> Synchroniser avec Google Agenda, Apple Calendrier ou Outlook
+        </summary>
+        <div className="space-y-3 border-t border-line p-4 text-sm">
+          <p className="text-ink-soft">
+            Abonnez votre agenda personnel à ce lien privé : vos rendez-vous s&apos;y affichent et se mettent à jour automatiquement (toutes les 15 min à quelques heures selon
+            l&apos;application). Google Agenda : « Autres agendas » › « + » › « À partir de l&apos;URL ». iPhone / Mac : ouvrez le lien webcal.
+          </p>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <input readOnly value={`${calendarUrl}`} className="input text-xs" aria-label="Lien de synchronisation" />
+            <CopyButton value={calendarUrl} />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <a href={calendarUrl.replace(/^https?:/, "webcal:")} className="btn-secondary px-3 py-1.5 text-sm">
+              Ouvrir dans Apple Calendrier / Outlook
+            </a>
+            <form action={rotateCalendarToken}>
+              <button type="submit" className="btn-ghost px-3 py-1.5 text-sm text-danger">
+                Régénérer le lien (révoque l&apos;ancien)
+              </button>
+            </form>
+          </div>
+        </div>
+      </details>
 
       {visible.length === 0 && <p className="card text-sm text-ink-soft">{t.empty}</p>}
 

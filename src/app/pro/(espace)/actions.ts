@@ -12,6 +12,7 @@ import { requireBusiness } from "@/lib/pro";
 import { slugify } from "@/lib/slug";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Booking } from "@/lib/supabase/types";
+import { notifyWaitlistForSlot } from "@/lib/waitlist";
 
 const num = (min: number, max: number) => z.coerce.number().min(min).max(max);
 const optionalNum = (min: number, max: number) =>
@@ -45,7 +46,10 @@ export async function updateBookingStatus(formData: FormData): Promise<void> {
     return;
   }
   const admin = createAdminClient();
-  if (status === "cancelled") await admin.from("bookings").update({ cancelled_by: "business" }).eq("id", id);
+  if (status === "cancelled") {
+    await admin.from("bookings").update({ cancelled_by: "business" }).eq("id", id);
+    if (booking.status !== "cancelled") await notifyWaitlistForSlot(booking);
+  }
   try {
     const { data: contact } = await admin.from("businesses").select(BUSINESS_CONTACT_COLUMNS).eq("id", business.id).single<BusinessContact>();
     if (contact && status === "cancelled" && booking.status !== "cancelled" && new Date(booking.start_at) > new Date()) {
@@ -307,6 +311,7 @@ const rulesSchema = z
     price_per_extra_km: num(0, 50),
     travel_buffer_minutes: num(0, 240),
     rebooking_days: num(7, 730),
+    no_show_block_threshold: num(0, 10),
   })
   .refine((v) => v.max_radius_km >= v.free_radius_km);
 
@@ -325,6 +330,7 @@ export async function updateRules(formData: FormData): Promise<void> {
       price_per_extra_km: v.price_per_extra_km,
       travel_buffer_minutes: Math.round(v.travel_buffer_minutes),
       rebooking_days: Math.round(v.rebooking_days),
+      no_show_block_threshold: Math.round(v.no_show_block_threshold),
     })
     .eq("id", business.id);
   if (error) await logEvent("pro.updateRules", error.message);
@@ -349,4 +355,11 @@ export async function updateDepositSettings(formData: FormData): Promise<void> {
   const { error } = await supabase.from("businesses").update({ deposit_enabled: enabled, deposit_percent: Math.round(percent) }).eq("id", business.id);
   if (error) await logEvent("pro.updateDepositSettings", error.message);
   revalidatePath("/pro/abonnement");
+}
+
+/** Régénère le lien privé de synchronisation calendrier (l'ancien cesse de fonctionner). */
+export async function rotateCalendarToken(): Promise<void> {
+  const { business } = await requireBusiness();
+  await createAdminClient().from("businesses").update({ calendar_token: crypto.randomUUID() }).eq("id", business.id);
+  revalidatePath("/pro/agenda");
 }

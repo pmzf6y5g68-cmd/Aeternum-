@@ -18,8 +18,11 @@ export const PRODUCT_FACTS = `
 - Le client reçoit une confirmation par email avec invitation calendrier (.ics). Avis vérifiés : seuls les clients venus au rendez-vous peuvent noter.
 - Plan Gratuit : 0 €, ${p.freeMonthlyBookings} rendez-vous par mois, page publique et visibilité, agenda, équipe, congés, acomptes.
 - Plan Pro : ${p.proMonthlyPriceEur} € par mois, ${p.proTrialDays} jours d'essai offerts, sans engagement, résiliable à tout moment. Inclut : rendez-vous illimités, options upsell, rappel la veille avec confirmation en 1 clic, alerte 6 h avant si le client n'a pas confirmé, relance de fidélisation automatique.
+- Liste d'attente : quand un créneau se libère (annulation, acompte non payé), les clients inscrits sont prévenus par email automatiquement. Blocage automatique de la réservation en ligne après un nombre d'absences choisi par le professionnel.
+- Synchronisation : l'agenda pro peut être affiché dans Google Agenda, Apple Calendrier ou Outlook via un lien d'abonnement privé (lecture seule, mis à jour automatiquement).
+- Application installable sur iPhone, Android, Windows et Mac depuis le navigateur (web app), sans passer par un store.
 - Outils de partage : lien unique, QR code, bouton pour site web, message de répondeur, guide Google Maps et réseaux sociaux.
-- Il n'existe AUCUNE remise, code promo, tarif annuel, frais d'installation, application mobile native, synchronisation Google Agenda / Outlook, SMS, paiement intégral en ligne, caisse ou facturation, gestion de stock, multi-établissements sur un même compte, ni intégration comptable. Ne les promets jamais.
+- Il n'existe AUCUNE remise, code promo, tarif annuel, frais d'installation, application native dans les stores, synchronisation bidirectionnelle d'agenda (les RDV ajoutés dans Google Agenda ne bloquent pas les créneaux), SMS, paiement intégral en ligne, caisse ou facturation, gestion de stock, multi-établissements sur un même compte, ni intégration comptable. Ne les promets jamais.
 - Rendez-vous ne traite pas les professions de santé (médecins, dentistes, kinés, etc.).
 - Support : ${siteConfig.supportEmail}.
 `.trim();

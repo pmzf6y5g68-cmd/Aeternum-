@@ -162,6 +162,11 @@ export const fr = {
     slotTaken: "Ce créneau vient d'être pris. Choisissez-en un autre.",
     quotaExceeded: "Cet établissement n'accepte plus de réservations en ligne ce mois-ci. Contactez-le directement.",
     loginHint: "Déjà un compte ? Connectez-vous pour retrouver vos rendez-vous.",
+    blocked: "Vous ne pouvez plus réserver en ligne chez cet établissement après plusieurs absences. Contactez-le directement.",
+    waitlistCta: "M'alerter si un créneau se libère",
+    waitlistTitle: "Liste d'attente",
+    waitlistSubmit: "Prévenez-moi pendant 14 jours",
+    waitlistDone: "C'est noté : vous recevrez un email dès qu'un créneau se libère.",
   },
   account: {
     title: "Mes rendez-vous",

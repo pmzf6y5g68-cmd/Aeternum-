@@ -57,3 +57,23 @@ export function buildIcs(event: IcsEvent, now: Date = new Date()): string {
   ];
   return lines.map(fold).join("\r\n") + "\r\n";
 }
+
+/** Flux d'abonnement multi-événements (Google Agenda, Apple Calendrier, Outlook). */
+export function buildCalendarFeed(name: string, events: Omit<IcsEvent, "organizerName" | "organizerEmail">[], now: Date = new Date()): string {
+  const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Rendez-vous//Agenda//FR", "CALSCALE:GREGORIAN", "METHOD:PUBLISH", `X-WR-CALNAME:${escapeText(name)}`, "X-PUBLISHED-TTL:PT15M", "REFRESH-INTERVAL;VALUE=DURATION:PT15M"];
+  for (const e of events) {
+    lines.push(
+      "BEGIN:VEVENT",
+      `UID:${e.uid}`,
+      `DTSTAMP:${stamp(now)}`,
+      `DTSTART:${stamp(e.start)}`,
+      `DTEND:${stamp(e.end)}`,
+      `SUMMARY:${escapeText(e.summary)}`,
+      `DESCRIPTION:${escapeText(e.description)}`,
+      `LOCATION:${escapeText(e.location)}`,
+      "END:VEVENT",
+    );
+  }
+  lines.push("END:VCALENDAR");
+  return lines.map(fold).join("\r\n") + "\r\n";
+}

@@ -126,7 +126,11 @@ export default async function MyPage() {
             <label className="label">Prix par km au-delà (€)</label>
             <input name="price_per_extra_km" type="number" min={0} step="0.05" defaultValue={b.price_per_extra_km} className="input" />
           </div>
-          <div className="text-right sm:col-span-3">
+          <div>
+            <label className="label">Bloquer après N absences (0 = jamais)</label>
+            <input name="no_show_block_threshold" type="number" min={0} max={10} defaultValue={b.no_show_block_threshold} className="input" />
+          </div>
+          <div className="text-right sm:col-span-2 sm:self-end">
             <SubmitButton>{fr.common.save}</SubmitButton>
           </div>
         </form>

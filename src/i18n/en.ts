@@ -157,6 +157,11 @@ export const en: Dictionary = {
     slotTaken: "This slot was just taken. Please choose another.",
     quotaExceeded: "This business isn't taking online bookings this month. Please contact them directly.",
     loginHint: "Already have an account? Log in to find your appointments.",
+    blocked: "Online booking with this business is disabled after several no-shows. Please contact them directly.",
+    waitlistCta: "Alert me if a slot opens up",
+    waitlistTitle: "Waitlist",
+    waitlistSubmit: "Alert me for 14 days",
+    waitlistDone: "Done: you'll get an email as soon as a slot opens up.",
   },
   account: {
     title: "My appointments",

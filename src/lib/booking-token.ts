@@ -3,6 +3,7 @@ import { z } from "zod";
 import { BUSINESS_CONTACT_COLUMNS, notifyBusinessCancelledByClient, type BusinessContact } from "@/lib/email/booking-emails";
 import { errorMessage, logEvent } from "@/lib/events";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { notifyWaitlistForSlot } from "@/lib/waitlist";
 import type { Booking } from "@/lib/supabase/types";
 
 export async function loadBookingByToken(token: string): Promise<{ booking: Booking; business: BusinessContact } | null> {
@@ -36,6 +37,7 @@ export async function cancelByClient(booking: Booking, business: BusinessContact
     .in("status", [...ACTIVE])
     .select("id");
   if (!data?.length) return "already";
+  await notifyWaitlistForSlot(booking);
   if (booking.status !== "pending_deposit") {
     try {
       await notifyBusinessCancelledByClient(booking, business);

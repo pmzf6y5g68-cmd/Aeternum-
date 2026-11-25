@@ -4,6 +4,7 @@ import { errorMessage, logEvent } from "@/lib/events";
 import { json, jsonError } from "@/lib/http";
 import { getStripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { notifyWaitlistForSlot } from "@/lib/waitlist";
 
 /** Toutes les 30 min : libère les créneaux dont l'acompte n'a pas été payé après 25 min. */
 export async function GET(request: Request) {
@@ -16,12 +17,15 @@ export async function GET(request: Request) {
     .update({ status: "cancelled", cancelled_by: "system" })
     .eq("status", "pending_deposit")
     .lt("created_at", cutoff)
-    .select("id, business_id, stripe_checkout_session_id")
-    .returns<{ id: string; business_id: string; stripe_checkout_session_id: string | null }[]>();
+    .select("id, business_id, service_id, start_at, stripe_checkout_session_id")
+    .returns<{ id: string; business_id: string; service_id: string | null; start_at: string; stripe_checkout_session_id: string | null }[]>();
   if (error) {
     await logEvent("cron.cleanup-pending", error.message);
     return jsonError("db_error", 500);
   }
+
+  let waitlisted = 0;
+  for (const b of expired ?? []) waitlisted += await notifyWaitlistForSlot(b);
 
   // Expire les sessions Checkout pour empêcher un paiement tardif (best effort).
   const withSession = (expired ?? []).filter((b) => b.stripe_checkout_session_id);
@@ -46,5 +50,5 @@ export async function GET(request: Request) {
       }
     }
   }
-  return json({ released: expired?.length ?? 0, expired_sessions: expiredSessions });
+  return json({ released: expired?.length ?? 0, expired_sessions: expiredSessions, waitlist_notified: waitlisted });
 }
