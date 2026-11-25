@@ -1,0 +1,13 @@
+name = "slotly-email-inbound"
+main = "src/index.ts"
+compatibility_date = "2026-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+# Domaine de l'application Next.js (sans https://)
+APP_DOMAIN = "slotly.fr"
+# Optionnel : adresse vérifiée dans Email Routing qui reçoit une copie si l'API est injoignable
+FALLBACK_FORWARD = ""
+
+# Secret partagé avec Next.js (INBOUND_EMAIL_SECRET) :
+#   npx wrangler secret put INBOUND_SECRET

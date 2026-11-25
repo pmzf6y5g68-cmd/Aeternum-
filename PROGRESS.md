@@ -41,3 +41,18 @@
   `POST /api/webhooks/stripe` (double secret plateforme + Connect) : `checkout.session.completed` (abonnement / acompte,
   idempotent, paiement tardif → réactivation atomique ou remboursement auto), `customer.subscription.*`, `account.updated`.
 - `tsc`, `npm test`, `npm run build` verts.
+
+## Phase 4 — Agent Répondeur IA & Cloudflare Email Worker ✅
+- `src/lib/ai/knowledge.ts` : base de faits produit stricte (y compris la liste de ce qui N'EXISTE PAS).
+- `src/lib/ai/email-agent.ts` : Claude (`ANTHROPIC_MODEL`, défaut `claude-haiku-4-5`) avec outil `strict: true`
+  et `tool_choice` forcé (bascule automatique sur `auto` pour les modèles qui refusent le forçage), sortie validée par Zod,
+  escalade par défaut si sortie invalide / refus / panne. Post-traitement déterministe `finalizeDecision` :
+  ≤ 110 mots, aucun lien inventé, lien d'onboarding signé ajouté seulement pour un prospect intéressé/objection, signature.
+- `src/lib/ai/inbound-pipeline.ts` : idempotence `message_id`, garde-fous avant IA, rattachement du fil
+  (In-Reply-To/References puis repli par contact), stockage, opt-out → `stopped`, OOO → `ooo_paused`,
+  prospect → `replied` (stoppe la relance J+4), envoi Resend avec `In-Reply-To`/`References`, `increment_ai_reply_count`,
+  escalade (fil `escalated`) avec fil complet + brouillon vers `OWNER_ALERT_EMAIL`, jamais d'envoi au contact.
+- `POST /api/webhooks/inbound-email` : `X-Inbound-Secret` en temps constant, payload Zod.
+- `workers/email-inbound/` : `wrangler.toml`, `package.json` (postal-mime v4), `src/index.ts` (parse, en-têtes anti-boucle,
+  HTML → texte, 3 essais avec backoff, transfert de secours optionnel). `tsc` du worker vert.
+- `npm test` : 80 tests (dont 15 sur l'agent avec client Anthropic simulé).
