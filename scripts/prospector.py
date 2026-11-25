@@ -9,23 +9,34 @@ Rendez-vous — robot de prospection sortante, tous métiers (hors médical).
 5. Enregistre immédiatement prospect + email_threads + email_messages (Message-ID) dans Supabase
    pour que le répondeur autonome /api/webhooks/inbound-email ait tout le contexte.
 
+Débit : montée en charge progressive (warm-up) jusqu'au plafond MAX_EMAILS_PER_DAY, freinée
+automatiquement si les rebonds ou les plaintes dépassent les seuils Gmail/Yahoo. Liste de
+suppression, vérification MX, désinscription en 1 clic (RFC 8058), aucun pixel de suivi (CNIL).
+
 DRY_RUN=true par défaut : aucun envoi, aucune écriture en base.
 """
 from __future__ import annotations
 
+import base64
+import hashlib
+import hmac
 import json
+import math
 import os
 import random
 import re
 import sys
 import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any
 from urllib.parse import urljoin, urlparse
 
 import anthropic
+import dns.exception
+import dns.resolver
 import requests
 
 # ---------------------------------------------------------------------------
@@ -41,9 +52,18 @@ def env_bool(name: str, default: bool) -> bool:
 
 
 DRY_RUN = env_bool("DRY_RUN", True)
-MAX_EMAILS_PER_DAY = int(os.environ.get("MAX_EMAILS_PER_DAY", "25"))
-MIN_PAUSE_S = int(os.environ.get("MIN_PAUSE_SECONDS", "45"))
-MAX_PAUSE_S = int(os.environ.get("MAX_PAUSE_SECONDS", "150"))
+# Plafond quotidien absolu ; le plafond effectif suit la montée en charge et la santé d'envoi.
+MAX_EMAILS_PER_DAY = int(os.environ.get("MAX_EMAILS_PER_DAY", "1500"))
+WARMUP_START = int(os.environ.get("WARMUP_START", "40"))
+WARMUP_GROWTH = float(os.environ.get("WARMUP_GROWTH", "1.3"))
+RUNS_PER_DAY = max(1, int(os.environ.get("RUNS_PER_DAY", "5")))
+CONCURRENCY = max(1, int(os.environ.get("CONCURRENCY", "8")))
+MIN_PAUSE_S = float(os.environ.get("MIN_PAUSE_SECONDS", "2"))
+MAX_PAUSE_S = float(os.environ.get("MAX_PAUSE_SECONDS", "6"))
+# Seuils de santé (Google : plaintes < 0,1 %, jamais 0,3 %).
+BOUNCE_SLOWDOWN = 0.03
+COMPLAINT_SLOWDOWN = 0.0008
+COMPLAINT_PAUSE = 0.002
 FOLLOWUP_DELAY_DAYS = 4
 MAX_BODY_WORDS = 80
 
@@ -55,6 +75,8 @@ ANTHROPIC_MODEL = os.environ.get("ANTHROPIC_MODEL") or "claude-haiku-4-5"
 EMAIL_FROM = os.environ.get("EMAIL_FROM", "Rendez-vous <bonjour@rendez-vous.app>")
 EMAIL_REPLY_TO = os.environ.get("EMAIL_REPLY_TO", "bonjour@rendez-vous.app")
 APP_DOMAIN = os.environ.get("APP_DOMAIN", "rendez-vous.app").replace("https://", "").replace("http://", "")
+APP_URL = (os.environ.get("APP_URL") or f"https://{APP_DOMAIN}").rstrip("/")
+UNSUBSCRIBE_SECRET = os.environ.get("UNSUBSCRIBE_SECRET", "")
 COUNTRY = os.environ.get("PROSPECT_COUNTRY", "FR").upper()
 
 MARKETS: dict[str, dict[str, Any]] = {
@@ -204,34 +226,90 @@ def new_message_id() -> str:
     return f"<{uuid.uuid4()}@{APP_DOMAIN}>"
 
 
-def send_email(to: str, subject: str, text: str, in_reply_to: str | None = None, references: str | None = None) -> str:
-    """Envoie via Resend et renvoie le Message-ID que nous avons fixé (clé de threading)."""
+def b64url(data: bytes) -> str:
+    return base64.urlsafe_b64encode(data).decode().rstrip("=")
+
+
+def unsubscribe_token(email: str) -> str:
+    """Même format que src/lib/unsubscribe.ts : base64url(email) + "." + base64url(HMAC-SHA256("unsub:" + email))."""
+    email = email.strip().lower()
+    sig = hmac.new(UNSUBSCRIBE_SECRET.encode(), f"unsub:{email}".encode(), hashlib.sha256).digest()
+    return f"{b64url(email.encode())}.{b64url(sig)}"
+
+
+def unsubscribe_url(email: str) -> str:
+    return f"{APP_URL}/desinscription?t={unsubscribe_token(email)}"
+
+
+def send_email(to: str, subject: str, text: str, in_reply_to: str | None = None, references: str | None = None) -> tuple[str, str | None]:
+    """Envoie via Resend ; renvoie (Message-ID fixé par nous, identifiant Resend pour les événements)."""
     message_id = new_message_id()
     headers = {
         "Message-ID": message_id,
-        "List-Unsubscribe": f"<mailto:{EMAIL_REPLY_TO}?subject=STOP>",
+        # RFC 8058 : désinscription en 1 clic exigée par Gmail et Yahoo.
+        "List-Unsubscribe": f"<{APP_URL}/api/unsubscribe?t={unsubscribe_token(to)}>, <mailto:{EMAIL_REPLY_TO}?subject=STOP>",
+        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
     }
     if in_reply_to:
         headers["In-Reply-To"] = in_reply_to
     if references:
         headers["References"] = references
-    res = requests.post(
-        "https://api.resend.com/emails",
-        headers={"Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json"},
-        data=json.dumps({"from": EMAIL_FROM, "to": [to], "reply_to": EMAIL_REPLY_TO, "subject": subject, "text": text, "headers": headers}),
-        timeout=TIMEOUT,
-    )
-    if res.status_code >= 300:
-        raise RuntimeError(f"Resend {res.status_code}: {res.text[:300]}")
-    return message_id
+    for attempt in range(3):
+        res = requests.post(
+            "https://api.resend.com/emails",
+            headers={"Authorization": f"Bearer {RESEND_API_KEY}", "Content-Type": "application/json"},
+            data=json.dumps({"from": EMAIL_FROM, "to": [to], "reply_to": EMAIL_REPLY_TO, "subject": subject, "text": text, "headers": headers}),
+            timeout=TIMEOUT,
+        )
+        if res.status_code == 429:
+            time.sleep(2 ** attempt)
+            continue
+        if res.status_code >= 300:
+            raise RuntimeError(f"Resend {res.status_code}: {res.text[:300]}")
+        return message_id, res.json().get("id")
+    raise RuntimeError("Resend 429: limite de débit")
 
 
-FOOTER_FR = "Bien à vous,\nL'équipe Rendez-vous\n\nRépondez STOP pour ne plus être contacté."
-FOOTER_EN = "Best,\nThe Rendez-vous team\n\nReply STOP to opt out."
+def footer(email: str) -> str:
+    if COUNTRY == "FR":
+        return f"Bien à vous,\nL'équipe Rendez-vous\n\nRépondez STOP ou désinscrivez-vous en 1 clic : {unsubscribe_url(email)}"
+    return f"Best,\nThe Rendez-vous team\n\nReply STOP or unsubscribe in one click: {unsubscribe_url(email)}"
 
 
-def footer() -> str:
-    return FOOTER_FR if COUNTRY == "FR" else FOOTER_EN
+_MX_CACHE: dict[str, bool] = {}
+
+
+def has_mx(email: str) -> bool:
+    """Domaine capable de recevoir des emails (MX, sinon A) : évite les rebonds qui ruinent la réputation."""
+    domain = email.rsplit("@", 1)[-1].lower()
+    if domain in _MX_CACHE:
+        return _MX_CACHE[domain]
+    ok = False
+    try:
+        ok = len(dns.resolver.resolve(domain, "MX", lifetime=5)) > 0
+    except dns.resolver.NoAnswer:
+        try:
+            ok = len(dns.resolver.resolve(domain, "A", lifetime=5)) > 0
+        except dns.exception.DNSException:
+            ok = False
+    except dns.exception.DNSException:
+        ok = False
+    _MX_CACHE[domain] = ok
+    return ok
+
+
+def compute_daily_cap(first_send_at: datetime | None, sends_7d: int, bounces_7d: int, complaints_7d: int, now: datetime) -> tuple[int, str]:
+    """Plafond du jour : montée en charge exponentielle, freinée par les rebonds et plaintes des 7 derniers jours."""
+    days = 0 if first_send_at is None else max(0, (now - first_send_at).days)
+    cap = min(MAX_EMAILS_PER_DAY, int(WARMUP_START * (WARMUP_GROWTH ** days)))
+    if sends_7d >= 100:
+        complaint_rate = complaints_7d / sends_7d
+        bounce_rate = bounces_7d / sends_7d
+        if complaint_rate >= COMPLAINT_PAUSE:
+            return 0, f"pause : plaintes {complaint_rate:.2%} sur 7 j"
+        if complaint_rate >= COMPLAINT_SLOWDOWN or bounce_rate >= BOUNCE_SLOWDOWN:
+            return max(WARMUP_START, cap // 2), f"freinage : rebonds {bounce_rate:.1%}, plaintes {complaint_rate:.2%}"
+    return cap, f"montée en charge jour {days}"
 
 
 def word_count(text: str) -> int:
@@ -448,7 +526,10 @@ def run_followups(db: Supabase, budget: int) -> int:
             db.update("prospects", {"id": f"eq.{prospect['id']}"}, {"status": "replied", "next_followup_at": None})
             continue
 
-        body = f"{FOLLOWUP_FR if COUNTRY == 'FR' else FOLLOWUP_EN}\n\n{footer()}"
+        if is_suppressed(db, prospect["email"]):
+            db.update("prospects", {"id": f"eq.{prospect['id']}"}, {"status": "stopped", "next_followup_at": None})
+            continue
+        body = f"{FOLLOWUP_FR if COUNTRY == 'FR' else FOLLOWUP_EN}\n\n{footer(prospect['email'])}"
         subject = thread.get("subject") or "Rendez-vous"
         subject = subject if subject.lower().startswith("re:") else f"Re: {subject}"
         if DRY_RUN:
@@ -456,14 +537,14 @@ def run_followups(db: Supabase, budget: int) -> int:
             sent += 1
             continue
         try:
-            message_id = send_email(prospect["email"], subject, body, thread.get("last_message_id"), thread.get("references_chain"))
+            message_id, provider_id = send_email(prospect["email"], subject, body, thread.get("last_message_id"), thread.get("references_chain"))
         except (RuntimeError, requests.RequestException) as err:
             db.log_event(f"followup failed: {err}", {"prospect_id": prospect["id"]})
             continue
         references = " ".join(filter(None, [thread.get("references_chain"), message_id]))
         db.insert("email_messages", {
             "thread_id": thread["id"], "direction": "outbound", "from_email": EMAIL_REPLY_TO, "to_email": prospect["email"],
-            "message_id": message_id, "in_reply_to": thread.get("last_message_id"), "body_text": body,
+            "message_id": message_id, "provider_id": provider_id, "in_reply_to": thread.get("last_message_id"), "body_text": body,
         })
         db.update("email_threads", {"id": f"eq.{thread['id']}"}, {
             "last_message_id": message_id, "references_chain": references, "updated_at": now.isoformat(),
@@ -488,9 +569,13 @@ def already_known(db: Supabase, website: str, email: str | None) -> bool:
     if email:
         if db.select("prospects", {"select": "id", "email": f"eq.{email}", "limit": "1"}):
             return True
-        if db.select("studios", {"select": "id", "email": f"eq.{email}", "limit": "1"}):
+        if db.select("businesses", {"select": "id", "email": f"eq.{email}", "limit": "1"}):
             return True
     return False
+
+
+def is_suppressed(db: Supabase, email: str) -> bool:
+    return bool(db.select("email_suppressions", {"select": "email", "email": f"eq.{email.strip().lower()}", "limit": "1"}))
 
 
 def sent_today(db: Supabase) -> int:
@@ -498,84 +583,111 @@ def sent_today(db: Supabase) -> int:
     return db.count("prospects", {"last_contacted_at": f"gte.{start.isoformat()}"})
 
 
-def prospect_city(db: Supabase, client: anthropic.Anthropic, category: dict[str, str], city: str, budget: int, seen: set[str]) -> int:
-    sent = 0
-    try:
-        places = search_places(category, city)
-    except requests.RequestException as err:
-        db.log_event(f"serper failed for {category['slug']} {city}: {err}", {})
-        return 0
-    log(f"{category['label']} · {city} : {len(places)} résultats avec site web")
+def todays_cap(db: Supabase) -> tuple[int, str]:
+    now = datetime.now(timezone.utc)
+    since = (now - timedelta(days=7)).isoformat()
+    first = db.select("prospects", {"select": "last_contacted_at", "last_contacted_at": "not.is.null", "order": "last_contacted_at.asc", "limit": "1"})
+    first_at = datetime.fromisoformat(first[0]["last_contacted_at"].replace("Z", "+00:00")) if first else None
+    sends = db.count("prospects", {"last_contacted_at": f"gte.{since}", "status": "neq.error"})
+    bounces = db.count("email_events", {"type": "eq.email.bounced", "created_at": f"gte.{since}"})
+    complaints = db.count("email_events", {"type": "eq.email.complained", "created_at": f"gte.{since}"})
+    cap, reason = compute_daily_cap(first_at, sends, bounces, complaints, now)
+    if cap < MAX_EMAILS_PER_DAY and reason.startswith(("pause", "freinage")):
+        db.log_event(f"prospection {reason} (plafond {cap}/jour)", {"sends_7d": sends, "bounces_7d": bounces, "complaints_7d": complaints})
+    return cap, reason
 
-    for place in places:
-        if sent >= budget:
-            break
-        if place.website in seen:
-            continue
-        seen.add(place.website)
-        if already_known(db, place.website, None):
-            continue
 
-        site_text, tool, email = scrape_site(place.website)
-        base_row = {"name": place.name[:200], "category": category["slug"], "website": place.website, "city": city, "country": COUNTRY, "phone": place.phone}
-        if tool or not email or not site_text:
-            reason = f"outil {tool}" if tool else "pas d'email" if not email else "site injoignable"
-            log(f"  ✗ {place.name} — {reason}")
-            if not DRY_RUN:
+@dataclass
+class Candidate:
+    place: Place
+    email: str
+    site_text: str
+
+
+def qualify(db: Supabase, place: Place, seen: set[str]) -> Candidate | None:
+    """Scraping + filtres (outil existant, email, MX, suppression, doublon). Exécuté en parallèle."""
+    base_row = {"name": place.name[:200], "category": place.category["slug"], "website": place.website, "city": place.city, "country": COUNTRY, "phone": place.phone}
+    site_text, tool, email = scrape_site(place.website)
+    if tool or not email or not site_text or not has_mx(email):
+        reason = f"outil {tool}" if tool else "pas d'email" if not email else "site injoignable" if not site_text else "domaine sans MX"
+        log(f"  ✗ {place.name} — {reason}")
+        if not DRY_RUN:
+            try:
                 db.insert("prospects", {**base_row, "status": "disqualified", "detected_booking_tool": tool})
-            continue
-        if already_known(db, place.website, email):
-            continue
+            except requests.RequestException:
+                pass
+        return None
+    if email in seen or already_known(db, place.website, email) or is_suppressed(db, email):
+        return None
+    seen.add(email)
+    return Candidate(place=place, email=email, site_text=site_text)
 
+
+def discover(db: Supabase, pairs: list[tuple[dict[str, str], str]], seen_sites: set[str]) -> list[Place]:
+    places: list[Place] = []
+    for category, city in pairs:
         try:
-            draft = draft_email(client, place, site_text)
-        except anthropic.APIError as err:
-            db.log_event(f"claude failed: {err}", {"website": place.website})
+            found = search_places(category, city)
+        except requests.RequestException as err:
+            db.log_event(f"serper failed for {category['slug']} {city}: {err}", {})
             continue
-        if not draft or not draft.get("is_relevant_business"):
-            log(f"  ✗ {place.name} — non qualifié")
-            if not DRY_RUN:
-                db.insert("prospects", {**base_row, "email": email, "status": "disqualified"})
-            continue
+        fresh = [p for p in found if p.website not in seen_sites]
+        seen_sites.update(p.website for p in fresh)
+        log(f"{category['label']} · {city} : {len(fresh)} sites nouveaux")
+        places.extend(fresh)
+    return [p for p in places if not already_known(db, p.website, None)]
 
-        body = f"Bonjour,\n\n{draft['body']}\n\n{footer()}" if COUNTRY == "FR" else f"Hi,\n\n{draft['body']}\n\n{footer()}"
-        if DRY_RUN:
-            log(f"  ✓ [DRY_RUN] {place.name} <{email}>\n    Objet : {draft['subject']}\n    " + body.replace("\n", "\n    "))
-            sent += 1
-            continue
 
-        prospect = db.insert("prospects", {**base_row, "email": email, "status": "new"})
-        try:
-            message_id = send_email(email, draft["subject"], body)
-        except (RuntimeError, requests.RequestException) as err:
-            db.update("prospects", {"id": f"eq.{prospect['id']}"}, {"status": "error", "last_contacted_at": datetime.now(timezone.utc).isoformat()})
-            db.log_event(f"send failed: {err}", {"prospect_id": prospect["id"]})
-            continue
+def send_first_email(db: Supabase, client: anthropic.Anthropic, c: Candidate) -> bool:
+    place = c.place
+    base_row = {"name": place.name[:200], "category": place.category["slug"], "website": place.website, "city": place.city, "country": COUNTRY, "phone": place.phone}
+    try:
+        draft = draft_email(client, place, c.site_text)
+    except anthropic.APIError as err:
+        db.log_event(f"claude failed: {err}", {"website": place.website})
+        return False
+    if not draft or not draft.get("is_relevant_business"):
+        log(f"  ✗ {place.name} — non qualifié")
+        if not DRY_RUN:
+            db.insert("prospects", {**base_row, "email": c.email, "status": "disqualified"})
+        return False
 
-        now = datetime.now(timezone.utc)
-        db.update("prospects", {"id": f"eq.{prospect['id']}"}, {
-            "status": "sent",
-            "last_contacted_at": now.isoformat(),
-            "next_followup_at": (now + timedelta(days=FOLLOWUP_DELAY_DAYS)).isoformat(),
-        })
-        thread = db.insert("email_threads", {
-            "contact_email": email, "prospect_id": prospect["id"], "subject": draft["subject"], "status": "open",
-            "last_message_id": message_id, "references_chain": message_id,
-        })
-        db.insert("email_messages", {
-            "thread_id": thread["id"], "direction": "outbound", "from_email": EMAIL_REPLY_TO, "to_email": email,
-            "message_id": message_id, "in_reply_to": None, "body_text": body,
-        })
-        sent += 1
-        log(f"  ✓ envoyé -> {place.name} <{email}>")
-        time.sleep(random.uniform(MIN_PAUSE_S, MAX_PAUSE_S))
-    return sent
+    greeting = "Bonjour," if COUNTRY == "FR" else "Hi,"
+    body = f"{greeting}\n\n{draft['body']}\n\n{footer(c.email)}"
+    if DRY_RUN:
+        log(f"  ✓ [DRY_RUN] {place.name} <{c.email}>\n    Objet : {draft['subject']}\n    " + body.replace("\n", "\n    "))
+        return True
+
+    prospect = db.insert("prospects", {**base_row, "email": c.email, "status": "new"})
+    try:
+        message_id, provider_id = send_email(c.email, draft["subject"], body)
+    except (RuntimeError, requests.RequestException) as err:
+        db.update("prospects", {"id": f"eq.{prospect['id']}"}, {"status": "error", "last_contacted_at": datetime.now(timezone.utc).isoformat()})
+        db.log_event(f"send failed: {err}", {"prospect_id": prospect["id"]})
+        return False
+
+    now = datetime.now(timezone.utc)
+    db.update("prospects", {"id": f"eq.{prospect['id']}"}, {
+        "status": "sent",
+        "last_contacted_at": now.isoformat(),
+        "next_followup_at": (now + timedelta(days=FOLLOWUP_DELAY_DAYS)).isoformat(),
+    })
+    thread = db.insert("email_threads", {
+        "contact_email": c.email, "prospect_id": prospect["id"], "subject": draft["subject"], "status": "open",
+        "last_message_id": message_id, "references_chain": message_id,
+    })
+    db.insert("email_messages", {
+        "thread_id": thread["id"], "direction": "outbound", "from_email": EMAIL_REPLY_TO, "to_email": c.email,
+        "message_id": message_id, "provider_id": provider_id, "in_reply_to": None, "body_text": body,
+    })
+    log(f"  ✓ envoyé -> {place.name} <{c.email}>")
+    return True
 
 
 def main() -> int:
     missing = [name for name, value in {
         "SUPABASE_URL": SUPABASE_URL, "SUPABASE_SERVICE_ROLE_KEY": SUPABASE_KEY, "SERPER_API_KEY": SERPER_API_KEY,
-        "ANTHROPIC_API_KEY": os.environ.get("ANTHROPIC_API_KEY", ""),
+        "ANTHROPIC_API_KEY": os.environ.get("ANTHROPIC_API_KEY", ""), "UNSUBSCRIBE_SECRET": UNSUBSCRIBE_SECRET,
     }.items() if not value]
     if not DRY_RUN and not RESEND_API_KEY:
         missing.append("RESEND_API_KEY")
@@ -588,15 +700,18 @@ def main() -> int:
 
     db = Supabase(SUPABASE_URL, SUPABASE_KEY)
     client = anthropic.Anthropic()
-    log(f"Démarrage — pays {COUNTRY}, DRY_RUN={DRY_RUN}, plafond {MAX_EMAILS_PER_DAY}/jour, modèle {ANTHROPIC_MODEL}")
-
+    global MIN_PAUSE_S, MAX_PAUSE_S
     if DRY_RUN:
-        global MIN_PAUSE_S, MAX_PAUSE_S
         MIN_PAUSE_S, MAX_PAUSE_S = 0, 0
-
-    budget = MAX_EMAILS_PER_DAY - (0 if DRY_RUN else sent_today(db))
+        daily_cap, reason = min(MAX_EMAILS_PER_DAY, WARMUP_START), "dry run"
+    else:
+        daily_cap, reason = todays_cap(db)
+    remaining_today = daily_cap - (0 if DRY_RUN else sent_today(db))
+    # Le plafond du jour est réparti sur plusieurs exécutions (lissage = meilleure délivrabilité).
+    budget = min(remaining_today, math.ceil(daily_cap / RUNS_PER_DAY))
+    log(f"Démarrage — {COUNTRY}, DRY_RUN={DRY_RUN}, plafond {daily_cap}/jour ({reason}), budget de cette exécution {max(0, budget)}")
     if budget <= 0:
-        log("Plafond quotidien déjà atteint.")
+        log("Plafond atteint ou envoi en pause.")
         return 0
 
     followups = run_followups(db, budget)
@@ -606,16 +721,34 @@ def main() -> int:
     cities = [c.strip() for c in cities_env.split(",") if c.strip()] or list(MARKETS[COUNTRY]["cities"])
     wanted = {c.strip() for c in os.environ.get("PROSPECT_CATEGORIES", "").split(",") if c.strip()}
     categories = [c for c in PROSPECT_CATEGORIES if not wanted or c["slug"] in wanted]
-    # Rotation aléatoire métier × ville : chaque jour explore une combinaison différente du marché.
+    # Rotation aléatoire métier × ville : chaque exécution explore une autre partie du marché.
     pairs = [(cat, city) for cat in categories for city in cities]
     random.shuffle(pairs)
+    searches = int(os.environ.get("MAX_SEARCHES_PER_RUN", "0")) or max(3, math.ceil(budget / 3))
 
     sent = 0
-    seen: set[str] = set()
-    for category, city in pairs[: max(1, int(os.environ.get("MAX_SEARCHES_PER_RUN", "12")))]:
-        if budget - sent <= 0:
+    seen_sites: set[str] = set()
+    seen_emails: set[str] = set()
+    offset = 0
+    while sent < budget and offset < len(pairs):
+        batch = pairs[offset: offset + min(searches, 10)]
+        offset += len(batch)
+        places = discover(db, batch, seen_sites)
+        with ThreadPoolExecutor(max_workers=CONCURRENCY) as pool:
+            candidates = [c for c in pool.map(lambda p: qualify(db, p, seen_emails), places) if c]
+        for candidate in candidates:
+            if sent >= budget:
+                break
+            try:
+                ok = send_first_email(db, client, candidate)
+            except requests.RequestException as err:
+                db.log_event(f"db error: {err}", {"email_domain": candidate.email.rsplit("@", 1)[-1]})
+                ok = False
+            if ok:
+                sent += 1
+                time.sleep(random.uniform(MIN_PAUSE_S, MAX_PAUSE_S))
+        if offset >= searches * 3:
             break
-        sent += prospect_city(db, client, category, city, budget - sent, seen)
 
     log(f"Terminé — {followups} relance(s), {sent} nouveau(x) email(s).")
     return 0

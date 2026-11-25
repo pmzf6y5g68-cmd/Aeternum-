@@ -107,6 +107,22 @@ do $$ begin
   assert claim_guest_bookings('33333333-3333-3333-3333-333333333333', 'C1@x.fr') = 1, 'claim';
 end $$;
 
+-- Évolutions : liste d'attente, suppression, anti-absence, jeton calendrier
+do $$ begin
+  insert into waitlist_entries (business_id, name, email, date_from, date_to) values ('b0000000-0000-0000-0000-000000000001', 'W', 'w@x.fr', '2026-12-01', '2026-12-14');
+  begin
+    insert into waitlist_entries (business_id, name, email, date_from, date_to) values ('b0000000-0000-0000-0000-000000000001', 'W', 'w2@x.fr', '2026-12-01', '2027-02-01');
+    raise exception 'plage > 31 j acceptée';
+  exception when check_violation then null; end;
+  begin
+    insert into email_suppressions (email, reason) values ('Majuscule@X.fr', 'bounce');
+    raise exception 'email non normalisé accepté';
+  exception when check_violation then null; end;
+  insert into email_suppressions (email, reason) values ('ok@x.fr', 'unsubscribe');
+  assert (select no_show_block_threshold from businesses where slug = 'salon-elegance') = 2, 'seuil absences par défaut';
+  assert (select count(distinct calendar_token) from businesses) = 2, 'jetons calendrier uniques';
+end $$;
+
 -- RLS
 set local role authenticated;
 set local request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
@@ -115,6 +131,8 @@ do $$ begin
   assert (select count(*) from businesses) = 0, 'usager : aucun établissement en direct';
   assert (select count(*) from reviews) = 2, 'avis publics';
   assert (select count(*) from prospects) = 0, 'prospects invisibles';
+  assert (select count(*) from email_suppressions) = 0, 'suppressions invisibles';
+  assert (select count(*) from waitlist_entries) = 0, 'liste d''attente d''autrui invisible';
 end $$;
 set local request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
 do $$ begin
@@ -128,6 +146,12 @@ do $$ begin
     raise exception 'prix modifiable !';
   exception when insufficient_privilege then null; end;
   update bookings set status = 'confirmed' where client_name = 'Client 1';
+  update businesses set no_show_block_threshold = 3 where slug = 'salon-elegance';
+  assert (select count(*) from waitlist_entries) = 1, 'pro : voit sa liste d''attente';
+  begin
+    update businesses set calendar_token = gen_random_uuid();
+    raise exception 'jeton calendrier modifiable !';
+  exception when insufficient_privilege then null; end;
   assert (select count(*) from search_businesses()) = 2, 'recherche accessible';
 end $$;
 reset role;

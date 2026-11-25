@@ -19,6 +19,7 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: python3 -m py_compile scripts/prospector.py
+      - run: pip install -r scripts/requirements.txt && python3 scripts/test_prospector.py
 
   sql:
     runs-on: ubuntu-latest

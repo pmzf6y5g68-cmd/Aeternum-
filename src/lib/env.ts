@@ -25,4 +25,6 @@ export const env = {
   inboundSecret: () => required("INBOUND_EMAIL_SECRET"),
   prefillSecret: () => required("PREFILL_SECRET"),
   cronSecret: () => required("CRON_SECRET"),
+  unsubscribeSecret: () => required("UNSUBSCRIBE_SECRET"),
+  resendWebhookSecret: () => process.env.RESEND_WEBHOOK_SECRET ?? "",
 };

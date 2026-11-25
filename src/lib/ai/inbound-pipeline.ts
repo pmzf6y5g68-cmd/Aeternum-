@@ -7,6 +7,7 @@ import { errorMessage, logEvent } from "@/lib/events";
 import { signPrefill } from "@/lib/prefill";
 import { getCategory } from "@/config/categories";
 import { countMonthlyBookings, publicBusinessUrl } from "@/lib/pro";
+import { suppressEmail } from "@/lib/suppression";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Business, EmailMessage, EmailThread, Prospect } from "@/lib/supabase/types";
 import { decideReply, finalizeDecision, replySubject, type AgentContext, type AgentDecision, type ContactContext } from "./email-agent";
@@ -198,7 +199,7 @@ export async function processInboundEmail(email: InboundEmail, deps: PipelineDep
 
   // 3. Opt-out & absence : traitement déterministe, aucune réponse.
   if (decision.action === "opt_out") {
-    await Promise.all([admin.from("email_threads").update({ status: "stopped" }).eq("id", thread.id), stopProspect("stopped"), setIntent("opt_out")]);
+    await Promise.all([admin.from("email_threads").update({ status: "stopped" }).eq("id", thread.id), stopProspect("stopped"), setIntent("opt_out"), suppressEmail(contactEmail, "unsubscribe")]);
     return { status: "opted_out" };
   }
   if (decision.action === "ooo_pause") {
@@ -253,7 +254,7 @@ export async function processInboundEmail(email: InboundEmail, deps: PipelineDep
 
   switch (final.action) {
     case "opt_out":
-      await Promise.all([admin.from("email_threads").update({ status: "stopped" }).eq("id", thread.id), stopProspect("stopped"), setIntent("opt_out")]);
+      await Promise.all([admin.from("email_threads").update({ status: "stopped" }).eq("id", thread.id), stopProspect("stopped"), setIntent("opt_out"), suppressEmail(contactEmail, "unsubscribe")]);
       return { status: "opted_out" };
     case "ooo_pause":
       await Promise.all([stopProspect("ooo_paused"), setIntent("out_of_office")]);
