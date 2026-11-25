@@ -1,0 +1,14 @@
+node_modules/
+.next/
+out/
+.env
+.env.local
+.env*.local
+*.tsbuildinfo
+next-env.d.ts
+.vercel
+__pycache__/
+*.pyc
+.venv/
+workers/email-inbound/node_modules/
+workers/email-inbound/.wrangler/
