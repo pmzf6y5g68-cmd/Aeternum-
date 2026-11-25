@@ -10,7 +10,8 @@ import { fr } from "@/i18n/fr";
 
 export const metadata: Metadata = {
   title: "Logiciel de prise de rendez-vous en ligne pour professionnels",
-  description: "Page de réservation, agenda d'équipe, rappels, acomptes anti-absence et visibilité auprès de milliers de clients. Gratuit pour démarrer.",
+  description: "Page de réservation, agenda d'équipe, rappels, acomptes anti-absence et visibilité auprès des clients. Gratuit pour démarrer, Pro dès 39 €/mois sans commission.",
+  alternates: { canonical: "/pro" },
 };
 
 const t = fr.pro;

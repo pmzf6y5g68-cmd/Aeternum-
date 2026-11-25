@@ -116,3 +116,17 @@ créneaux visibles dès les résultats, carte, fiche avec réservation pas à pa
 - Bug corrigé : dépassement numérique de la montée en charge après plusieurs années (`1.3 ** jours`).
 - Vérifs : `tsc` ✅ · 111 tests ✅ · build ✅ · `py_compile` + `test_prospector.py` ✅ · SQL ✅ · HTTP (assistant 503 sans clé,
   readiness 401 / « non prêt » détaillé, pages paiement, cron billing 401) · captures assistant mobile/desktop sans erreur JS.
+
+## X — Prix accepté par tous & référencement Google / IA ✅
+- Recherche prix : Doctolib (~135–149 €/praticien, sans commission), Planity (devis, ~60–100 €, sans commission),
+  Booksy (59 € HT + 10 €/collaborateur), Treatwell (commission 25–35 % très critiquée).
+- **Tarification** : `src/lib/domain/plans.ts` — Pro 39 €/mois le 1er agenda + 15 €/agenda, annuel 2 mois offerts, 0 % de
+  commission (`newClientCommissionPercent = 0`), gratuit pour les clients. `src/lib/stripe-catalog.ts` : produit, prix
+  à paliers (`lookup_key`) et portail client créés automatiquement, quantité = membres actifs (`syncSeats`, au prorata),
+  codes promo acceptés au checkout. Simulateur de prix sur `/pro`, choix mensuel/annuel dans l'abonnement, CGU dynamiques.
+- **SEO / IA** : `src/lib/seo.ts` (types schema.org par métier, offres, horaires, avis, ReserveAction, FAQ factuelle),
+  JSON-LD sur accueil / métiers / villes / fiches, `robots.ts` (22 robots moteurs + IA autorisés), `/sitemap.xml` + `/sitemaps/*`,
+  `/llms.txt`, IndexNow (`/indexnow.txt`, ping à chaque création / modification), images OG par fiche, canoniques,
+  vérification Search Console / Bing, RPC `category_stats`, colonne `businesses.updated_at`.
+- Vérifs : `tsc` ✅ · 121 tests ✅ · build ✅ · SQL ✅ · HTTP : robots, sitemap index et parties, llms.txt, clé IndexNow,
+  image OG, canoniques et types JSON-LD vérifiés.

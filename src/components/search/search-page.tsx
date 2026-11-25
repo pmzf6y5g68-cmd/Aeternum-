@@ -12,6 +12,7 @@ import { SiteHeader } from "../site-header";
 import { FiltersBar } from "./filters-bar";
 import { ResultsView } from "./results-view";
 import type { SerializedResult } from "./types";
+import { breadcrumbJsonLd, faqJsonLd, itemListJsonLd, jsonLdScript } from "@/lib/seo";
 
 export type RawParams = Record<string, string | string[] | undefined>;
 
@@ -32,9 +33,11 @@ export interface SearchPageProps {
   title?: string;
   intro?: string;
   basePath: string;
+  /** Pages métier / ville indexables : FAQ factuelle + données structurées. */
+  seo?: { faq: { question: string; answer: string }[]; breadcrumbs: { name: string; path: string }[]; listName: string };
 }
 
-export async function SearchPage({ params, fixedCategory, fixedCity, title, intro, basePath }: SearchPageProps) {
+export async function SearchPage({ params, fixedCategory, fixedCity, title, intro, basePath, seo }: SearchPageProps) {
   const q = one(params, "q")?.slice(0, 100) ?? "";
   const category = fixedCategory ?? getCategory(one(params, "categorie"))?.slug ?? null;
   let lat = num(params, "lat");
@@ -117,6 +120,18 @@ export async function SearchPage({ params, fixedCategory, fixedCity, title, intr
           defaultPlaceLabel: fixedCity?.label ?? placeLabel,
         }}
       />
+      {seo && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: jsonLdScript([
+              breadcrumbJsonLd(seo.breadcrumbs),
+              itemListJsonLd(seo.listName, results.map((r) => ({ name: r.name, path: r.path, rating_avg: r.rating_avg, rating_count: r.rating_count, min_price_eur: r.min_price_eur, city: r.city }))),
+              faqJsonLd(seo.faq),
+            ]),
+          }}
+        />
+      )}
       <main className="mx-auto max-w-7xl px-4 py-5">
         <div className="mb-4 space-y-3">
           <div>
@@ -157,6 +172,19 @@ export async function SearchPage({ params, fixedCategory, fixedCity, title, intr
               </Link>
             )}
           </nav>
+        )}
+        {seo && seo.faq.length > 0 && (
+          <section className="mt-10 max-w-3xl">
+            <h2 className="mb-3 text-xl font-bold">Questions fréquentes</h2>
+            <div className="space-y-2">
+              {seo.faq.map((f) => (
+                <details key={f.question} className="card p-4">
+                  <summary className="cursor-pointer font-semibold">{f.question}</summary>
+                  <p className="mt-2 text-sm leading-relaxed text-ink-soft">{f.answer}</p>
+                </details>
+              ))}
+            </div>
+          </section>
         )}
       </main>
       <SiteFooter />

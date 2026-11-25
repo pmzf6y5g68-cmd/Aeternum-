@@ -40,6 +40,8 @@ do $$ declare r record; begin
   assert (select sponsored from search_businesses() limit 1), 'drapeau sponsored';
   assert (select slug from search_businesses(p_lat => 45.75, p_lng => 4.85, p_sort => 'distance') limit 1) = 'salon-elegance', 'tri distance non influencé';
   update businesses set plan = 'free' where slug = 'yoga-flow';
+  assert (select businesses from category_stats('coiffeur')) = 1 and (select min_price from category_stats('coiffeur')) = 40, 'stats métier';
+  assert (select businesses from category_stats('coiffeur', 'paris')) = 0, 'stats métier × ville';
 end $$;
 
 -- Réservation avec équipe : « peu importe » prend le premier membre libre puis le suivant

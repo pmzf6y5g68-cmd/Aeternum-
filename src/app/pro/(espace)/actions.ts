@@ -14,6 +14,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { Booking } from "@/lib/supabase/types";
 import { notifyWaitlistForSlot } from "@/lib/waitlist";
 import { syncSeats } from "@/lib/stripe-catalog";
+import { businessUrlsToPing, pingIndexNow } from "@/lib/indexnow";
 
 const num = (min: number, max: number) => z.coerce.number().min(min).max(max);
 const optionalNum = (min: number, max: number) =>
@@ -119,6 +120,7 @@ export async function upsertService(formData: FormData): Promise<void> {
     ? await supabase.from("services").update(row).eq("id", input.id).eq("business_id", business.id)
     : await supabase.from("services").insert(row);
   if (result.error) await logEvent("pro.upsertService", result.error.message);
+  else await pingIndexNow(businessUrlsToPing(business));
   revalidatePath("/pro/prestations");
 }
 
@@ -309,6 +311,7 @@ export async function updatePage(formData: FormData): Promise<void> {
   }
   const { error } = await supabase.from("businesses").update(patch).eq("id", business.id);
   if (error) await logEvent("pro.updatePage", error.message);
+  else await pingIndexNow(businessUrlsToPing({ slug: business.slug, category: business.category, city_slug: (patch.city_slug as string | undefined) ?? business.city_slug }));
   revalidatePath("/pro/ma-page");
 }
 

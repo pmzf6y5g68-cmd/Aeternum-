@@ -6,6 +6,9 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { CATEGORIES, CATEGORY_BY_SLUG, FEATURED_CATEGORIES, GROUPS } from "@/config/categories";
 import { fr } from "@/i18n/fr";
+import { jsonLdScript, siteJsonLd } from "@/lib/seo";
+
+export const metadata = { alternates: { canonical: "/" } };
 
 const t = fr.home;
 const howIcons = [Search, Scale, CalendarCheck2];
@@ -17,6 +20,7 @@ export default function HomePage() {
   return (
     <>
       <SiteHeader />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(siteJsonLd()) }} />
       <main>
         <section className="relative overflow-hidden bg-brand pb-16 pt-10 md:pb-24 md:pt-16">
           <div className="pointer-events-none absolute -right-32 -top-32 size-[28rem] rounded-full bg-white/5" />

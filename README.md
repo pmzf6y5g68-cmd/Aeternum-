@@ -61,7 +61,7 @@ Ajouter un métier : une entrée dans `src/config/categories.ts` (+ la ligne cor
 4. Récupérez `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
 
 ### 2. Stripe (abonnement Pro + Connect)
-1. Produit « Rendez-vous Pro », prix récurrent **49 €/mois** → `STRIPE_PRICE_PRO_MONTHLY`.
+1. Rien à créer pour l'abonnement : produit, prix et portail sont provisionnés automatiquement.
 2. Activez **Connect** (comptes **Express**, France) et le **Customer portal**.
 3. Webhook `https://votre-domaine/api/webhooks/stripe`, créé **deux fois** :
    - *Votre compte* : `checkout.session.completed`, `customer.subscription.created|updated|deleted` → `STRIPE_WEBHOOK_SECRET`.
@@ -138,15 +138,39 @@ PayPal, Link, Bancontact… Dans Stripe → *Paramètres → Moyens de paiement*
 vous voulez proposer (PayPal requiert l'éligibilité du compte). Le domaine Apple Pay / Google Pay est enregistré
 automatiquement sur chaque compte connecté. `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` obligatoire.
 
-## Modèle économique
-| Source | Inspiration | Détail |
-| --- | --- | --- |
-| Abonnement Pro 49 €/mois | Doctolib, Planity | 0 % de commission, RDV illimités, rappels, mise en avant |
-| Commission plan Gratuit | Treatwell | 20 % (max 20 €) du 1er RDV honoré d'un nouveau client marketplace ; 0 % sur les clients du pro (`?via=pro`) |
-| Mise en avant Pro | Uber Eats Ads | bonus en tri « Pertinence » uniquement, mention « Mis en avant » |
-| Frais sur acompte (option) | Uber Eats frais de service | `PLATFORM_DEPOSIT_FEE_PERCENT` (0 par défaut) via `application_fee_amount` |
+## Référencement Google et assistants IA
+Tout est automatique côté code :
+- **Données structurées schema.org exactes** : type précis par métier (HairSalon, AutoRepair, Attorney, Restaurant…),
+  prestations et fourchettes de prix, horaires (pauses comprises), zone d'intervention, avis vérifiés, note,
+  action « Réserver » ; Organization + WebSite + recherche interne sur l'accueil ; fil d'Ariane, liste et FAQ
+  factuelle (chiffres réels : nombre d'établissements, prix d'entrée, domicile, visio, notes) sur chaque page
+  métier et métier × ville.
+- **Sitemaps** : `/sitemap.xml` (index) → pages fixes + 43 métiers, toutes les combinaisons métier × ville, fiches
+  par lots de 40 000, avec date de dernière modification.
+- **robots.txt** : Googlebot, Bingbot, Applebot, GPTBot, OAI-SearchBot, ChatGPT-User, ClaudeBot, Claude-SearchBot,
+  PerplexityBot, Google-Extended… explicitement autorisés ; espaces privés exclus.
+- **`/llms.txt`** : guide factuel du site pour les assistants IA (structure des URL, lien direct `#reserver`).
+- **IndexNow** : chaque création / modification de fiche est signalée instantanément à Bing (Copilot), Yandex…
+- **Images de partage** générées pour chaque fiche, URL canoniques, métadonnées complètes.
 
-L'usager ne paie jamais pour réserver : c'est ce qui fait grossir la marketplace (et donc la valeur pour les pros).
+À faire **une fois** (comptes à votre nom) : Google Search Console et Bing Webmaster Tools → ajouter le domaine
+(codes `GOOGLE_SITE_VERIFICATION`, `BING_SITE_VERIFICATION`), soumettre `https://votre-domaine/sitemap.xml` ;
+générer `INDEXNOW_KEY` (`openssl rand -hex 16`). `NEXT_PUBLIC_APP_URL` doit être défini **avant** le build.
+Chaque pro est guidé (onglet « Partager ») pour ajouter son lien « Réserver » sur sa fiche Google.
+
+## Modèle économique
+Calé sur ce que le marché accepte : **abonnement, prix public, zéro commission** (Doctolib ~135–149 €/praticien,
+Planity sur devis, Booksy 59 € HT + 10 €/collaborateur ; les commissions type Treatwell sont le premier reproche des pros).
+
+| Offre | Prix | Pour qui |
+| --- | --- | --- |
+| Gratuit | 0 €, sans carte, 30 RDV/mois, 0 % de commission | essayer, petits volumes |
+| Pro | **39 €/mois** le 1er agenda + **15 €** par agenda supplémentaire ; annuel 390 € + 150 € (2 mois offerts) | indépendants → équipes |
+| Clients | **toujours gratuit** | tout le monde |
+
+Le catalogue Stripe (produit, prix mensuel / annuel à paliers par agenda, portail client) est créé automatiquement ;
+le nombre d'agendas facturés suit l'équipe active (au prorata). Leviers optionnels désactivés par défaut :
+commission nouveaux clients (`newClientCommissionPercent`), frais sur acompte (`PLATFORM_DEPOSIT_FEE_PERCENT`).
 
 ## Assistant IA
 Bouton « Assistant » sur toutes les pages publiques (plein écran sur mobile). Il cherche, montre de vrais

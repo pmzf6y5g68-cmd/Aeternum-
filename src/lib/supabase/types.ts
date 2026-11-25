@@ -47,6 +47,7 @@ export interface Business {
   rating_count: number;
   no_show_block_threshold: number;
   calendar_token: string;
+  updated_at: string;
   locale: "fr" | "en";
   created_at: string;
 }
@@ -57,7 +58,7 @@ export const PUBLIC_BUSINESS_COLUMNS =
 
 export type PublicBusiness = Omit<
   Business,
-  "owner_id" | "email" | "stripe_customer_id" | "stripe_subscription_id" | "stripe_connect_account_id" | "rebooking_days" | "created_at" | "calendar_token" | "no_show_block_threshold"
+  "owner_id" | "email" | "stripe_customer_id" | "stripe_subscription_id" | "stripe_connect_account_id" | "rebooking_days" | "created_at" | "calendar_token" | "no_show_block_threshold" | "updated_at"
 >;
 
 export interface Staff {

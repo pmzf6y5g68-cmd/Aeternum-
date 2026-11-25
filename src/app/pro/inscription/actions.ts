@@ -6,6 +6,7 @@ import { LOCATION_MODES, getCategory, type LocationMode } from "@/config/categor
 import { buildSeedAddons, buildSeedHours, buildSeedServices } from "@/lib/catalog";
 import { geocodeAddress } from "@/lib/domain/geocode";
 import { errorMessage, logEvent } from "@/lib/events";
+import { businessUrlsToPing, pingIndexNow } from "@/lib/indexnow";
 import { businessSlug, slugify } from "@/lib/slug";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentUser } from "@/lib/supabase/server";
@@ -89,6 +90,7 @@ export async function createBusiness(_prev: OnboardingState, formData: FormData)
     const emails = Array.from(new Set([input.email, (user.email ?? "").toLowerCase()].filter(Boolean)));
     await admin.from("prospects").update({ status: "converted", next_followup_at: null }).in("email", emails);
     await admin.from("email_threads").update({ business_id: business.id }).in("contact_email", emails);
+    await pingIndexNow(businessUrlsToPing({ slug, category: category.slug, city_slug: slugify(city) }));
   } catch (err) {
     await logEvent("onboarding", errorMessage(err), { user_id: user.id });
     return { error: "server" };

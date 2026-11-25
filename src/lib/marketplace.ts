@@ -355,3 +355,13 @@ export async function topCitiesForCategory(category: string, limit = 12): Promis
   }
   return [...counts.values()].sort((a, b) => b.count - a.count).slice(0, limit);
 }
+
+/** Statistiques publiques d'un métier (et d'une ville) pour les FAQ et données structurées. */
+export async function loadCategoryStats(category: string, citySlug: string | null = null): Promise<import("@/lib/seo").CategoryStats | null> {
+  try {
+    const { data } = await createAdminClient().rpc("category_stats", { p_category: category, p_city_slug: citySlug }).single<import("@/lib/seo").CategoryStats>();
+    return data ?? null;
+  } catch {
+    return null;
+  }
+}

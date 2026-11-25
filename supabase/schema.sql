@@ -299,6 +299,9 @@ alter table public.bookings add column if not exists commission_eur numeric(10,2
 alter table public.bookings add column if not exists commission_invoiced boolean not null default false;
 create index if not exists bookings_commission_idx on public.bookings (business_id) where commission_eur > 0 and not commission_invoiced;
 
+-- Référencement : date de dernière modification de la fiche (sitemaps, IndexNow).
+alter table public.businesses add column if not exists updated_at timestamptz not null default now();
+
 -- Liste d'attente : prévenue par email dès qu'un créneau se libère (annulation, acompte expiré).
 create table if not exists public.waitlist_entries (
   id uuid primary key default gen_random_uuid(),
@@ -357,6 +360,7 @@ begin
 
   update public.businesses b
      set min_price_eur = v_min,
+         updated_at = now(),
          search_tsv =
            setweight(to_tsvector('french', public.norm(b.name)), 'A') ||
            setweight(to_tsvector('french', public.norm(b.category || ' ' || coalesce(b.tagline, ''))), 'B') ||
@@ -564,6 +568,21 @@ as $$
    limit least(greatest(p_limit, 1), 100) offset greatest(p_offset, 0);
 $$;
 grant execute on function public.search_businesses(text, text, text, double precision, double precision, double precision, numeric, text, numeric, text, integer, integer) to anon, authenticated, service_role;
+
+-- Statistiques publiques par métier (et ville) : alimentent les FAQ et données structurées des pages SEO.
+create or replace function public.category_stats(p_category text, p_city_slug text default null)
+returns table (businesses bigint, min_price numeric, avg_price numeric, avg_rating numeric, reviews bigint, at_home bigint, online bigint, cities bigint)
+language sql stable security definer set search_path = public
+as $$
+  select count(*), min(min_price_eur), round(avg(min_price_eur), 0),
+         round(avg(nullif(rating_avg, 0)), 1), coalesce(sum(rating_count), 0),
+         count(*) filter (where 'at_home' = any(modes)), count(*) filter (where 'online' = any(modes)),
+         count(distinct city_slug)
+    from public.businesses
+   where published and min_price_eur is not null and category = p_category
+     and (p_city_slug is null or city_slug = p_city_slug);
+$$;
+grant execute on function public.category_stats(text, text) to anon, authenticated, service_role;
 
 -- ---------------------------------------------------------------------
 -- RPC atomique de création de RDV (équipe, capacité, congés, quota)

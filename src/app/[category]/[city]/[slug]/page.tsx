@@ -17,6 +17,7 @@ import { formatDuration, formatEur, startingPriceCents } from "@/lib/domain/pric
 import { isValidDateString, zonedDateString } from "@/lib/domain/time";
 import { loadCatalog, loadPublicBusiness, pricingOf } from "@/lib/marketplace";
 import { businessPath } from "@/lib/slug";
+import { breadcrumbJsonLd, businessJsonLd, jsonLdScript } from "@/lib/seo";
 import { getCurrentUser } from "@/lib/supabase/server";
 import type { CustomerProfile } from "@/lib/supabase/types";
 import { BookingWidget } from "./booking-widget";
@@ -35,6 +36,12 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     title: `${biz.name} — ${cat?.label ?? ""} à ${biz.city ?? ""} : prendre rendez-vous`,
     description: biz.tagline ?? `Prenez rendez-vous en ligne avec ${biz.name}${biz.city ? ` à ${biz.city}` : ""} : prix, avis et disponibilités en temps réel.`,
     alternates: { canonical: businessPath(biz) },
+    openGraph: {
+      type: "website",
+      title: `${biz.name} — ${cat?.label ?? ""} à ${biz.city ?? ""}`,
+      description: biz.tagline ?? `Réservez en ligne avec ${biz.name} : prix, avis vérifiés et créneaux libres en temps réel.`,
+      url: businessPath(biz),
+    },
   };
 }
 
@@ -66,22 +73,22 @@ export default async function BusinessPage({ params, searchParams }: { params: P
   const weekOrder = [1, 2, 3, 4, 5, 6, 0];
   const hoursByDay = new Map(catalog.hours.map((h) => [h.day_of_week, h]));
   const todayDow = new Date().getDay();
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "LocalBusiness",
-    name: biz.name,
-    address: biz.address,
-    telephone: biz.phone ?? undefined,
-    url: `${siteConfig.url}${canonical}`,
-    geo: biz.lat !== null ? { "@type": "GeoCoordinates", latitude: biz.lat, longitude: biz.lng } : undefined,
-    aggregateRating: biz.rating_count > 0 ? { "@type": "AggregateRating", ratingValue: Number(biz.rating_avg), reviewCount: biz.rating_count } : undefined,
-  };
+  const jsonLd = [
+    businessJsonLd(biz, catalog.services, catalog.hours, catalog.reviews),
+    breadcrumbJsonLd([
+      { name: siteConfig.name, path: "/" },
+      { name: cat?.plural ?? biz.category, path: `/${biz.category}` },
+      ...(biz.city_slug ? [{ name: `${cat?.plural ?? ""} à ${biz.city}`, path: `/${biz.category}/${biz.city_slug}` }] : []),
+      { name: biz.name, path: canonical },
+    ]),
+  ];
+
 
   return (
     <>
       <SiteHeader variant="white" search={{ defaultCategory: biz.category, defaultPlaceLabel: biz.city ?? "" }} />
       <Attribution slug={biz.slug} via={sp.via} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(jsonLd) }} />
 
       <section className="bg-brand">
         <div className="mx-auto flex max-w-6xl flex-col gap-5 px-4 py-6 md:flex-row md:items-center md:justify-between md:py-8">
