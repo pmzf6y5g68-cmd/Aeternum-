@@ -321,7 +321,7 @@ export function BookingWidget({
           client_notes: contact.notes,
         }),
       });
-      const data = (await res.json()) as { checkout_url?: string; error?: string };
+      const data = (await res.json()) as { payment_url?: string; error?: string };
       if (!res.ok) {
         if (data.error === "slot_taken") {
           setSlot(null);
@@ -329,8 +329,8 @@ export function BookingWidget({
         }
         throw new Error(ERRORS[data.error ?? ""] ?? fr.common.error);
       }
-      if (data.checkout_url) {
-        window.location.href = data.checkout_url;
+      if (data.payment_url) {
+        window.location.href = data.payment_url;
         return;
       }
       setDone(true);

@@ -104,8 +104,21 @@ async function confirmDeposit(session: Stripe.Checkout.Session, connectedAccount
   await sendBookingConfirmation(fresh, business, (addons ?? []).map((a) => a.name), staff?.name ?? null);
 }
 
+/** Apple Pay / Google Pay sur notre domaine : le domaine doit être enregistré sur chaque compte connecté. */
+async function registerWalletDomain(accountId: string): Promise<void> {
+  const domain = (process.env.APP_DOMAIN ?? "").replace(/^https?:\/\//, "");
+  if (!domain) return;
+  try {
+    await getStripe().paymentMethodDomains.create({ domain_name: domain }, { stripeAccount: accountId });
+  } catch (err) {
+    // Déjà enregistré : sans conséquence.
+    if (!/already/i.test(errorMessage(err))) await logEvent("stripe.walletDomain", errorMessage(err), { accountId }, "warning");
+  }
+}
+
 async function syncConnectAccount(account: Stripe.Account): Promise<void> {
   const onboarded = Boolean(account.charges_enabled && account.details_submitted);
+  if (onboarded) await registerWalletDomain(account.id);
   const patch: Record<string, unknown> = { stripe_connect_onboarded: onboarded };
   if (!onboarded) patch.deposit_enabled = false;
   const { error } = await createAdminClient().from("businesses").update(patch).eq("stripe_connect_account_id", account.id);

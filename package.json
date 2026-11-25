@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.14.0",
+    "@stripe/react-stripe-js": "^7.1.0",
+    "@stripe/stripe-js": "^10.4.0",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.119.2",
     "leaflet": "^1.9.4",

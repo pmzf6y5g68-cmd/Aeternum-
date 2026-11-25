@@ -9,7 +9,6 @@ import { env } from "@/lib/env";
 import { errorMessage, logEvent } from "@/lib/events";
 import { json, jsonError } from "@/lib/http";
 import { computeSlotWindow, loadPublicBusiness, pricingOf, resolveDistance } from "@/lib/marketplace";
-import { businessPath } from "@/lib/slug";
 import { getStripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createSessionClient } from "@/lib/supabase/server";
@@ -32,6 +31,13 @@ const schema = z
     client_notes: z.string().trim().max(500).optional().default(""),
   })
   .refine((v) => v.location_type !== "at_home" || v.client_address.length >= 5, { path: ["client_address"] });
+
+/** Frais de service plateforme prélevés sur l'acompte (0 par défaut ; voir PLATFORM_DEPOSIT_FEE_PERCENT). */
+function applicationFee(depositCents: number): { application_fee_amount?: number } {
+  const pct = Number(process.env.PLATFORM_DEPOSIT_FEE_PERCENT ?? "0");
+  const fee = Math.round((depositCents * Math.min(Math.max(pct, 0), 20)) / 100);
+  return fee > 0 ? { application_fee_amount: fee } : {};
+}
 
 const RPC_ERRORS: Record<string, { code: string; status: number }> = {
   SLOT_TAKEN: { code: "slot_taken", status: 409 },
@@ -161,7 +167,6 @@ export async function POST(request: Request) {
     await admin.from("customer_profiles").upsert({ user_id: auth.user.id, full_name: input.client_name, phone: input.client_phone, ...(clientAddress ? { default_address: clientAddress } : {}) });
   }
 
-  const path = businessPath(business);
 
   // 5a. Acompte : Checkout en charge directe sur le compte Connect de l'établissement.
   if (needsDeposit) {
@@ -171,6 +176,9 @@ export async function POST(request: Request) {
       const session = await getStripe().checkout.sessions.create(
         {
           mode: "payment",
+          // Page de paiement intégrée à notre site : carte, Apple Pay, Google Pay, PayPal, Link…
+          // (moyens de paiement dynamiques activés dans le tableau de bord Stripe du compte connecté).
+          ui_mode: "embedded_page",
           customer_email: input.client_email,
           line_items: [
             {
@@ -183,17 +191,16 @@ export async function POST(request: Request) {
             },
           ],
           metadata: { booking_id: booking.id, business_id: business.id },
-          payment_intent_data: { metadata: { booking_id: booking.id, business_id: business.id } },
+          payment_intent_data: { metadata: { booking_id: booking.id, business_id: business.id }, ...applicationFee(quote.depositCents) },
           // Minimum imposé par Stripe : 30 min. Le cron cleanup-pending expire la session plus tôt.
           expires_at: Math.floor(Date.now() / 1000) + 31 * 60,
-          success_url: `${env.appUrl()}${path}?reservation=ok`,
-          cancel_url: `${env.appUrl()}${path}?reservation=annulee`,
+          return_url: `${env.appUrl()}/paiement/${booking.confirm_token}/retour?session_id={CHECKOUT_SESSION_ID}`,
           locale: "fr",
         },
         { stripeAccount: acct.stripe_connect_account_id },
       );
       await admin.from("bookings").update({ stripe_checkout_session_id: session.id }).eq("id", booking.id);
-      return json({ booking_id: booking.id, checkout_url: session.url });
+      return json({ booking_id: booking.id, payment_url: `/paiement/${booking.confirm_token}` });
     } catch (err) {
       await admin.from("bookings").update({ status: "cancelled", cancelled_by: "system" }).eq("id", booking.id);
       await logEvent("api.bookings.checkout", errorMessage(err), { booking_id: booking.id });
