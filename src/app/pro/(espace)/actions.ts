@@ -13,6 +13,7 @@ import { slugify } from "@/lib/slug";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Booking } from "@/lib/supabase/types";
 import { notifyWaitlistForSlot } from "@/lib/waitlist";
+import { syncSeats } from "@/lib/stripe-catalog";
 
 const num = (min: number, max: number) => z.coerce.number().min(min).max(max);
 const optionalNum = (min: number, max: number) =>
@@ -176,7 +177,17 @@ export async function upsertStaff(formData: FormData): Promise<void> {
       await createAdminClient().from("bookings").update({ staff_id: data.id }).eq("business_id", business.id).is("staff_id", null).gte("end_at", new Date().toISOString());
     }
   }
+  await syncSeatsSafely(business.id);
   revalidatePath("/pro/equipe");
+}
+
+/** Facturation par agenda : la quantité Stripe suit le nombre de membres actifs (au prorata). */
+async function syncSeatsSafely(businessId: string): Promise<void> {
+  try {
+    await syncSeats(businessId);
+  } catch (err) {
+    await logEvent("pro.syncSeats", errorMessage(err), { business_id: businessId }, "warning");
+  }
 }
 
 export async function deleteStaff(formData: FormData): Promise<void> {
@@ -192,6 +203,7 @@ export async function deleteStaff(formData: FormData): Promise<void> {
   // Un membre avec des RDV à venir est désactivé plutôt que supprimé.
   if ((count ?? 0) > 0) await supabase.from("staff").update({ active: false }).eq("id", id).eq("business_id", business.id);
   else await supabase.from("staff").delete().eq("id", id).eq("business_id", business.id);
+  await syncSeatsSafely(business.id);
   revalidatePath("/pro/equipe");
 }
 

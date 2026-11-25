@@ -3,6 +3,7 @@ import Link from "next/link";
 import { BellRing, CalendarRange, Check, Eye, Layers, ShieldCheck, Users } from "lucide-react";
 import { CategoryIcon } from "@/components/category-icon";
 import { SiteFooter } from "@/components/site-footer";
+import { PlanPicker } from "@/components/plan-picker";
 import { SiteHeader } from "@/components/site-header";
 import { CATEGORIES } from "@/config/categories";
 import { fr } from "@/i18n/fr";
@@ -56,6 +57,9 @@ export default function ProLandingPage() {
 
         <section className="mx-auto max-w-4xl px-4">
           <h2 className="text-center text-2xl font-bold md:text-3xl">{t.pricingTitle}</h2>
+          <p className="mx-auto mt-2 max-w-2xl text-center text-ink-soft">
+            Prix public, sans devis, sans frais d&apos;installation, sans engagement et <strong>sans aucune commission</strong> sur vos rendez-vous. Gratuit pour vos clients, toujours.
+          </p>
           <div className="mt-8 grid gap-5 md:grid-cols-2">
             <div className="card flex flex-col p-7">
               <h3 className="text-lg font-bold">{t.freeName}</h3>
@@ -76,10 +80,9 @@ export default function ProLandingPage() {
                 <h3 className="text-lg font-bold">{t.proName}</h3>
                 <span className="rounded-full bg-sun px-2.5 py-1 text-xs font-bold text-ink">{t.proBadge}</span>
               </div>
-              <p className="mt-2 text-4xl font-bold">
-                {t.proPrice}
-                <span className="text-base font-medium text-ink-soft">{fr.common.perMonth}</span>
-              </p>
+              <div className="mt-3">
+                <PlanPicker mode="simulator" />
+              </div>
               <ul className="mt-6 flex-1 space-y-2.5 text-sm">
                 {t.proFeatures.map((f) => (
                   <li key={f} className="flex gap-2">

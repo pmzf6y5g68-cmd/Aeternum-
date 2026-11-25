@@ -1,4 +1,5 @@
 import { BadgeCheck, CreditCard, ShieldCheck } from "lucide-react";
+import { PlanPicker } from "@/components/plan-picker";
 import { PostRedirectButton } from "@/components/post-redirect-button";
 import { SubmitButton } from "@/components/submit-button";
 import { siteConfig } from "@/config/site";
@@ -13,6 +14,8 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
   const limit = siteConfig.pricing.freeMonthlyBookings;
   const isPro = business.plan === "pro";
   const pct = Math.min(100, Math.round((used / limit) * 100));
+  const { count: staffCount } = await supabase.from("staff").select("id", { count: "exact", head: true }).eq("business_id", business.id).eq("active", true);
+  const activeSeats = Math.max(1, staffCount ?? 0);
   const { data: commissions } = await supabase
     .from("bookings")
     .select("commission_eur, commission_invoiced, status")
@@ -46,7 +49,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
             </div>
           )}
         </div>
-        {!isPro && (
+        {!isPro && siteConfig.pricing.newClientCommissionPercent > 0 && (
           <div className="rounded-lg bg-canvas p-3 text-sm">
             <p className="font-semibold">
               Commissions nouveaux clients : {pendingCommission.toFixed(2).replace(".", ",")} € à facturer · {upcomingCommission.toFixed(2).replace(".", ",")} € sur des RDV à venir
@@ -65,7 +68,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
                 <li key={f}>✓ {f}</li>
               ))}
             </ul>
-            <PostRedirectButton endpoint="/api/stripe/subscription" label={`Passer Pro — ${siteConfig.pricing.proTrialDays} jours offerts`} />
+            <PlanPicker mode="checkout" initialSeats={activeSeats} />
           </>
         )}
       </section>

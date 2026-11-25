@@ -3,6 +3,7 @@ import { env } from "@/lib/env";
 import { errorMessage, logEvent } from "@/lib/events";
 import { json, jsonError } from "@/lib/http";
 import { getStripe } from "@/lib/stripe";
+import { ensureBillingPortal } from "@/lib/stripe-catalog";
 
 /** Stripe Customer Portal : moyens de paiement, factures, résiliation. */
 export async function POST() {
@@ -11,6 +12,7 @@ export async function POST() {
   if (!business.stripe_customer_id) return jsonError("no_customer", 409);
 
   try {
+    await ensureBillingPortal();
     const session = await getStripe().billingPortal.sessions.create({
       customer: business.stripe_customer_id,
       return_url: `${env.appUrl()}/pro/abonnement`,

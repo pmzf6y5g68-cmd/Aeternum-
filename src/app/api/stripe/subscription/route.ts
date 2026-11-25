@@ -1,4 +1,6 @@
 import { siteConfig } from "@/config/site";
+import { seatsFor, type BillingInterval } from "@/lib/domain/plans";
+import { ensureProPrice } from "@/lib/stripe-catalog";
 import { getApiBusiness } from "@/lib/pro";
 import { env } from "@/lib/env";
 import { errorMessage, logEvent } from "@/lib/events";
@@ -6,8 +8,10 @@ import { json, jsonError } from "@/lib/http";
 import { getStripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-/** Checkout d'abonnement Pro (49 €/mois, 14 jours d'essai). */
-export async function POST() {
+/** Checkout d'abonnement Pro : prix par agenda (quantité = membres actifs), mensuel ou annuel, essai gratuit. */
+export async function POST(request: Request) {
+  const body = (await request.json().catch(() => ({}))) as { interval?: string };
+  const interval: BillingInterval = body.interval === "year" ? "year" : "month";
   const business = await getApiBusiness();
   if (!business) return jsonError("unauthorized", 401);
   if (business.plan === "pro") return jsonError("already_pro", 409);
@@ -21,14 +25,16 @@ export async function POST() {
       await createAdminClient().from("businesses").update({ stripe_customer_id: customerId }).eq("id", business.id);
     }
 
+    const { count } = await createAdminClient().from("staff").select("id", { count: "exact", head: true }).eq("business_id", business.id).eq("active", true);
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       customer: customerId,
-      line_items: [{ price: env.stripePriceProMonthly(), quantity: 1 }],
+      line_items: [{ price: (await ensureProPrice(interval)).id, quantity: seatsFor(count ?? 0) }],
       subscription_data: { trial_period_days: siteConfig.pricing.proTrialDays, metadata: { business_id: business.id } },
       metadata: { business_id: business.id },
       client_reference_id: business.id,
-      allow_promotion_codes: false,
+      allow_promotion_codes: true,
+      // Carte, Apple Pay, Google Pay, Link, prélèvement SEPA… selon les moyens activés dans Stripe.
       locale: "fr",
       success_url: `${env.appUrl()}/pro/abonnement?checkout=success`,
       cancel_url: `${env.appUrl()}/pro/abonnement`,

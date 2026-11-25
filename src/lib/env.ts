@@ -14,7 +14,6 @@ export const env = {
   supabaseAnonKey: () => required("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
   supabaseServiceRoleKey: () => required("SUPABASE_SERVICE_ROLE_KEY"),
   stripeSecretKey: () => required("STRIPE_SECRET_KEY"),
-  stripePriceProMonthly: () => required("STRIPE_PRICE_PRO_MONTHLY"),
   stripeWebhookSecret: () => process.env.STRIPE_WEBHOOK_SECRET ?? "",
   stripeConnectWebhookSecret: () => process.env.STRIPE_CONNECT_WEBHOOK_SECRET ?? "",
   resendApiKey: () => required("RESEND_API_KEY"),

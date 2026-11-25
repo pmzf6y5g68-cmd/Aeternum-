@@ -21,10 +21,18 @@ export const siteConfig = {
   },
   pricing: {
     freeMonthlyBookings: 30,
-    proMonthlyPriceEur: 49,
+    /** Prix public, sans commission, par agenda (comme Doctolib : par praticien). 1er agenda inclus. */
+    proMonthlyPriceEur: 39,
+    proExtraSeatMonthlyEur: 15,
+    /** Annuel : 2 mois offerts. */
+    proYearlyPriceEur: 390,
+    proExtraSeatYearlyEur: 150,
     proTrialDays: 14,
-    /** Plan Gratuit : commission sur la 1re réservation d'un nouveau client venu de la marketplace. */
-    newClientCommissionPercent: 20,
+    /**
+     * Commission « nouveau client marketplace » du plan Gratuit. 0 = désactivée : le marché accepte l'abonnement
+     * (Doctolib, Planity) et rejette les commissions (principal reproche fait à Treatwell).
+     */
+    newClientCommissionPercent: 0,
     newClientCommissionCapEur: 20,
     /** Un client redevient « nouveau » après ce délai sans rendez-vous chez l'établissement. */
     newClientWindowDays: 365,

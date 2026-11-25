@@ -9,7 +9,9 @@ export function PostRedirectButton({
   label,
   className = "btn-primary",
   errorLabel = "Une erreur est survenue. Réessayez dans un instant.",
+  body,
 }: {
+  body?: Record<string, unknown>;
   endpoint: string;
   label: string;
   className?: string;
@@ -22,7 +24,7 @@ export function PostRedirectButton({
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(endpoint, { method: "POST" });
+      const res = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body ?? {}) });
       const data = (await res.json()) as { url?: string; error?: string };
       if (!res.ok || !data.url) throw new Error(data.error ?? errorLabel);
       window.location.href = data.url;

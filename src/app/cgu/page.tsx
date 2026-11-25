@@ -27,8 +27,10 @@ export default function CguPage() {
         {
           title: "3. Professionnels",
           paragraphs: [
-            `Plan Gratuit : 0 € par mois, jusqu'à ${p.freeMonthlyBookings} rendez-vous par mois civil, et une commission de ${p.newClientCommissionPercent} % (plafonnée à ${p.newClientCommissionCapEur} € HT) sur le premier rendez-vous honoré de chaque nouveau client venu de la plateforme. Est « nouveau » un client sans rendez-vous chez le Professionnel depuis ${p.newClientWindowDays} jours. Aucune commission sur les clients arrivés par les liens, QR codes ou boutons propres au Professionnel. Facturation mensuelle par Stripe, payable sous 14 jours.`,
-            `Plan Pro : ${p.proMonthlyPriceEur} € TTC par mois, sans commission, rendez-vous illimités et fonctions avancées, avec ${p.proTrialDays} jours d'essai offerts, sans engagement, résiliable à tout moment depuis le portail de facturation.`,
+            p.newClientCommissionPercent > 0
+              ? `Plan Gratuit : 0 € par mois, jusqu'à ${p.freeMonthlyBookings} rendez-vous par mois civil, et une commission de ${p.newClientCommissionPercent} % (plafonnée à ${p.newClientCommissionCapEur} € HT) sur le premier rendez-vous honoré de chaque nouveau client venu de la plateforme (client sans rendez-vous chez le Professionnel depuis ${p.newClientWindowDays} jours). Aucune commission sur les clients arrivés par les liens, QR codes ou boutons propres au Professionnel.`
+              : `Plan Gratuit : 0 € par mois, sans carte bancaire et sans commission, jusqu'à ${p.freeMonthlyBookings} rendez-vous par mois civil.`,
+            `Plan Pro : ${p.proMonthlyPriceEur} € TTC par mois pour le premier agenda, puis ${p.proExtraSeatMonthlyEur} € TTC par agenda supplémentaire (membre d'équipe actif), ou ${p.proYearlyPriceEur} € TTC par an et ${p.proExtraSeatYearlyEur} € TTC par agenda supplémentaire en paiement annuel. Aucune commission, rendez-vous illimités, ${p.proTrialDays} jours d'essai offerts, sans engagement, résiliable à tout moment depuis le portail de facturation. L'ajout ou le retrait d'un agenda est facturé au prorata.`,
             "Le Professionnel est seul responsable des informations publiées (prestations, prix, horaires, adresse), de la prestation réalisée et du respect de ses obligations légales et réglementaires.",
           ],
         },

@@ -1,6 +1,7 @@
 import "server-only";
 import { Resend } from "resend";
 import { getStripe } from "@/lib/stripe";
+import { ensureBillingPortal, ensureProPrice } from "@/lib/stripe-catalog";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { errorMessage } from "@/lib/events";
 
@@ -50,12 +51,13 @@ export async function readiness(): Promise<{ ready: boolean; checks: ReadinessCh
       const stripe = getStripe();
       const account = await stripe.accounts.retrieveCurrent();
       if (!account.charges_enabled) throw new Error("compte Stripe non activé pour les paiements");
-      const price = await stripe.prices.retrieve(process.env.STRIPE_PRICE_PRO_MONTHLY ?? "");
-      if (!price.active || !price.recurring) throw new Error("prix Pro inactif ou non récurrent");
+      // Catalogue auto-provisionné (idempotent) : prix Pro mensuel / annuel par agenda + portail client.
+      const [price] = await Promise.all([ensureProPrice("month"), ensureProPrice("year")]);
+      await ensureBillingPortal();
       const hooks = await stripe.webhookEndpoints.list({ limit: 100 });
       const ours = hooks.data.filter((h) => h.url === `${appUrl}/api/webhooks/stripe` && h.status === "enabled");
       if (ours.length < 1) throw new Error(`webhook ${appUrl}/api/webhooks/stripe absent`);
-      return `${ours.length} webhook(s), prix ${price.unit_amount ? price.unit_amount / 100 : "?"} €`;
+      return `${ours.length} webhook(s), prix Pro ${price.lookup_key}`;
     }),
     check("domaine d'envoi", async () => {
       const domain = (process.env.EMAIL_FROM ?? "").match(/@([^>\s]+)/)?.[1]?.toLowerCase();
