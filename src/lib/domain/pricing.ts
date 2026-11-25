@@ -1,25 +1,23 @@
 /**
- * Moteur de tarification pur : gabarit + options + frais kilométriques + acompte.
- * Tous les montants sortants sont en centimes (entiers) pour éviter les erreurs d'arrondi.
+ * Moteur de tarification pur et universel : prestation + variante (gabarit, longueur, taille,
+ * nombre de personnes…) + options + places + frais kilométriques + acompte.
+ * Tous les montants sortants sont en centimes (entiers).
  */
-export const VEHICLE_SIZES = ["citadine", "berline", "suv_4x4", "utilitaire"] as const;
-export type VehicleSize = (typeof VEHICLE_SIZES)[number];
-
-export type LocationType = "workshop" | "mobile";
-export type ServiceMode = "workshop" | "mobile" | "both";
+import type { LocationMode } from "@/config/categories";
 
 export const ROAD_FACTOR = 1.25;
 
-export interface SizePricing {
+export interface Variant {
+  key: string;
+  label: string;
   price_eur: number;
   duration_minutes: number;
 }
-export type SizePricingMap = Partial<Record<VehicleSize, SizePricing>>;
 
 export interface ServiceForPricing {
-  base_price_eur: number;
-  base_duration_minutes: number;
-  size_pricing_json: SizePricingMap | null;
+  price_eur: number;
+  duration_minutes: number;
+  variants: Variant[] | null;
 }
 
 export interface AddonForPricing {
@@ -27,7 +25,7 @@ export interface AddonForPricing {
   duration_minutes: number;
 }
 
-export interface StudioForPricing {
+export interface BusinessForPricing {
   free_radius_km: number;
   max_radius_km: number;
   price_per_extra_km: number;
@@ -51,7 +49,15 @@ export function centsToEur(cents: number): number {
 }
 
 export function formatEur(cents: number, locale: string = "fr-FR"): string {
-  return new Intl.NumberFormat(locale, { style: "currency", currency: "EUR" }).format(cents / 100);
+  const whole = cents % 100 === 0;
+  return new Intl.NumberFormat(locale, { style: "currency", currency: "EUR", minimumFractionDigits: whole ? 0 : 2 }).format(cents / 100);
+}
+
+export function formatDuration(minutes: number): string {
+  if (minutes < 60) return `${minutes} min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m ? `${h} h ${String(m).padStart(2, "0")}` : `${h} h`;
 }
 
 /** Distance orthodromique (km). */
@@ -75,60 +81,74 @@ export interface TravelFee {
   outOfZone: boolean;
 }
 
-export function computeTravelFee(distanceKm: number, studio: StudioForPricing): TravelFee {
+export function computeTravelFee(distanceKm: number, business: BusinessForPricing): TravelFee {
   const distance = Math.max(0, distanceKm);
-  if (distance > Number(studio.max_radius_km)) {
-    return { distanceKm: distance, feeCents: 0, outOfZone: true };
-  }
-  const extraKm = Math.max(0, distance - Number(studio.free_radius_km));
-  return {
-    distanceKm: distance,
-    feeCents: Math.round(extraKm * Number(studio.price_per_extra_km) * 100),
-    outOfZone: false,
-  };
+  if (distance > Number(business.max_radius_km)) return { distanceKm: distance, feeCents: 0, outOfZone: true };
+  const extraKm = Math.max(0, distance - Number(business.free_radius_km));
+  return { distanceKm: distance, feeCents: Math.round(extraKm * Number(business.price_per_extra_km) * 100), outOfZone: false };
 }
 
-export function servicePriceForSize(service: ServiceForPricing, size: VehicleSize): SizePricing {
-  const override = service.size_pricing_json?.[size];
-  if (override && Number.isFinite(override.price_eur) && Number.isFinite(override.duration_minutes)) {
-    return { price_eur: Number(override.price_eur), duration_minutes: Math.round(Number(override.duration_minutes)) };
-  }
-  return { price_eur: Number(service.base_price_eur), duration_minutes: Math.round(Number(service.base_duration_minutes)) };
+/** Variante choisie, ou tarif de base si la prestation n'a pas de variante. */
+export function resolveVariant(service: ServiceForPricing, variantKey: string | null | undefined): Variant | null {
+  const variants = service.variants ?? [];
+  if (variants.length === 0) return null;
+  const found = variants.find((v) => v.key === variantKey);
+  if (!found) throw new Error("VARIANT_REQUIRED");
+  return found;
 }
 
-export function depositCents(totalCents: number, studio: StudioForPricing): number {
-  if (!studio.deposit_enabled || !studio.stripe_connect_onboarded) return 0;
-  const pct = Math.min(100, Math.max(0, Number(studio.deposit_percent)));
+export function servicePrice(service: ServiceForPricing, variantKey?: string | null): { price_eur: number; duration_minutes: number } {
+  const variant = resolveVariant(service, variantKey);
+  return variant
+    ? { price_eur: Number(variant.price_eur), duration_minutes: Math.round(Number(variant.duration_minutes)) }
+    : { price_eur: Number(service.price_eur), duration_minutes: Math.round(Number(service.duration_minutes)) };
+}
+
+/** Prix « à partir de » affiché dans les listes. */
+export function startingPriceCents(service: ServiceForPricing): number {
+  const prices = [Number(service.price_eur), ...(service.variants ?? []).map((v) => Number(v.price_eur))];
+  return eurToCents(Math.min(...prices));
+}
+
+export function depositCents(totalCents: number, business: BusinessForPricing): number {
+  if (!business.deposit_enabled || !business.stripe_connect_onboarded) return 0;
+  const pct = Math.min(100, Math.max(0, Number(business.deposit_percent)));
   return Math.round((totalCents * pct) / 100);
 }
 
 export interface QuoteInput {
   service: ServiceForPricing;
+  variantKey?: string | null;
   addons: AddonForPricing[];
-  size: VehicleSize;
-  locationType: LocationType;
-  /** Distance routière en km (obligatoire si locationType = mobile). */
+  /** Nombre de places (cours collectif, table…). Le prix unitaire est multiplié, pas la durée. */
+  seats?: number;
+  locationType: LocationMode;
+  /** Distance routière en km (obligatoire si locationType = at_home). */
   distanceKm: number | null;
-  studio: StudioForPricing;
+  business: BusinessForPricing;
 }
 
 export interface Quote {
-  servicePriceCents: number;
+  unitPriceCents: number;
   addonsCents: number;
+  seats: number;
   travelFeeCents: number;
   totalCents: number;
   depositCents: number;
   /** Durée de la prestation elle-même. */
   workMinutes: number;
-  /** Durée bloquée dans l'agenda (prestation + tampon trajet si domicile). */
+  /** Durée bloquée dans l'agenda (prestation + tampon trajet si à domicile). */
   blockedMinutes: number;
   distanceKm: number | null;
   outOfZone: boolean;
+  variant: Variant | null;
 }
 
 export function computeQuote(input: QuoteInput): Quote {
-  const base = servicePriceForSize(input.service, input.size);
-  const servicePriceCents = eurToCents(base.price_eur);
+  const variant = resolveVariant(input.service, input.variantKey);
+  const base = servicePrice(input.service, input.variantKey);
+  const seats = Math.max(1, Math.round(input.seats ?? 1));
+  const unitPriceCents = eurToCents(base.price_eur);
   const addonsCents = input.addons.reduce((sum, a) => sum + eurToCents(a.price_eur), 0);
   const addonsMinutes = input.addons.reduce((sum, a) => sum + Math.max(0, Math.round(Number(a.duration_minutes))), 0);
   const workMinutes = base.duration_minutes + addonsMinutes;
@@ -138,27 +158,27 @@ export function computeQuote(input: QuoteInput): Quote {
   let distanceKm: number | null = null;
   let blockedMinutes = workMinutes;
 
-  if (input.locationType === "mobile") {
-    if (input.distanceKm === null || !Number.isFinite(input.distanceKm)) {
-      throw new Error("DISTANCE_REQUIRED");
-    }
-    const travel = computeTravelFee(input.distanceKm, input.studio);
+  if (input.locationType === "at_home") {
+    if (input.distanceKm === null || !Number.isFinite(input.distanceKm)) throw new Error("DISTANCE_REQUIRED");
+    const travel = computeTravelFee(input.distanceKm, input.business);
     travelFeeCents = travel.feeCents;
     outOfZone = travel.outOfZone;
     distanceKm = travel.distanceKm;
-    blockedMinutes = workMinutes + Math.max(0, Math.round(Number(input.studio.travel_buffer_minutes)));
+    blockedMinutes = workMinutes + Math.max(0, Math.round(Number(input.business.travel_buffer_minutes)));
   }
 
-  const totalCents = servicePriceCents + addonsCents + travelFeeCents;
+  const totalCents = (unitPriceCents + addonsCents) * seats + travelFeeCents;
   return {
-    servicePriceCents,
+    unitPriceCents,
     addonsCents,
+    seats,
     travelFeeCents,
     totalCents,
-    depositCents: depositCents(totalCents, input.studio),
+    depositCents: depositCents(totalCents, input.business),
     workMinutes,
     blockedMinutes,
     distanceKm,
     outOfZone,
+    variant,
   };
 }

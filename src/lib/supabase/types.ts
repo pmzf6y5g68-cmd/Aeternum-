@@ -1,24 +1,38 @@
+import type { LocationMode } from "@/config/categories";
 import type { BookingStatus, OpeningHours } from "@/lib/domain/availability";
-import type { LocationType, ServiceMode, SizePricingMap, VehicleSize } from "@/lib/domain/pricing";
+import type { Variant } from "@/lib/domain/pricing";
 
 export type Plan = "free" | "pro";
 
-export interface Studio {
+export interface Business {
   id: string;
   owner_id: string;
   slug: string;
   name: string;
+  category: string;
+  tagline: string | null;
+  description: string | null;
   email: string;
   phone: string | null;
+  website: string | null;
   address: string | null;
+  postal_code: string | null;
   city: string | null;
-  base_lat: number | null;
-  base_lng: number | null;
-  service_mode: ServiceMode;
+  city_slug: string | null;
+  lat: number | null;
+  lng: number | null;
+  modes: LocationMode[];
+  cover_url: string | null;
+  highlights: string[];
+  payment_methods: string[];
   free_radius_km: number;
   max_radius_km: number;
   price_per_extra_km: number;
   travel_buffer_minutes: number;
+  slot_step_minutes: number;
+  min_lead_minutes: number;
+  max_days_ahead: number;
+  cancellation_hours: number;
   deposit_enabled: boolean;
   deposit_percent: number;
   plan: Plan;
@@ -27,50 +41,50 @@ export interface Studio {
   stripe_connect_account_id: string | null;
   stripe_connect_onboarded: boolean;
   rebooking_days: number;
+  published: boolean;
+  min_price_eur: number | null;
+  rating_avg: number;
+  rating_count: number;
   locale: "fr" | "en";
   created_at: string;
 }
 
-/** Colonnes exposables publiquement (tunnel client). */
-export const PUBLIC_STUDIO_COLUMNS =
-  "id, slug, name, phone, city, address, base_lat, base_lng, service_mode, free_radius_km, max_radius_km, price_per_extra_km, travel_buffer_minutes, deposit_enabled, deposit_percent, plan, stripe_connect_onboarded, locale" as const;
+/** Colonnes exposables publiquement (marketplace). Jamais de Stripe, d'email ou d'owner. */
+export const PUBLIC_BUSINESS_COLUMNS =
+  "id, slug, name, category, tagline, description, phone, website, address, postal_code, city, city_slug, lat, lng, modes, cover_url, highlights, payment_methods, free_radius_km, max_radius_km, price_per_extra_km, travel_buffer_minutes, slot_step_minutes, min_lead_minutes, max_days_ahead, cancellation_hours, deposit_enabled, deposit_percent, plan, stripe_connect_onboarded, min_price_eur, rating_avg, rating_count, published, locale" as const;
 
-export type PublicStudio = Pick<
-  Studio,
-  | "id"
-  | "slug"
-  | "name"
-  | "phone"
-  | "city"
-  | "address"
-  | "base_lat"
-  | "base_lng"
-  | "service_mode"
-  | "free_radius_km"
-  | "max_radius_km"
-  | "price_per_extra_km"
-  | "travel_buffer_minutes"
-  | "deposit_enabled"
-  | "deposit_percent"
-  | "plan"
-  | "stripe_connect_onboarded"
-  | "locale"
+export type PublicBusiness = Omit<
+  Business,
+  "owner_id" | "email" | "stripe_customer_id" | "stripe_subscription_id" | "stripe_connect_account_id" | "rebooking_days" | "created_at"
 >;
+
+export interface Staff {
+  id: string;
+  business_id: string;
+  name: string;
+  title: string | null;
+  service_ids: string[];
+  active: boolean;
+  sort: number;
+}
 
 export interface Service {
   id: string;
-  studio_id: string;
+  business_id: string;
   name: string;
   description: string | null;
-  base_price_eur: number;
-  base_duration_minutes: number;
-  size_pricing_json: SizePricingMap;
+  price_eur: number;
+  duration_minutes: number;
+  variants: Variant[];
+  capacity: number;
+  modes: LocationMode[];
   active: boolean;
+  sort: number;
 }
 
 export interface Addon {
   id: string;
-  studio_id: string;
+  business_id: string;
   name: string;
   price_eur: number;
   duration_minutes: number;
@@ -79,17 +93,29 @@ export interface Addon {
 
 export interface OpeningHoursRow extends OpeningHours {
   id: string;
-  studio_id: string;
+  business_id: string;
+}
+
+export interface TimeOffRow {
+  id: string;
+  business_id: string;
+  staff_id: string | null;
+  start_at: string;
+  end_at: string;
+  reason: string | null;
 }
 
 export interface Booking {
   id: string;
-  studio_id: string;
+  business_id: string;
   service_id: string | null;
+  staff_id: string | null;
+  service_name: string;
+  variant_key: string | null;
+  variant_label: string | null;
   addon_ids: string[];
-  vehicle_size: VehicleSize;
-  vehicle_model: string | null;
-  location_type: LocationType;
+  seats: number;
+  location_type: LocationMode;
   client_address: string | null;
   distance_km: number | null;
   travel_fee_eur: number;
@@ -97,17 +123,63 @@ export interface Booking {
   deposit_amount_eur: number;
   deposit_paid: boolean;
   stripe_checkout_session_id: string | null;
+  client_user_id: string | null;
   client_name: string;
   client_email: string;
   client_phone: string | null;
+  client_notes: string | null;
   start_at: string;
   end_at: string;
   status: BookingStatus;
+  cancelled_by: "client" | "business" | "system" | null;
   confirm_token: string;
   reminder_sent: boolean;
   risk_alert_sent: boolean;
   rebooking_sent: boolean;
+  review_requested: boolean;
   created_at: string;
+}
+
+export interface Review {
+  id: string;
+  business_id: string;
+  booking_id: string;
+  author_user_id: string | null;
+  author_name: string;
+  rating: number;
+  comment: string | null;
+  reply: string | null;
+  created_at: string;
+}
+
+export interface CustomerProfile {
+  user_id: string;
+  full_name: string | null;
+  phone: string | null;
+  default_address: string | null;
+}
+
+/** Ligne renvoyée par la RPC search_businesses. */
+export interface SearchRow {
+  id: string;
+  slug: string;
+  name: string;
+  category: string;
+  tagline: string | null;
+  city: string | null;
+  city_slug: string | null;
+  address: string | null;
+  lat: number | null;
+  lng: number | null;
+  modes: LocationMode[];
+  cover_url: string | null;
+  min_price_eur: number | null;
+  rating_avg: number;
+  rating_count: number;
+  plan: Plan;
+  distance_km: number | null;
+  relevance: number;
+  total_count: number;
 }
 
 export type ProspectStatus = "new" | "disqualified" | "sent" | "replied" | "ooo_paused" | "converted" | "stopped" | "error";
@@ -115,6 +187,7 @@ export type ProspectStatus = "new" | "disqualified" | "sent" | "replied" | "ooo_
 export interface Prospect {
   id: string;
   name: string;
+  category: string | null;
   website: string | null;
   email: string | null;
   city: string | null;
@@ -134,7 +207,7 @@ export interface EmailThread {
   id: string;
   contact_email: string;
   prospect_id: string | null;
-  studio_id: string | null;
+  business_id: string | null;
   subject: string | null;
   status: ThreadStatus;
   ai_reply_count: number;
