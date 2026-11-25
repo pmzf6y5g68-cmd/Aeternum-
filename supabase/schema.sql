@@ -2,7 +2,6 @@
 -- Slotly — schéma Supabase complet (idempotent : peut être rejoué)
 -- =====================================================================
 create extension if not exists pgcrypto;
-create extension if not exists btree_gist;
 
 -- ---------------------------------------------------------------------
 -- Types énumérés

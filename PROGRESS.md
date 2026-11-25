@@ -70,3 +70,23 @@
   création immédiate `prospects` + `email_threads` + `email_messages`, relance unique J+4 dans le même fil
   (jamais si réponse, STOP ou OOO), `DRY_RUN=true` par défaut, `MAX_EMAILS_PER_DAY=25`, pauses aléatoires.
 - `.github/workflows/crons.yml`, `.github/workflows/prospector.yml`, `.github/workflows/ci.yml` (4 vérifications).
+
+## Phase 6 — Vérification End-to-End & Guide Zéro-Friction ✅
+- `npx tsc --noEmit` ✅ · `npm test` ✅ (80 tests) · `npm run build` ✅ · `python3 -m py_compile scripts/prospector.py` ✅ · `tsc` du Worker ✅.
+- `supabase/schema.sql` exécuté **deux fois** sur un PostgreSQL 16 réel (stubs `auth.*` + rôles Supabase) : idempotent.
+  RPC vérifiée : chevauchement refusé (`SLOT_TAKEN`), créneau contigu accepté, `pending_deposit` > 20 min ignoré,
+  paiement tardif sur créneau repris → `reactivate_paid_booking = false`, 16ᵉ RDV gratuit du mois refusé (`QUOTA_EXCEEDED`),
+  mois suivant accepté. RLS vérifiée : studio A ne voit que ses RDV, studio B aucun, anon rien, prospects invisibles,
+  `plan` / prix non modifiables par le studio, RPC non appelable par `authenticated`.
+- Serveur de production testé en HTTP : pages publiques 200, crons et webhook entrant 401 sans secret, payloads invalides 400,
+  webhook Stripe sans signature 400, `/dashboard` sans session → `/login`, landing mobile sans débordement ni erreur JS.
+- Robot Python testé (venv, `anthropic` 2.x) : variables manquantes → sortie 2, extraction d'email, détection d'outil, outil Claude simulé.
+- `README.md` : configuration unique en 7 étapes (Supabase, Stripe Pro + Connect, Resend DNS, Cloudflare Email Routing + `wrangler deploy`,
+  Vercel, GitHub Secrets, passage `DRY_RUN=false`).
+
+### Points à connaître
+- Le webhook Stripe est servi sur `/api/webhooks/stripe` (même dossier que le webhook entrant).
+- Stripe impose 30 min minimum pour expirer une session Checkout : la session est créée à 31 min et le cron l'expire à 25 min ;
+  un paiement qui passerait malgré tout est réactivé ou remboursé automatiquement.
+- Table additionnelle `system_events` (journal d'erreurs lu par `health-digest`).
+- Non exécutés ici faute de comptes réels : appels Stripe / Resend / Anthropic / Serper en conditions réelles et `wrangler deploy`.
