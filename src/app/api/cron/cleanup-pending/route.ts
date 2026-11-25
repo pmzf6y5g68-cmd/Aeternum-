@@ -13,11 +13,11 @@ export async function GET(request: Request) {
 
   const { data: expired, error } = await admin
     .from("bookings")
-    .update({ status: "cancelled" })
+    .update({ status: "cancelled", cancelled_by: "system" })
     .eq("status", "pending_deposit")
     .lt("created_at", cutoff)
-    .select("id, studio_id, stripe_checkout_session_id")
-    .returns<{ id: string; studio_id: string; stripe_checkout_session_id: string | null }[]>();
+    .select("id, business_id, stripe_checkout_session_id")
+    .returns<{ id: string; business_id: string; stripe_checkout_session_id: string | null }[]>();
   if (error) {
     await logEvent("cron.cleanup-pending", error.message);
     return jsonError("db_error", 500);
@@ -27,15 +27,15 @@ export async function GET(request: Request) {
   const withSession = (expired ?? []).filter((b) => b.stripe_checkout_session_id);
   let expiredSessions = 0;
   if (withSession.length) {
-    const studioIds = Array.from(new Set(withSession.map((b) => b.studio_id)));
-    const { data: studios } = await admin
-      .from("studios")
+    const businessIds = Array.from(new Set(withSession.map((b) => b.business_id)));
+    const { data: businesses } = await admin
+      .from("businesses")
       .select("id, stripe_connect_account_id")
-      .in("id", studioIds)
+      .in("id", businessIds)
       .returns<{ id: string; stripe_connect_account_id: string | null }[]>();
-    const accounts = new Map((studios ?? []).map((s) => [s.id, s.stripe_connect_account_id]));
+    const accounts = new Map((businesses ?? []).map((s) => [s.id, s.stripe_connect_account_id]));
     for (const b of withSession) {
-      const account = accounts.get(b.studio_id);
+      const account = accounts.get(b.business_id);
       if (!account) continue;
       try {
         await getStripe().checkout.sessions.expire(b.stripe_checkout_session_id as string, {}, { stripeAccount: account });

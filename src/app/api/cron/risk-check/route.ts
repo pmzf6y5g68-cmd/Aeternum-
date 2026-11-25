@@ -1,4 +1,4 @@
-import { hoursFromNow, isAuthorizedCron, loadProStudios } from "@/lib/cron";
+import { hoursFromNow, isAuthorizedCron, loadProBusinesses } from "@/lib/cron";
 import { sendRiskAlert } from "@/lib/email/booking-emails";
 import { errorMessage, logEvent } from "@/lib/events";
 import { json, jsonError } from "@/lib/http";
@@ -8,15 +8,15 @@ import type { Booking } from "@/lib/supabase/types";
 /** Toutes les heures (Pro) : alerte le detailer à H-6 si le client n'a pas confirmé le rappel. */
 export async function GET(request: Request) {
   if (!isAuthorizedCron(request)) return jsonError("unauthorized", 401);
-  const studios = await loadProStudios();
-  if (!studios.length) return json({ alerted: 0 });
-  const byId = new Map(studios.map((s) => [s.id, s]));
+  const businesses = await loadProBusinesses();
+  if (!businesses.length) return json({ alerted: 0 });
+  const byId = new Map(businesses.map((s) => [s.id, s]));
   const admin = createAdminClient();
 
   const { data: bookings } = await admin
     .from("bookings")
     .select("*")
-    .in("studio_id", studios.map((s) => s.id))
+    .in("business_id", businesses.map((s) => s.id))
     .eq("status", "scheduled")
     .eq("reminder_sent", true)
     .eq("risk_alert_sent", false)
@@ -26,8 +26,8 @@ export async function GET(request: Request) {
 
   let alerted = 0;
   for (const booking of bookings ?? []) {
-    const studio = byId.get(booking.studio_id);
-    if (!studio) continue;
+    const business = byId.get(booking.business_id);
+    if (!business) continue;
     const { data: claimed } = await admin
       .from("bookings")
       .update({ status: "at_risk", risk_alert_sent: true })
@@ -37,7 +37,7 @@ export async function GET(request: Request) {
       .select("id");
     if (!claimed?.length) continue;
     try {
-      await sendRiskAlert(booking, studio);
+      await sendRiskAlert(booking, business);
       alerted++;
     } catch (err) {
       await logEvent("cron.risk-check", errorMessage(err), { booking_id: booking.id });

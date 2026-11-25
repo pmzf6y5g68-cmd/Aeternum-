@@ -1,4 +1,4 @@
-name: Slotly crons
+name: Rendez-vous crons
 
 on:
   schedule:
@@ -15,7 +15,7 @@ on:
         options: [cleanup-pending, reminders, risk-check, rebooking, health-digest]
 
 concurrency:
-  group: slotly-crons-${{ github.event.schedule || inputs.job }}
+  group: rdv-crons-${{ github.event.schedule || inputs.job }}
   cancel-in-progress: false
 
 jobs:

@@ -45,7 +45,7 @@ async function geocodeBan(query: string): Promise<GeocodeResult | null> {
 
 async function geocodeNominatim(query: string): Promise<GeocodeResult | null> {
   const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&q=${encodeURIComponent(query)}`;
-  const data = (await fetchJson(url, { "User-Agent": "SlotlyBookingApp/1.0", "Accept-Language": "fr" })) as NominatimItem[];
+  const data = (await fetchJson(url, { "User-Agent": "RendezVousApp/1.0", "Accept-Language": "fr" })) as NominatimItem[];
   const item = data[0];
   if (!item?.lat || !item.lon) return null;
   return {

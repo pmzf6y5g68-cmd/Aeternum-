@@ -5,9 +5,10 @@ import { layoutHtml, sendEmail } from "@/lib/email/send";
 import { env } from "@/lib/env";
 import { errorMessage, logEvent } from "@/lib/events";
 import { signPrefill } from "@/lib/prefill";
-import { countMonthlyBookings, publicStudioUrl } from "@/lib/studio";
+import { getCategory } from "@/config/categories";
+import { countMonthlyBookings, publicBusinessUrl } from "@/lib/pro";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { EmailMessage, EmailThread, Prospect, Studio } from "@/lib/supabase/types";
+import type { Business, EmailMessage, EmailThread, Prospect } from "@/lib/supabase/types";
 import { decideReply, finalizeDecision, replySubject, type AgentContext, type AgentDecision, type ContactContext } from "./email-agent";
 import { evaluateGuardrails, normalizeEmail, type InboundEmail } from "./email-guardrails";
 
@@ -20,7 +21,7 @@ export type PipelineResult =
   | { status: "replied"; messageId: string }
   | { status: "no_reply" };
 
-const SIGNATURE = "Bien à vous,\nL'équipe Slotly";
+const SIGNATURE = "Bien à vous,\nL'équipe Rendez-vous";
 const MAX_REFERENCES = 20;
 
 function extractIds(value: string | null): string[] {
@@ -56,34 +57,37 @@ async function findThread(email: InboundEmail): Promise<EmailThread | null> {
   return data?.[0] ?? null;
 }
 
-async function loadContact(contactEmail: string, thread: EmailThread | null): Promise<{ prospect: Prospect | null; studio: Studio | null }> {
+async function loadContact(contactEmail: string, thread: EmailThread | null): Promise<{ prospect: Prospect | null; business: Business | null }> {
   const admin = createAdminClient();
-  const [prospect, studio] = await Promise.all([
+  const [prospect, business] = await Promise.all([
     thread?.prospect_id
       ? admin.from("prospects").select("*").eq("id", thread.prospect_id).maybeSingle<Prospect>()
       : admin.from("prospects").select("*").eq("email", contactEmail).maybeSingle<Prospect>(),
-    thread?.studio_id
-      ? admin.from("studios").select("*").eq("id", thread.studio_id).maybeSingle<Studio>()
-      : admin.from("studios").select("*").eq("email", contactEmail).limit(1).maybeSingle<Studio>(),
+    thread?.business_id
+      ? admin.from("businesses").select("*").eq("id", thread.business_id).maybeSingle<Business>()
+      : admin.from("businesses").select("*").eq("email", contactEmail).limit(1).maybeSingle<Business>(),
   ]);
-  return { prospect: prospect.data, studio: studio.data };
+  return { prospect: prospect.data, business: business.data };
 }
 
-async function buildContactContext(prospect: Prospect | null, studio: Studio | null): Promise<ContactContext> {
-  if (studio) {
+async function buildContactContext(prospect: Prospect | null, business: Business | null): Promise<ContactContext> {
+  if (business) {
     return {
-      kind: "studio",
-      name: studio.name,
-      city: studio.city,
-      plan: studio.plan,
-      monthlyBookings: await countMonthlyBookings(createAdminClient(), studio.id),
+      kind: "business",
+      name: business.name,
+      category: getCategory(business.category)?.label ?? business.category,
+      city: business.city,
+      plan: business.plan,
+      monthlyBookings: await countMonthlyBookings(createAdminClient(), business.id),
       freeMonthlyLimit: siteConfig.pricing.freeMonthlyBookings,
-      connectOnboarded: studio.stripe_connect_onboarded,
-      depositEnabled: studio.deposit_enabled,
-      publicUrl: publicStudioUrl(studio.slug),
+      connectOnboarded: business.stripe_connect_onboarded,
+      depositEnabled: business.deposit_enabled,
+      publicUrl: publicBusinessUrl(business),
     };
   }
-  if (prospect) return { kind: "prospect", name: prospect.name, city: prospect.city, status: prospect.status, website: prospect.website };
+  if (prospect) {
+    return { kind: "prospect", name: prospect.name, category: getCategory(prospect.category)?.label ?? null, city: prospect.city, status: prospect.status, website: prospect.website };
+  }
   return { kind: "unknown" };
 }
 
@@ -95,7 +99,7 @@ async function alertOwner(params: {
   history: { direction: string; body: string; created_at: string }[];
   draft: string;
 }): Promise<void> {
-  const transcript = params.history.map((m) => `--- ${m.direction === "outbound" ? "Slotly" : "Contact"} · ${m.created_at}\n${m.body}`).join("\n\n");
+  const transcript = params.history.map((m) => `--- ${m.direction === "outbound" ? "Rendez-vous" : "Contact"} · ${m.created_at}\n${m.body}`).join("\n\n");
   const lines = [
     `Raison : ${params.reason}`,
     `Contact : ${params.email.from} (${params.contact.kind})`,
@@ -113,7 +117,7 @@ async function alertOwner(params: {
   await sendEmail({
     to: env.ownerAlertEmail(),
     replyTo: normalizeEmail(params.email.from),
-    subject: `[Slotly · escalade] ${params.reason} — ${normalizeEmail(params.email.from)}`,
+    subject: `[Rendez-vous · escalade] ${params.reason} — ${normalizeEmail(params.email.from)}`,
     text: lines.join("\n"),
     html: layoutHtml(`Escalade : ${params.reason}`, lines.filter(Boolean)),
   });
@@ -143,7 +147,7 @@ export async function processInboundEmail(email: InboundEmail, deps: PipelineDep
   });
   if (decision.action === "drop") return { status: "dropped", reason: decision.reason };
 
-  const { prospect, studio } = await loadContact(contactEmail, thread);
+  const { prospect, business } = await loadContact(contactEmail, thread);
 
   // 2. Rattachement / création du fil puis stockage du message entrant.
   if (!thread) {
@@ -152,7 +156,7 @@ export async function processInboundEmail(email: InboundEmail, deps: PipelineDep
       .insert({
         contact_email: contactEmail,
         prospect_id: prospect?.id ?? null,
-        studio_id: studio?.id ?? null,
+        business_id: business?.id ?? null,
         subject: email.subject.slice(0, 300),
         status: "open",
       })
@@ -212,7 +216,7 @@ export async function processInboundEmail(email: InboundEmail, deps: PipelineDep
     .order("created_at")
     .returns<{ direction: "inbound" | "outbound"; body_text: string | null; created_at: string }[]>();
   const history = (historyRows ?? []).slice(0, -1).map((m) => ({ direction: m.direction, body: m.body_text ?? "", created_at: m.created_at }));
-  const contact = await buildContactContext(prospect, studio);
+  const contact = await buildContactContext(prospect, business);
   const context: AgentContext = { inbound: email, contact, history, aiReplyCount: thread.ai_reply_count };
 
   const escalate = async (reason: string, draft: string, intent: string) => {
@@ -240,8 +244,8 @@ export async function processInboundEmail(email: InboundEmail, deps: PipelineDep
 
   const onboardingUrl =
     contact.kind === "prospect" && prospect
-      ? `${env.appUrl()}/onboarding?prefill=${encodeURIComponent(
-          signPrefill({ name: prospect.name, city: prospect.city ?? "", email: prospect.email ?? contactEmail }, env.prefillSecret()),
+      ? `${env.appUrl()}/pro/inscription?prefill=${encodeURIComponent(
+          signPrefill({ name: prospect.name, city: prospect.city ?? "", email: prospect.email ?? contactEmail, ...(prospect.category ? { category: prospect.category } : {}) }, env.prefillSecret()),
         )}`
       : null;
 

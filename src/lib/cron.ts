@@ -4,7 +4,7 @@ import { zonedParts } from "@/lib/domain/time";
 import { env } from "@/lib/env";
 import { safeEqual } from "@/lib/prefill";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { Studio } from "@/lib/supabase/types";
+import type { Business } from "@/lib/supabase/types";
 
 /** Crons protégés par `Authorization: Bearer ${CRON_SECRET}`. */
 export function isAuthorizedCron(request: Request): boolean {
@@ -22,8 +22,8 @@ export function isParisHour(request: Request, hour: number, now: Date = new Date
   return zonedParts(now, siteConfig.booking.timeZone).hour === hour;
 }
 
-export async function loadProStudios(): Promise<Studio[]> {
-  const { data } = await createAdminClient().from("studios").select("*").eq("plan", "pro").returns<Studio[]>();
+export async function loadProBusinesses(): Promise<Business[]> {
+  const { data } = await createAdminClient().from("businesses").select("*").eq("plan", "pro").returns<Business[]>();
   return data ?? [];
 }
 

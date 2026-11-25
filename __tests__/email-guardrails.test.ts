@@ -13,18 +13,18 @@ import { safeEqual, signPrefill, verifyPrefill } from "@/lib/prefill";
 function email(overrides: Partial<InboundEmail> = {}): InboundEmail {
   return {
     from: "Julien <julien@detailing-lyon.fr>",
-    to: "bonjour@slotly.fr",
+    to: "bonjour@rendez-vous.app",
     subject: "Re: Votre page de réservation",
     text: "Bonjour, ça m'intéresse, comment ça marche ?",
     messageId: "<abc@mail.gmail.com>",
-    inReplyTo: "<out-1@slotly.fr>",
-    references: "<out-1@slotly.fr>",
+    inReplyTo: "<out-1@rendez-vous.app>",
+    references: "<out-1@rendez-vous.app>",
     headers: {},
     ...overrides,
   };
 }
 
-const own = ["bonjour@slotly.fr"];
+const own = ["bonjour@rendez-vous.app"];
 
 describe("adresses système & bounces", () => {
   it.each(["mailer-daemon@googlemail.com", "MAILER-DAEMON@mx.example.com", "noreply@stripe.com", "no-reply@x.fr", "postmaster@orange.fr", "do-not-reply@a.io", "bounce+123@x.com"])(
@@ -40,7 +40,7 @@ describe("adresses système & bounces", () => {
   });
 
   it("ignore nos propres envois", () => {
-    expect(evaluateGuardrails({ email: email({ from: "Slotly <bonjour@slotly.fr>" }), thread: null, ownAddresses: own }).action).toBe("drop");
+    expect(evaluateGuardrails({ email: email({ from: "Rendez-vous <bonjour@rendez-vous.app>" }), thread: null, ownAddresses: own }).action).toBe("drop");
   });
 });
 
@@ -85,8 +85,8 @@ describe("opt-out immédiat", () => {
   });
 
   it("ignore le mot présent uniquement dans la citation", () => {
-    const text = "Oui je suis intéressé !\n\nLe lun. 23 nov. 2026, Slotly a écrit :\n> Répondez STOP pour ne plus être contacté.";
-    expect(containsStopKeyword("Re: Slotly", text)).toBe(false);
+    const text = "Oui je suis intéressé !\n\nLe lun. 23 nov. 2026, Rendez-vous a écrit :\n> Répondez STOP pour ne plus être contacté.";
+    expect(containsStopKeyword("Re: Rendez-vous", text)).toBe(false);
     expect(evaluateGuardrails({ email: email({ text }), thread: null, ownAddresses: own }).action).toBe("ai");
   });
 
@@ -126,7 +126,7 @@ describe("plafond de réponses IA", () => {
 
 describe("citations", () => {
   it("retire l'historique Gmail / Outlook", () => {
-    expect(stripQuotedReply("Ok pour moi\nOn Mon, Nov 23, 2026 at 9:00 AM Slotly wrote:\n> blabla")).toBe("Ok pour moi");
+    expect(stripQuotedReply("Ok pour moi\nOn Mon, Nov 23, 2026 at 9:00 AM Rendez-vous wrote:\n> blabla")).toBe("Ok pour moi");
     expect(stripQuotedReply("Parfait\n-----Original Message-----\nFrom: x")).toBe("Parfait");
   });
 });
@@ -134,6 +134,11 @@ describe("citations", () => {
 describe("jeton HMAC prefill", () => {
   const secret = "test-secret-très-long";
   const data = { name: "Shine Detailing", city: "Lyon", email: "Julien@Detailing-Lyon.fr" };
+
+  it("transporte la catégorie quand elle est fournie", () => {
+    const token = signPrefill({ ...data, category: "barbier" }, secret);
+    expect(verifyPrefill(token, secret)?.category).toBe("barbier");
+  });
 
   it("signe puis vérifie", () => {
     const token = signPrefill(data, secret);

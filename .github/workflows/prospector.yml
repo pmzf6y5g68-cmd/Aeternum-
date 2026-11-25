@@ -1,4 +1,4 @@
-name: Slotly prospector
+name: Rendez-vous prospector
 
 on:
   schedule:
@@ -13,7 +13,7 @@ on:
         options: ["true", "false"]
 
 concurrency:
-  group: slotly-prospector
+  group: rdv-prospector
   cancel-in-progress: false
 
 jobs:
@@ -36,8 +36,10 @@ jobs:
           MAX_EMAILS_PER_DAY: ${{ vars.MAX_EMAILS_PER_DAY || '25' }}
           PROSPECT_COUNTRY: ${{ vars.PROSPECT_COUNTRY || 'FR' }}
           PROSPECT_CITIES: ${{ vars.PROSPECT_CITIES }}
+          PROSPECT_CATEGORIES: ${{ vars.PROSPECT_CATEGORIES }}
+          MAX_SEARCHES_PER_RUN: ${{ vars.MAX_SEARCHES_PER_RUN || '12' }}
           ANTHROPIC_MODEL: ${{ vars.ANTHROPIC_MODEL || 'claude-haiku-4-5' }}
-          APP_DOMAIN: ${{ vars.APP_DOMAIN || 'slotly.fr' }}
+          APP_DOMAIN: ${{ vars.APP_DOMAIN || 'rendez-vous.app' }}
           EMAIL_FROM: ${{ vars.EMAIL_FROM }}
           EMAIL_REPLY_TO: ${{ vars.EMAIL_REPLY_TO }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

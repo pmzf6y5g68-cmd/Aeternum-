@@ -6,7 +6,7 @@ import { errorMessage, logEvent } from "@/lib/events";
 import { json, jsonError } from "@/lib/http";
 import { getStripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { Booking, Studio } from "@/lib/supabase/types";
+import type { Booking, Business } from "@/lib/supabase/types";
 
 /**
  * Un seul endpoint pour les deux sources Stripe :
@@ -32,10 +32,10 @@ async function syncSubscription(subscription: Stripe.Subscription): Promise<void
   const admin = createAdminClient();
   const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
   const plan = PRO_STATUSES.includes(subscription.status) ? "pro" : "free";
-  const studioId = subscription.metadata?.studio_id;
+  const businessId = subscription.metadata?.business_id;
 
-  const query = admin.from("studios").update({ plan, stripe_subscription_id: plan === "pro" ? subscription.id : null, stripe_customer_id: customerId });
-  const { error } = studioId ? await query.eq("id", studioId) : await query.eq("stripe_customer_id", customerId);
+  const query = admin.from("businesses").update({ plan, stripe_subscription_id: plan === "pro" ? subscription.id : null, stripe_customer_id: customerId });
+  const { error } = businessId ? await query.eq("id", businessId) : await query.eq("stripe_customer_id", customerId);
   if (error) throw new Error(error.message);
 }
 
@@ -43,8 +43,8 @@ async function handleSubscriptionCheckout(session: Stripe.Checkout.Session): Pro
   if (!session.subscription) return;
   const subscriptionId = typeof session.subscription === "string" ? session.subscription : session.subscription.id;
   const subscription = await getStripe().subscriptions.retrieve(subscriptionId);
-  if (!subscription.metadata?.studio_id && session.metadata?.studio_id) {
-    subscription.metadata = { ...subscription.metadata, studio_id: session.metadata.studio_id };
+  if (!subscription.metadata?.business_id && session.metadata?.business_id) {
+    subscription.metadata = { ...subscription.metadata, business_id: session.metadata.business_id };
   }
   await syncSubscription(subscription);
 }
@@ -57,9 +57,9 @@ async function confirmDeposit(session: Stripe.Checkout.Session, connectedAccount
   const { data: booking } = await admin.from("bookings").select("*").eq("id", bookingId).maybeSingle<Booking>();
   if (!booking || booking.deposit_paid) return; // Idempotence : déjà traité.
 
-  const { data: studio } = await admin.from("studios").select("*").eq("id", booking.studio_id).single<Studio>();
-  if (!studio) return;
-  if (connectedAccount && studio.stripe_connect_account_id !== connectedAccount) {
+  const { data: business } = await admin.from("businesses").select("*").eq("id", booking.business_id).single<Business>();
+  if (!business) return;
+  if (connectedAccount && business.stripe_connect_account_id !== connectedAccount) {
     await logEvent("stripe.webhook", "account mismatch on deposit", { booking_id: bookingId, connectedAccount });
     return;
   }
@@ -68,7 +68,7 @@ async function confirmDeposit(session: Stripe.Checkout.Session, connectedAccount
   if (booking.status === "pending_deposit") {
     const { data } = await admin
       .from("bookings")
-      .update({ status: "scheduled", deposit_paid: true, stripe_checkout_session_id: session.id })
+      .update({ status: "scheduled", deposit_paid: true, stripe_checkout_session_id: session.id, cancelled_by: null })
       .eq("id", booking.id)
       .eq("status", "pending_deposit")
       .select("id");
@@ -83,11 +83,11 @@ async function confirmDeposit(session: Stripe.Checkout.Session, connectedAccount
     confirmed = data === true;
     if (!confirmed) {
       const paymentIntent = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id;
-      if (paymentIntent && studio.stripe_connect_account_id) {
-        await getStripe().refunds.create({ payment_intent: paymentIntent }, { stripeAccount: studio.stripe_connect_account_id });
+      if (paymentIntent && business.stripe_connect_account_id) {
+        await getStripe().refunds.create({ payment_intent: paymentIntent }, { stripeAccount: business.stripe_connect_account_id });
       }
       await admin.from("bookings").update({ stripe_checkout_session_id: session.id }).eq("id", booking.id);
-      await notifyClientLatePaymentRefunded(booking, studio);
+      await notifyClientLatePaymentRefunded(booking, business);
       await logEvent("stripe.webhook", "late deposit refunded: slot taken", { booking_id: booking.id }, "warning");
       return;
     }
@@ -95,20 +95,20 @@ async function confirmDeposit(session: Stripe.Checkout.Session, connectedAccount
   if (!confirmed) return;
 
   const fresh = { ...booking, status: "scheduled" as const, deposit_paid: true };
-  const [{ data: service }, { data: addons }] = await Promise.all([
-    admin.from("services").select("name").eq("id", booking.service_id ?? "").maybeSingle<{ name: string }>(),
+  const [{ data: addons }, { data: staff }] = await Promise.all([
     booking.addon_ids.length
       ? admin.from("addons").select("name").in("id", booking.addon_ids).returns<{ name: string }[]>()
       : Promise.resolve({ data: [] as { name: string }[] }),
+    booking.staff_id ? admin.from("staff").select("name").eq("id", booking.staff_id).maybeSingle<{ name: string }>() : Promise.resolve({ data: null }),
   ]);
-  await sendBookingConfirmation(fresh, studio, service?.name ?? "Prestation", (addons ?? []).map((a) => a.name));
+  await sendBookingConfirmation(fresh, business, (addons ?? []).map((a) => a.name), staff?.name ?? null);
 }
 
 async function syncConnectAccount(account: Stripe.Account): Promise<void> {
   const onboarded = Boolean(account.charges_enabled && account.details_submitted);
   const patch: Record<string, unknown> = { stripe_connect_onboarded: onboarded };
   if (!onboarded) patch.deposit_enabled = false;
-  const { error } = await createAdminClient().from("studios").update(patch).eq("stripe_connect_account_id", account.id);
+  const { error } = await createAdminClient().from("businesses").update(patch).eq("stripe_connect_account_id", account.id);
   if (error) throw new Error(error.message);
 }
 

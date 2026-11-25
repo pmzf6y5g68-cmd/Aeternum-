@@ -14,36 +14,49 @@ export default function CguPage() {
         {
           title: "1. Objet",
           paragraphs: [
-            `${siteConfig.name} fournit aux professionnels du detailing automobile (« le Studio ») une page de réservation en ligne, un agenda et des outils de rappel. Les présentes CGU régissent l'utilisation du service par les Studios et par leurs clients finaux.`,
+            `${siteConfig.name} est une plateforme qui met en relation des utilisateurs (« Usagers ») avec des professionnels recevant sur rendez-vous (« Professionnels »), hors professions de santé. ${siteConfig.name} agit en intermédiaire technique : le contrat de prestation est conclu directement entre l'Usager et le Professionnel.`,
           ],
         },
         {
-          title: "2. Offres",
+          title: "2. Usagers",
           paragraphs: [
-            `Plan Gratuit : jusqu'à ${p.freeMonthlyBookings} rendez-vous par mois civil. Plan Pro : ${p.proMonthlyPriceEur} € TTC par mois, rendez-vous illimités, options upsell, rappels et relances automatiques, avec ${p.proTrialDays} jours d'essai offerts.`,
-            "L'abonnement Pro est sans engagement, renouvelé chaque mois et résiliable à tout moment depuis le portail de facturation ; la résiliation prend effet à la fin de la période en cours.",
+            "La recherche et la réservation sont gratuites pour les Usagers. Un compte (connexion par lien envoyé par email) permet de retrouver, annuler et reprendre ses rendez-vous et de gérer ses favoris.",
+            "L'Usager s'engage à fournir des coordonnées exactes et à honorer ses rendez-vous ou à les annuler dans le délai prévu par la politique d'annulation affichée sur la page du Professionnel. En cas d'acompte, son remboursement relève exclusivement du Professionnel.",
           ],
         },
         {
-          title: "3. Acomptes",
+          title: "3. Professionnels",
           paragraphs: [
-            `Les acomptes sont encaissés directement par le Studio via son propre compte Stripe Connect. ${siteConfig.name} n'encaisse ni ne détient jamais de fonds pour le compte des Studios. La politique de remboursement des acomptes relève exclusivement du Studio.`,
+            `Plan Gratuit : jusqu'à ${p.freeMonthlyBookings} rendez-vous par mois civil. Plan Pro : ${p.proMonthlyPriceEur} € TTC par mois, rendez-vous illimités et fonctions avancées, avec ${p.proTrialDays} jours d'essai offerts, sans engagement, résiliable à tout moment depuis le portail de facturation.`,
+            "Le Professionnel est seul responsable des informations publiées (prestations, prix, horaires, adresse), de la prestation réalisée et du respect de ses obligations légales et réglementaires.",
           ],
         },
         {
-          title: "4. Rendez-vous",
+          title: "4. Paiements et acomptes",
           paragraphs: [
-            "Le prix affiché au client est calculé à partir des tarifs renseignés par le Studio (gabarit, options, frais de déplacement). Le Studio reste seul responsable de la prestation réalisée, de ses tarifs et du respect de ses obligations professionnelles.",
-            "Un créneau en attente d'acompte est réservé pendant 20 minutes ; passé ce délai, il est automatiquement libéré.",
+            `Les acomptes sont encaissés directement par le Professionnel via son propre compte Stripe Connect. ${siteConfig.name} n'encaisse ni ne détient jamais de fonds pour le compte des Professionnels. Un créneau en attente d'acompte est réservé 20 minutes, puis libéré.`,
           ],
         },
         {
-          title: "5. Responsabilité",
+          title: "5. Avis",
           paragraphs: [
-            `${siteConfig.name} met en œuvre les moyens raisonnables pour assurer la disponibilité du service, sans garantie de disponibilité continue. Sa responsabilité ne saurait être engagée pour les litiges entre un Studio et ses clients.`,
+            "Seuls les Usagers ayant effectivement eu rendez-vous peuvent publier un avis, une seule fois par rendez-vous. Les avis sont publiés sans modération préalable, sans contrepartie, et classés par date. Le Professionnel peut y répondre publiquement. Tout avis illicite peut être signalé à " +
+              siteConfig.supportEmail +
+              ".",
           ],
         },
-        { title: "6. Droit applicable", paragraphs: ["Les présentes CGU sont soumises au droit français. À défaut d'accord amiable, les tribunaux de Paris sont compétents."] },
+        {
+          title: "6. Classement des résultats",
+          paragraphs: [
+            "Les résultats sont classés selon la pertinence par rapport à la recherche (nom, métier, prestations), puis la note moyenne pondérée par le nombre d'avis et la distance. L'Usager peut trier par distance, prix, note ou disponibilité. Aucune rémunération n'influence le classement.",
+          ],
+        },
+        {
+          title: "7. Responsabilité et droit applicable",
+          paragraphs: [
+            `${siteConfig.name} met en œuvre les moyens raisonnables pour assurer la disponibilité du service, sans garantie de continuité, et n'est pas partie aux litiges entre Usagers et Professionnels. Les présentes CGU sont soumises au droit français ; à défaut d'accord amiable, les tribunaux de Paris sont compétents, sous réserve des règles protectrices des consommateurs.`,
+          ],
+        },
       ]}
     />
   );

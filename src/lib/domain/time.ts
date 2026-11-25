@@ -1,6 +1,6 @@
 /**
  * Conversions de fuseau horaire sans dépendance (Intl uniquement).
- * Toutes les heures d'ouverture sont exprimées en heure locale du studio (Europe/Paris).
+ * Toutes les heures d'ouverture sont exprimées en heure locale de l'établissement (Europe/Paris).
  */
 export const DEFAULT_TZ = "Europe/Paris";
 

@@ -23,7 +23,7 @@ function isSundayInParis(now: Date): boolean {
 
 /**
  * 20h (Paris) : bilan envoyé à OWNER_ALERT_EMAIL uniquement s'il y a des escalades en attente
- * ou des erreurs système — et chaque dimanche pour le récap hebdo (MRR, prospects, studios).
+ * ou des erreurs système — et chaque dimanche pour le récap hebdo (MRR, prospects, établissements).
  */
 export async function GET(request: Request) {
   if (!isAuthorizedCron(request)) return jsonError("unauthorized", 401);
@@ -73,10 +73,10 @@ export async function GET(request: Request) {
   if (prospectErrors) lines.push(`⚠️ ${prospectErrors} prospect(s) en erreur d'envoi sur 24 h.`);
 
   if (isSunday) {
-    const [pro, studiosTotal, newStudios, sent, replied, converted, stopped, bookings] = await Promise.all([
-      count("studios", [["eq", "plan", "pro"]]),
-      count("studios"),
-      count("studios", [["gte", "created_at", since7d]]),
+    const [pro, businessesTotal, newBusinesses, sent, replied, converted, stopped, bookings] = await Promise.all([
+      count("businesses", [["eq", "plan", "pro"]]),
+      count("businesses"),
+      count("businesses", [["gte", "created_at", since7d]]),
       count("prospects", [["gte", "last_contacted_at", since7d]]),
       count("email_messages", [["eq", "direction", "inbound"], ["gte", "created_at", since7d]]),
       count("prospects", [["eq", "status", "converted"]]),
@@ -85,8 +85,8 @@ export async function GET(request: Request) {
     ]);
     lines.push(
       "📊 Récap hebdo",
-      `• MRR : ${pro * siteConfig.pricing.proMonthlyPriceEur} € (${pro} studio(s) Pro sur ${studiosTotal})`,
-      `• Nouveaux studios (7 j) : ${newStudios}`,
+      `• MRR : ${pro * siteConfig.pricing.proMonthlyPriceEur} € (${pro} établissement(s) Pro sur ${businessesTotal})`,
+      `• Nouveaux établissements (7 j) : ${newBusinesses}`,
       `• Prospects contactés (7 j) : ${sent} · emails reçus : ${replied}`,
       `• Prospects convertis (total) : ${converted} · opt-out : ${stopped}`,
       `• RDV créés (7 j) : ${bookings}`,
@@ -96,9 +96,9 @@ export async function GET(request: Request) {
   try {
     await sendEmail({
       to: env.ownerAlertEmail(),
-      subject: hasAnomaly ? `[Slotly] ${escalations.length} escalade(s), ${systemErrors.length} erreur(s)` : "[Slotly] Récap hebdomadaire",
+      subject: hasAnomaly ? `[Rendez-vous] ${escalations.length} escalade(s), ${systemErrors.length} erreur(s)` : "[Rendez-vous] Récap hebdomadaire",
       text: lines.join("\n"),
-      html: layoutHtml(hasAnomaly ? "Bilan de santé Slotly" : "Récap hebdomadaire Slotly", lines),
+      html: layoutHtml(hasAnomaly ? "Bilan de santé Rendez-vous" : "Récap hebdomadaire Rendez-vous", lines),
     });
   } catch (err) {
     await logEvent("cron.health-digest", errorMessage(err));

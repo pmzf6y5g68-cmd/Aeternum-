@@ -99,7 +99,7 @@ export function containsStopKeyword(subject: string, text: string): boolean {
 export interface GuardrailInput {
   email: InboundEmail;
   thread: ThreadState | null;
-  /** Adresses du domaine Slotly (évite de se répondre à soi-même). */
+  /** Adresses du domaine Rendez-vous (évite de se répondre à soi-même). */
   ownAddresses: string[];
 }
 

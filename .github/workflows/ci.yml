@@ -19,3 +19,22 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: python3 -m py_compile scripts/prospector.py
+
+  sql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Schéma (x2, idempotence) + tests comportementaux
+        env:
+          PGHOST: localhost
+          PGUSER: postgres
+          PGPASSWORD: postgres
+        run: scripts/test-sql.sh

@@ -1,11 +1,11 @@
-name = "slotly-email-inbound"
+name = "rdv-email-inbound"
 main = "src/index.ts"
 compatibility_date = "2026-11-01"
 compatibility_flags = ["nodejs_compat"]
 
 [vars]
 # Domaine de l'application Next.js (sans https://)
-APP_DOMAIN = "slotly.fr"
+APP_DOMAIN = "rendez-vous.app"
 # Optionnel : adresse vérifiée dans Email Routing qui reçoit une copie si l'API est injoignable
 FALLBACK_FORWARD = ""
 

@@ -1,5 +1,5 @@
 {
-  "name": "slotly-email-inbound",
+  "name": "rdv-email-inbound",
   "version": "1.0.0",
   "private": true,
   "type": "module",
