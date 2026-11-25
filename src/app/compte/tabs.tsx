@@ -8,6 +8,7 @@ const tabs = [
   { href: "/compte", label: fr.account.title },
   { href: "/compte/favoris", label: fr.account.favorites },
   { href: "/compte/profil", label: fr.account.profile },
+  { href: "/compte/securite", label: "Sécurité" },
 ];
 
 export function AccountTabs() {

@@ -4,7 +4,9 @@ import { notifyClientLatePaymentRefunded, sendBookingConfirmation } from "@/lib/
 import { env } from "@/lib/env";
 import { errorMessage, logEvent } from "@/lib/events";
 import { json, jsonError } from "@/lib/http";
+import { rewardReferralOnFirstPayment } from "@/lib/referral";
 import { getStripe } from "@/lib/stripe";
+import { notifyPaymentFailed } from "@/lib/email/pro-emails";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Booking, Business } from "@/lib/supabase/types";
 
@@ -146,6 +148,18 @@ export async function POST(request: Request) {
       case "customer.subscription.deleted":
         await syncSubscription(event.data.object);
         break;
+      case "invoice.paid": {
+        const invoice = event.data.object;
+        const customer = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
+        if (customer && invoice.amount_paid > 0 && !event.account) await rewardReferralOnFirstPayment(customer);
+        break;
+      }
+      case "invoice.payment_failed": {
+        const invoice = event.data.object;
+        const customer = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
+        if (customer && !event.account) await notifyPaymentFailed(customer, invoice.attempt_count ?? 1, invoice.next_payment_attempt ?? null);
+        break;
+      }
       case "account.updated":
         await syncConnectAccount(event.data.object);
         break;

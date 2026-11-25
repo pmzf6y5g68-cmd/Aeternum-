@@ -1,3 +1,4 @@
+import { ReferralCapture } from "@/components/referral-capture";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BellRing, CalendarRange, Check, Eye, Layers, ShieldCheck, Users } from "lucide-react";
@@ -17,10 +18,12 @@ export const metadata: Metadata = {
 const t = fr.pro;
 const icons = [Eye, CalendarRange, ShieldCheck, Layers, Users, BellRing];
 
-export default function ProLandingPage() {
+export default async function ProLandingPage({ searchParams }: { searchParams: Promise<{ parrain?: string }> }) {
+  const { parrain } = await searchParams;
   return (
     <>
       <SiteHeader />
+      <ReferralCapture code={parrain} />
       <main>
         <section className="bg-brand pb-16 pt-10 md:pt-16">
           <div className="mx-auto max-w-5xl px-4 text-white">

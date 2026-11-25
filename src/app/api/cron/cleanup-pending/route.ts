@@ -24,6 +24,9 @@ export async function GET(request: Request) {
     return jsonError("db_error", 500);
   }
 
+  // Purge des compteurs anti-abus expirés.
+  await admin.from("rate_limits").delete().lt("window_start", new Date(Date.now() - 2 * 3_600_000).toISOString());
+
   let waitlisted = 0;
   for (const b of expired ?? []) waitlisted += await notifyWaitlistForSlot(b);
 

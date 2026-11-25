@@ -50,6 +50,12 @@ export interface Business {
   updated_at: string;
   locale: "fr" | "en";
   created_at: string;
+  referral_code: string;
+  referred_by: string | null;
+  referral_rewarded_at: string | null;
+  quota_nudge_month: string | null;
+  quota_block_alert_at: string | null;
+  last_report_month: string | null;
 }
 
 /** Colonnes exposables publiquement (marketplace). Jamais de Stripe, d'email ou d'owner. */
@@ -58,7 +64,7 @@ export const PUBLIC_BUSINESS_COLUMNS =
 
 export type PublicBusiness = Omit<
   Business,
-  "owner_id" | "email" | "stripe_customer_id" | "stripe_subscription_id" | "stripe_connect_account_id" | "rebooking_days" | "created_at" | "calendar_token" | "no_show_block_threshold" | "updated_at"
+  "owner_id" | "email" | "stripe_customer_id" | "stripe_subscription_id" | "stripe_connect_account_id" | "rebooking_days" | "created_at" | "calendar_token" | "no_show_block_threshold" | "updated_at" | "referral_code" | "referred_by" | "referral_rewarded_at" | "quota_nudge_month" | "quota_block_alert_at" | "last_report_month"
 >;
 
 export interface Staff {

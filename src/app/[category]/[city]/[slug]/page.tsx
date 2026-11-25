@@ -17,7 +17,8 @@ import { formatDuration, formatEur, startingPriceCents } from "@/lib/domain/pric
 import { isValidDateString, zonedDateString } from "@/lib/domain/time";
 import { loadCatalog, loadPublicBusiness, pricingOf } from "@/lib/marketplace";
 import { businessPath } from "@/lib/slug";
-import { breadcrumbJsonLd, businessJsonLd, jsonLdScript } from "@/lib/seo";
+import { breadcrumbJsonLd, businessFaq, businessJsonLd, faqJsonLd, jsonLdScript } from "@/lib/seo";
+import { trackBusinessView } from "@/lib/stats";
 import { getCurrentUser } from "@/lib/supabase/server";
 import type { CustomerProfile } from "@/lib/supabase/types";
 import { BookingWidget } from "./booking-widget";
@@ -57,7 +58,7 @@ export default async function BusinessPage({ params, searchParams }: { params: P
   if (biz.category !== category || (biz.city_slug || "france") !== city) permanentRedirect(canonical);
 
   const cat = getCategory(biz.category);
-  const [catalog, session] = await Promise.all([loadCatalog(biz), getCurrentUser().catch(() => ({ user: null, supabase: null }))]);
+  const [catalog, session] = await Promise.all([loadCatalog(biz), getCurrentUser().catch(() => ({ user: null, supabase: null })), trackBusinessView(biz.id)]);
   const user = session.user;
   let isFavorite = false;
   let profile: CustomerProfile | null = null;
@@ -73,8 +74,10 @@ export default async function BusinessPage({ params, searchParams }: { params: P
   const weekOrder = [1, 2, 3, 4, 5, 6, 0];
   const hoursByDay = new Map(catalog.hours.map((h) => [h.day_of_week, h]));
   const todayDow = new Date().getDay();
+  const faq = businessFaq(biz, catalog.services, catalog.hours);
   const jsonLd = [
     businessJsonLd(biz, catalog.services, catalog.hours, catalog.reviews),
+    faqJsonLd(faq),
     breadcrumbJsonLd([
       { name: siteConfig.name, path: "/" },
       { name: cat?.plural ?? biz.category, path: `/${biz.category}` },
@@ -327,6 +330,18 @@ export default async function BusinessPage({ params, searchParams }: { params: P
                 ))}
               </ul>
             )}
+          </section>
+
+          <section className="card">
+            <h2 className="text-lg font-bold">Questions fréquentes</h2>
+            <div className="mt-2 divide-y divide-line">
+              {faq.map((f) => (
+                <details key={f.question} className="group py-3">
+                  <summary className="cursor-pointer list-none font-semibold marker:hidden group-open:text-brand">{f.question}</summary>
+                  <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">{f.answer}</p>
+                </details>
+              ))}
+            </div>
           </section>
         </div>
       </main>

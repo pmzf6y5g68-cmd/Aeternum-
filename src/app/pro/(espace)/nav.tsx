@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, Clock, CreditCard, LayoutList, Share2, Star, Store, Users } from "lucide-react";
+import { CalendarDays, Clock, CreditCard, LayoutList, Share2, ShieldCheck, Star, Store, TrendingUp, Users } from "lucide-react";
 import { fr } from "@/i18n/fr";
 
 const n = fr.dashboard.nav;
@@ -12,9 +12,11 @@ const items = [
   { href: "/pro/equipe", label: n.team, icon: Users },
   { href: "/pro/horaires", label: n.hours, icon: Clock },
   { href: "/pro/ma-page", label: n.page, icon: Store },
+  { href: "/pro/visibilite", label: "Visibilité", icon: TrendingUp },
   { href: "/pro/partager", label: n.share, icon: Share2 },
   { href: "/pro/avis", label: n.reviews, icon: Star },
   { href: "/pro/abonnement", label: n.billing, icon: CreditCard },
+  { href: "/compte/securite", label: "Sécurité", icon: ShieldCheck },
 ];
 
 export function ProNav() {

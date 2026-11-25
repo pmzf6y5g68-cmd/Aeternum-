@@ -1,5 +1,6 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { LOCATION_MODES, getCategory, type LocationMode } from "@/config/categories";
@@ -75,6 +76,15 @@ export async function createBusiness(_prev: OnboardingState, formData: FormData)
       .select("id")
       .single<{ id: string }>();
     if (error || !business) throw new Error(error?.message ?? "insert business");
+
+    // Parrainage : rattache le filleul au parrain (récompense au premier paiement, cf. webhook Stripe).
+    const jar = await cookies();
+    const ref = jar.get("rdv_ref")?.value;
+    if (ref && /^[a-z0-9]{6,16}$/.test(ref)) {
+      const { data: referrer } = await admin.from("businesses").select("id").eq("referral_code", ref).neq("id", business.id).maybeSingle<{ id: string }>();
+      if (referrer) await admin.from("businesses").update({ referred_by: referrer.id }).eq("id", business.id);
+      jar.delete("rdv_ref");
+    }
 
     const seeds = await Promise.all([
       admin.from("services").insert(buildSeedServices(category).map((s) => ({ ...s, business_id: business.id }))),

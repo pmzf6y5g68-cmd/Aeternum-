@@ -1,3 +1,4 @@
+import { rateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 import { centsToEur } from "@/lib/domain/pricing";
 import { json, jsonError } from "@/lib/http";
@@ -6,6 +7,7 @@ import { loadPublicBusiness, resolveDistance } from "@/lib/marketplace";
 const schema = z.object({ business: z.string().min(3).max(60), address: z.string().trim().min(5).max(200) });
 
 export async function POST(request: Request) {
+  if (!(await rateLimit("distance", request, 60, 600))) return jsonError("rate_limited", 429);
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return jsonError("invalid_request");
   const business = await loadPublicBusiness(parsed.data.business);

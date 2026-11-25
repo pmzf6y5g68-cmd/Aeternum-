@@ -131,6 +131,17 @@ do $$ begin
 end $$;
 
 -- RLS
+-- Statistiques de vues (agrégat journalier) et codes de parrainage.
+do $$
+declare v_id uuid := (select id from businesses where slug = 'salon-elegance');
+begin
+  perform track_business_view(v_id);
+  perform track_business_view(v_id);
+  perform track_business_view(v_id, true);
+  assert (select views from business_daily_stats where business_id = v_id) = 2, 'vues agrégées';
+  assert (select widget_views from business_daily_stats where business_id = v_id) = 1, 'vues module intégré';
+  assert (select count(distinct referral_code) from businesses) = (select count(*) from businesses), 'codes de parrainage uniques';
+end $$;
 set local role authenticated;
 set local request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
 do $$ begin
@@ -160,6 +171,32 @@ do $$ begin
     raise exception 'jeton calendrier modifiable !';
   exception when insufficient_privilege then null; end;
   assert (select count(*) from search_businesses()) = 2, 'recherche accessible';
+  assert (select count(*) from business_daily_stats) = 1, 'pro : ses statistiques uniquement';
+  begin
+    insert into business_daily_stats (business_id, day) values ((select id from businesses limit 1), '2020-01-01');
+    raise exception 'statistiques modifiables !';
+  exception when insufficient_privilege then null; end;
+  begin
+    update businesses set referral_rewarded_at = now();
+    raise exception 'parrainage modifiable !';
+  exception when insufficient_privilege then null; end;
+end $$;
+reset role;
+
+-- Double authentification : un second facteur vérifié exige une session aal2.
+insert into auth.mfa_factors (user_id, status) values ('11111111-1111-1111-1111-111111111111', 'verified');
+set local role authenticated;
+set local request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+set local request.jwt.claims = '{"aal": "aal1"}';
+do $$ begin
+  assert (select count(*) from businesses) = 0, 'aal1 + 2FA : établissement inaccessible';
+  assert (select count(*) from bookings) = 0, 'aal1 + 2FA : RDV inaccessibles';
+  assert (select count(*) from search_businesses()) = 2, 'aal1 : la recherche publique reste accessible';
+end $$;
+set local request.jwt.claims = '{"aal": "aal2"}';
+do $$ begin
+  assert (select count(*) from businesses) = 1, 'aal2 : accès rétabli';
+  assert (select count(*) from bookings) = 5, 'aal2 : RDV visibles';
 end $$;
 reset role;
 select 'ALL SQL TESTS PASSED' as result;

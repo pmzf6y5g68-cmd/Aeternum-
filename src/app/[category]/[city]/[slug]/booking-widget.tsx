@@ -40,6 +40,7 @@ const ERRORS: Record<string, string> = {
   out_of_zone: t.outOfZone,
   address_not_found: t.addressNotFound,
   blocked_no_show: t.blocked,
+  rate_limited: "Trop de tentatives en peu de temps. Patientez quelques minutes puis réessayez.",
 };
 
 function Waitlist({ businessSlug, serviceId, from, prefill }: { businessSlug: string; serviceId: string | null; from: string; prefill: { name: string; email: string } }) {
@@ -156,6 +157,7 @@ export function BookingWidget({
   today,
   prefill,
   loggedIn,
+  embedded = false,
 }: {
   business: WidgetBusiness;
   services: Service[];
@@ -166,6 +168,8 @@ export function BookingWidget({
   initialDate: string | null;
   today: string;
   prefill: { name: string; email: string; phone: string; address: string };
+  /** Module intégré sur le site du professionnel (iframe) : paiement ouvert dans un nouvel onglet. */
+  embedded?: boolean;
   loggedIn: boolean;
 }) {
   const [serviceId, setServiceId] = useState<string | null>(initialServiceId && services.some((s) => s.id === initialServiceId) ? initialServiceId : services.length === 1 ? (services[0]?.id ?? null) : null);
@@ -188,6 +192,7 @@ export function BookingWidget({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
 
   const service = services.find((s) => s.id === serviceId) ?? null;
   const serviceModes = useMemo<LocationMode[]>(() => {
@@ -340,6 +345,10 @@ export function BookingWidget({
         throw new Error(ERRORS[data.error ?? ""] ?? fr.common.error);
       }
       if (data.payment_url) {
+        if (embedded) {
+          setPaymentUrl(data.payment_url);
+          return;
+        }
         window.location.href = data.payment_url;
         return;
       }
@@ -351,6 +360,19 @@ export function BookingWidget({
     }
   }
 
+  if (paymentUrl && slot) {
+    return (
+      <div className="p-5 text-center">
+        <h3 className="text-xl font-bold">Acompte à régler</h3>
+        <p className="mt-1 font-semibold capitalize text-brand">{slotLabel(slot.startAt)}</p>
+        <p className="mt-2 text-sm text-ink-soft">Votre créneau est réservé quelques minutes, le temps de régler l&apos;acompte sur la page de paiement sécurisée.</p>
+        <a href={paymentUrl} target="_blank" rel="noopener" className="btn-primary mt-5 w-full">
+          Payer l&apos;acompte
+        </a>
+      </div>
+    );
+  }
+
   if (done && slot) {
     return (
       <div className="p-5 text-center">
@@ -360,7 +382,7 @@ export function BookingWidget({
         <h3 className="mt-4 text-xl font-bold">{t.successTitle}</h3>
         <p className="mt-1 font-semibold capitalize text-brand">{slotLabel(slot.startAt)}</p>
         <p className="mt-2 text-sm text-ink-soft">{t.successText}</p>
-        <Link href={loggedIn ? "/compte" : `/login?next=/compte`} className="btn-primary mt-5 w-full">
+        <Link href={loggedIn ? "/compte" : `/login?next=/compte`} target={embedded ? "_blank" : undefined} className="btn-primary mt-5 w-full">
           {t.seeMyAppointments}
         </Link>
       </div>

@@ -125,7 +125,7 @@ export function AssistantWidget() {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, open]);
 
-  if (pathname.startsWith("/pro") || pathname.startsWith("/paiement")) return null;
+  if (["/pro", "/paiement", "/widget", "/login", "/auth"].some((p) => pathname.startsWith(p))) return null;
 
   async function send(text: string) {
     const content = text.trim();

@@ -1,3 +1,4 @@
+import { rateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 import { siteConfig } from "@/config/site";
 import { addDays, isValidDateString, zonedDateString } from "@/lib/domain/time";
@@ -17,6 +18,7 @@ const schema = z.object({
 
 /** Inscription à la liste d'attente d'un établissement (alerte dès qu'un créneau se libère). */
 export async function POST(request: Request) {
+  if (!(await rateLimit("waitlist", request, 10, 3600))) return jsonError("rate_limited", 429);
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return jsonError("invalid_request");
   const input = parsed.data;

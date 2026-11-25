@@ -58,7 +58,10 @@ Ajouter un métier : une entrée dans `src/config/categories.ts` (+ la ligne cor
 1. Créez un projet (région UE). **SQL Editor** → exécutez `supabase/schema.sql` (idempotent, rejouable).
 2. **Authentication → URL Configuration** : *Site URL* = `https://votre-domaine`, *Redirect URLs* = `https://votre-domaine/auth/callback`.
 3. **Authentication → Emails** : branchez le SMTP de Resend (étape 3) pour que les liens de connexion partent de votre domaine.
-4. Récupérez `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
+4. **Authentication → Emails → Magic Link** : ajoutez `{{ .Token }}` au modèle pour que l'email contienne aussi le code à 6 chiffres.
+5. **Authentication → Providers** : activez Google, Apple et Microsoft (Azure) avec leurs identifiants développeur, puis listez-les dans `NEXT_PUBLIC_AUTH_PROVIDERS`.
+6. **Authentication → Multi-Factor** : laissez *TOTP* activé (double authentification par application).
+7. Récupérez `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
 
 ### 2. Stripe (abonnement Pro + Connect)
 1. Rien à créer pour l'abonnement : produit, prix et portail sont provisionnés automatiquement.
@@ -183,6 +186,13 @@ Android / Chrome / Edge proposent « Installer » ; sur iPhone : Partager → «
 rappelle). Les pros peuvent abonner Google Agenda, Apple Calendrier ou Outlook à leur agenda depuis `/pro/agenda`.
 
 ---
+
+## Croissance et sécurité
+- **Pros** : `/pro/visibilite` (vues, réservations, score /100, rédaction de fiche), module à intégrer sur leur site
+  (`<script src=".../embed.js" data-business="slug" async></script>`), parrainage (1 mois offert aux deux), bilan mensuel,
+  relances automatiques quand le quota gratuit approche ou bloque un client.
+- **Comptes** : Google, Apple, Microsoft, code ou lien par email, double authentification (application) imposée jusqu'en base.
+- **Protection** : HSTS, anti-clickjacking, limitation de débit en base, RLS stricte, webhooks signés.
 
 ## Contrats critiques (voir `CLAUDE.md`)
 - **RLS** : chaque établissement ne voit que ses données, chaque usager que ses RDV/favoris/profil ; plan, Stripe,

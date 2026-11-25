@@ -1,3 +1,5 @@
+import { rateLimit } from "@/lib/rate-limit";
+import { alertQuotaBlocked } from "@/lib/email/pro-emails";
 import { z } from "zod";
 import { siteConfig } from "@/config/site";
 import { BookingInputError, locationSchema, resolveSelection } from "@/lib/booking-request";
@@ -48,6 +50,7 @@ const RPC_ERRORS: Record<string, { code: string; status: number }> = {
 };
 
 export async function POST(request: Request) {
+  if (!(await rateLimit("booking", request, 15, 600))) return jsonError("rate_limited", 429);
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return jsonError("invalid_request");
   const input = parsed.data;
@@ -159,6 +162,9 @@ export async function POST(request: Request) {
 
   if (error || !booking) {
     const known = Object.entries(RPC_ERRORS).find(([key]) => error?.message.includes(key));
+    if (known?.[0] === "QUOTA_EXCEEDED") {
+      await alertQuotaBlocked(business.id, siteConfig.pricing.freeMonthlyBookings).catch((err) => logEvent("api.bookings.quotaAlert", errorMessage(err), {}, "warning"));
+    }
     if (known) return jsonError(known[1].code, known[1].status);
     await logEvent("api.bookings", error?.message ?? "rpc returned no row", { business: input.business });
     return jsonError("server_error", 500);

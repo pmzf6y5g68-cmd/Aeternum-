@@ -191,6 +191,86 @@ export function categoryFaq(cat: CategoryDef, stats: CategoryStats, cityLabel: s
   return faq;
 }
 
+const DAY_NAMES = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
+
+function hourText(v: string): string {
+  return v.slice(0, 5).replace(":", "h");
+}
+
+/** Horaires en clair, du lundi au dimanche (« lundi : 9h00–12h30, 13h30–19h00 ; dimanche : fermé »). */
+export function openingHoursText(hours: OpeningHours[]): string {
+  const byDay = new Map(hours.map((h) => [h.day_of_week, h]));
+  return [1, 2, 3, 4, 5, 6, 0]
+    .map((d) => {
+      const h = byDay.get(d);
+      if (!h || h.is_closed || !h.open_time || !h.close_time) return `${DAY_NAMES[d]} : fermé`;
+      if (h.break_start && h.break_end) return `${DAY_NAMES[d]} : ${hourText(h.open_time)}–${hourText(h.break_start)}, ${hourText(h.break_end)}–${hourText(h.close_time)}`;
+      return `${DAY_NAMES[d]} : ${hourText(h.open_time)}–${hourText(h.close_time)}`;
+    })
+    .join(" ; ");
+}
+
+function euros(v: number): string {
+  return `${Number.isInteger(v) ? v : v.toFixed(2).replace(".", ",")} €`;
+}
+
+/**
+ * FAQ d'une fiche établissement, construite uniquement à partir de ses données réelles :
+ * c'est le format que les moteurs IA et les AI Overviews citent pour « combien coûte… chez X ? », « X est-il ouvert le samedi ? ».
+ */
+export function businessFaq(b: PublicBusiness, services: Service[], hours: OpeningHours[]): { question: string; answer: string }[] {
+  const cat = getCategory(b.category);
+  const where = b.city ? ` à ${b.city}` : "";
+  const faq: { question: string; answer: string }[] = [
+    {
+      question: `Comment prendre rendez-vous chez ${b.name} ?`,
+      answer: `En ligne sur ${siteConfig.name}, 24 h/24 : choisissez la prestation puis un créneau libre affiché en temps réel. La confirmation est immédiate par email, avec un rappel avant le rendez-vous. C'est gratuit pour le client.`,
+    },
+  ];
+  const active = services.filter((s) => s.active !== false);
+  if (active.length) {
+    const lines = active.slice(0, 6).map((s) => {
+      const prices = [Number(s.price_eur), ...s.variants.map((v) => Number(v.price_eur))];
+      const min = Math.min(...prices);
+      return `${s.name} : ${s.variants.length ? `à partir de ${euros(min)}` : min === 0 ? "gratuit" : euros(min)} (${s.duration_minutes} min)`;
+    });
+    faq.push({
+      question: `Quels sont les tarifs de ${b.name} ?`,
+      answer: `${lines.join(" ; ")}${active.length > 6 ? ` ; et ${active.length - 6} autre${active.length - 6 > 1 ? "s" : ""} prestation${active.length - 6 > 1 ? "s" : ""}` : ""}. Le prix exact est affiché avant de réserver.`,
+    });
+  }
+  if (hours.some((h) => !h.is_closed && h.open_time)) {
+    faq.push({ question: `Quels sont les horaires de ${b.name} ?`, answer: `${openingHoursText(hours)}.` });
+  }
+  const placeParts: string[] = [];
+  if (b.modes.includes("on_site") && b.address) placeParts.push(`${b.name} vous reçoit au ${b.address}`);
+  if (b.modes.includes("at_home")) placeParts.push(`intervient à domicile jusqu'à ${Number(b.max_radius_km)} km${Number(b.free_radius_km) > 0 ? ` (déplacement offert jusqu'à ${Number(b.free_radius_km)} km)` : ""}`);
+  if (b.modes.includes("online")) placeParts.push("propose des rendez-vous en visio");
+  if (placeParts.length) {
+    const text = placeParts.join(", ");
+    faq.push({ question: `Où se trouve ${b.name}${where} ?`, answer: `${text.charAt(0).toUpperCase()}${text.slice(1)}.` });
+  }
+  if (b.payment_methods.length || b.deposit_enabled) {
+    faq.push({
+      question: `Quels moyens de paiement sont acceptés ?`,
+      answer: `${b.payment_methods.length ? `${b.payment_methods.join(", ")}.` : ""}${b.deposit_enabled && b.stripe_connect_onboarded ? ` Un acompte de ${b.deposit_percent} % est réglé en ligne à la réservation (carte, Apple Pay, Google Pay).` : ""}`.trim(),
+    });
+  }
+  faq.push({
+    question: `Peut-on annuler un rendez-vous chez ${b.name} ?`,
+    answer: b.cancellation_hours > 0
+      ? `Oui, gratuitement jusqu'à ${b.cancellation_hours} h avant le rendez-vous, depuis le lien reçu par email ou « Mes rendez-vous ».`
+      : `Oui, à tout moment depuis le lien reçu par email ou « Mes rendez-vous ».`,
+  });
+  if (b.rating_count > 0) {
+    faq.push({
+      question: `Quel est l'avis des clients sur ${b.name} ?`,
+      answer: `${b.name} est noté ${Number(b.rating_avg).toFixed(1).replace(".", ",")}/5 sur ${b.rating_count} avis vérifiés : seuls les clients venus à leur rendez-vous peuvent noter${cat ? ` ce ${cat.label.toLowerCase()}` : ""}.`,
+    });
+  }
+  return faq;
+}
+
 export function faqJsonLd(faq: { question: string; answer: string }[]) {
   return {
     "@context": "https://schema.org",

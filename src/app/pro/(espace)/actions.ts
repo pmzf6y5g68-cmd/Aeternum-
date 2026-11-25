@@ -378,3 +378,25 @@ export async function rotateCalendarToken(): Promise<void> {
   await createAdminClient().from("businesses").update({ calendar_token: crypto.randomUUID() }).eq("id", business.id);
   revalidatePath("/pro/agenda");
 }
+
+const listingCopySchema = z.object({
+  tagline: z.string().trim().min(5).max(140),
+  description: z.string().trim().min(50).max(3000),
+  highlights: z.array(z.string().trim().min(1).max(40)).max(8),
+});
+
+/** Applique la fiche proposée par l'IA après relecture (et éventuelle retouche) du professionnel. */
+export async function applyListingCopy(input: { tagline: string; description: string; highlights: string[] }): Promise<{ ok: boolean }> {
+  const { supabase, business } = await requireBusiness();
+  const parsed = listingCopySchema.safeParse(input);
+  if (!parsed.success) return { ok: false };
+  const { error } = await supabase.from("businesses").update(parsed.data).eq("id", business.id);
+  if (error) {
+    await logEvent("pro.applyListingCopy", error.message);
+    return { ok: false };
+  }
+  await pingIndexNow(businessUrlsToPing(business));
+  revalidatePath("/pro/visibilite");
+  revalidatePath("/pro/ma-page");
+  return { ok: true };
+}

@@ -7,13 +7,14 @@ on:
     - cron: "2 8,9 * * *"    # rebooking : la route ne s'exécute qu'à 10h Paris (hiver/été)
     - cron: "2 18,19 * * *"  # health-digest : la route ne s'exécute qu'à 20h Paris
     - cron: "4 4,5 1 * *"    # billing : le 1er du mois, la route ne s'exécute qu'à 6h Paris
+    - cron: "12 7,8 * * *"   # growth : relance quota + bilan mensuel, la route ne s'exécute qu'à 9h Paris
   workflow_dispatch:
     inputs:
       job:
         description: "Cron à lancer manuellement"
         required: true
         type: choice
-        options: [cleanup-pending, reminders, risk-check, rebooking, health-digest, billing]
+        options: [cleanup-pending, reminders, risk-check, rebooking, health-digest, billing, growth]
 
 concurrency:
   group: rdv-crons-${{ github.event.schedule || inputs.job }}
@@ -33,6 +34,7 @@ jobs:
             "2 8,9 * * *")    echo "list=rebooking" >> "$GITHUB_OUTPUT" ;;
             "2 18,19 * * *")  echo "list=health-digest" >> "$GITHUB_OUTPUT" ;;
             "4 4,5 1 * *")    echo "list=billing" >> "$GITHUB_OUTPUT" ;;
+            "12 7,8 * * *")   echo "list=growth" >> "$GITHUB_OUTPUT" ;;
             *)                echo "list=${{ inputs.job }}" >> "$GITHUB_OUTPUT" ;;
           esac
       - name: Appeler les routes cron

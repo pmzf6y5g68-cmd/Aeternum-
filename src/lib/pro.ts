@@ -7,9 +7,16 @@ import { businessPath } from "@/lib/slug";
 import { createSessionClient, getCurrentUser } from "@/lib/supabase/server";
 import type { Business } from "@/lib/supabase/types";
 
+/** Second facteur activé mais session non vérifiée : accès refusé (en plus du proxy et de la RLS). */
+async function mfaPending(supabase: SupabaseClient): Promise<boolean> {
+  const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  return Boolean(data && data.nextLevel === "aal2" && data.currentLevel !== "aal2");
+}
+
 export async function getOwnBusiness() {
   const { supabase, user } = await getCurrentUser();
   if (!user) return { supabase, user: null, business: null };
+  if (await mfaPending(supabase)) redirect("/auth/mfa?next=/pro/agenda");
   const { data } = await supabase.from("businesses").select("*").eq("owner_id", user.id).order("created_at").limit(1).maybeSingle<Business>();
   return { supabase, user, business: data };
 }
@@ -26,7 +33,7 @@ export async function requireBusiness() {
 export async function getApiBusiness(): Promise<Business | null> {
   const supabase = await createSessionClient();
   const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) return null;
+  if (!auth.user || (await mfaPending(supabase))) return null;
   const { data } = await supabase.from("businesses").select("*").eq("owner_id", auth.user.id).order("created_at").limit(1).maybeSingle<Business>();
   return data;
 }

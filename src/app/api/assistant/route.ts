@@ -1,3 +1,4 @@
+import { rateLimit } from "@/lib/rate-limit";
 import Anthropic from "@anthropic-ai/sdk";
 import { assistantRequestSchema, runAssistant } from "@/lib/ai/assistant";
 import { executeAssistantTool } from "@/lib/ai/assistant-tools";
@@ -24,7 +25,7 @@ function allowed(ip: string, now: number = Date.now()): boolean {
 export async function POST(request: Request) {
   if (!process.env.ANTHROPIC_API_KEY) return jsonError("assistant_unavailable", 503);
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  if (!allowed(ip)) return jsonError("rate_limited", 429);
+  if (!allowed(ip) || !(await rateLimit("assistant", request, 60, 3600))) return jsonError("rate_limited", 429);
 
   const parsed = assistantRequestSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return jsonError("invalid_request");

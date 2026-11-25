@@ -1,15 +1,24 @@
 import QRCode from "qrcode";
-import { AtSign, Download, MapPinned, Mic } from "lucide-react";
+import { AtSign, Download, Gift, MapPinned, Mic } from "lucide-react";
+import { referralUrl } from "@/lib/referral";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { CopyButton } from "@/components/copy-button";
 import { fr } from "@/i18n/fr";
+import { siteConfig } from "@/config/site";
 import { requireBusiness, shareBusinessUrl } from "@/lib/pro";
 
 export default async function SharePage() {
   const { business } = await requireBusiness();
+  // Les filleuls ne sont pas lisibles par RLS (autres établissements) : simple comptage côté serveur.
+  const { count: referrals } = await createAdminClient().from("businesses").select("id", { count: "exact", head: true }).eq("referred_by", business.id);
+  const refLink = referralUrl(business.referral_code);
   const url = shareBusinessUrl(business);
   const qr = await QRCode.toDataURL(url, { width: 640, margin: 2, color: { dark: "#0B1F3A", light: "#FFFFFF" } });
   const short = url.replace(/^https?:\/\//, "").replace("?via=pro", "");
   const voicemail = `Bonjour, vous êtes bien chez ${business.name}. Je ne peux pas vous répondre pour le moment. Le plus rapide pour prendre rendez-vous, c'est en ligne sur ${short} : vous verrez le prix et mes disponibilités en temps réel. À très vite !`;
+  const origin = siteConfig.url.replace(/\/$/, "");
+  const embed = `<script src="${origin}/embed.js" data-business="${business.slug}" async></script>`;
+  const inline = `<div id="rdv-booking"></div>\n<script src="${origin}/embed.js" data-business="${business.slug}" data-mode="inline" async></script>`;
   const widget = `<a href="${url}" style="display:inline-block;padding:12px 20px;border-radius:8px;background:#1758E6;color:#fff;font:600 15px system-ui;text-decoration:none">Prendre rendez-vous</a>`;
 
   return (
@@ -23,6 +32,19 @@ export default async function SharePage() {
           <CopyButton value={url} />
         </div>
       </section>
+      <section id="parrainage" className="card scroll-mt-24 border-brand/30 bg-brand-softer">
+        <h2 className="flex items-center gap-2 font-bold">
+          <Gift className="size-5 text-brand" aria-hidden /> Recommandez Rendez-vous : 1 mois offert pour vous et pour lui
+        </h2>
+        <p className="mt-1 text-sm text-ink-soft">
+          Partagez ce lien à un confrère, un voisin commerçant ou votre réseau. Dès son premier paiement Pro, vous recevez chacun un mois offert, sans limite de parrainages.
+        </p>
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+          <input readOnly value={refLink} className="input font-medium" aria-label="Lien de parrainage" />
+          <CopyButton value={refLink} />
+        </div>
+        {(referrals ?? 0) > 0 && <p className="mt-2 text-sm font-semibold text-brand">{referrals} professionnel{(referrals ?? 0) > 1 ? "s" : ""} inscrit{(referrals ?? 0) > 1 ? "s" : ""} grâce à vous.</p>}
+      </section>
       <section className="card flex flex-col items-center gap-4 sm:flex-row sm:items-start">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={qr} alt="QR code" width={170} height={170} className="rounded-lg border border-line" />
@@ -34,8 +56,24 @@ export default async function SharePage() {
           </a>
         </div>
       </section>
+      <section id="widget" className="card scroll-mt-24">
+        <h2 className="font-bold">Réservation sur votre site web</h2>
+        <p className="mt-1 text-sm text-ink-soft">
+          Vos visiteurs réservent sans quitter votre site : un bouton flottant ouvre votre agenda en temps réel. Collez cette ligne avant la balise <code>&lt;/body&gt;</code> (Wix, WordPress, Squarespace, Shopify…).
+        </p>
+        <pre className="mt-3 overflow-x-auto rounded-lg bg-canvas p-3 text-xs">{embed}</pre>
+        <div className="mt-2">
+          <CopyButton value={embed} />
+        </div>
+        <p className="mt-4 text-sm text-ink-soft">Ou affichez l&apos;agenda directement dans une page :</p>
+        <pre className="mt-2 overflow-x-auto rounded-lg bg-canvas p-3 text-xs">{inline}</pre>
+        <div className="mt-2">
+          <CopyButton value={inline} />
+        </div>
+        <p className="mt-3 text-xs text-ink-soft">Les réservations faites depuis votre site sont comptées comme vos clients directs.</p>
+      </section>
       <section className="card">
-        <h2 className="font-bold">Bouton pour votre site web</h2>
+        <h2 className="font-bold">Simple bouton (lien)</h2>
         <p className="mt-1 text-sm text-ink-soft">Copiez ce code dans votre site (Wix, WordPress, Squarespace…).</p>
         <pre className="mt-3 overflow-x-auto rounded-lg bg-canvas p-3 text-xs">{widget}</pre>
         <div className="mt-2">

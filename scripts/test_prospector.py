@@ -41,6 +41,27 @@ def test_footer_has_one_click_unsubscribe() -> None:
     assert "/desinscription?t=" in p.footer("a@b.fr")
 
 
+
+def test_send_window_business_hours_only() -> None:
+    # Mercredi 25/11/2026 : 10h Paris = 9h UTC ; 20h Paris = 19h UTC ; samedi 28/11 10h Paris.
+    assert p.in_send_window(datetime(2026, 11, 25, 9, tzinfo=timezone.utc), "FR")
+    assert not p.in_send_window(datetime(2026, 11, 25, 19, tzinfo=timezone.utc), "FR")
+    assert not p.in_send_window(datetime(2026, 11, 28, 9, tzinfo=timezone.utc), "FR")
+
+
+def test_cliches_are_rejected() -> None:
+    assert p.has_cliche("Je me permets de vous écrire")
+    assert p.has_cliche("Gagnez du temps !")
+    assert not p.has_cliche("Vos clients réservent seuls, même le soir. Ça vous intéresse ?")
+
+
+def test_followup_sequence_stops_after_second() -> None:
+    first = p.next_followup_after(0, NOW)
+    assert first == NOW + timedelta(days=p.FOLLOWUP_DELAYS_DAYS[1])
+    assert p.next_followup_after(1, NOW) is None
+    assert p.followup_text(0) != p.followup_text(1)
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_") and callable(fn):

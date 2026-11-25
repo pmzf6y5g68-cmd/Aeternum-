@@ -1,3 +1,4 @@
+import { ReferralCapture } from "@/components/referral-capture";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Sparkles } from "lucide-react";
@@ -10,8 +11,8 @@ import { OnboardingForm } from "./onboarding-form";
 
 export const metadata: Metadata = { title: "Créer ma page professionnelle" };
 
-export default async function OnboardingPage({ searchParams }: { searchParams: Promise<{ prefill?: string }> }) {
-  const { prefill: token } = await searchParams;
+export default async function OnboardingPage({ searchParams }: { searchParams: Promise<{ prefill?: string; parrain?: string }> }) {
+  const { prefill: token, parrain } = await searchParams;
   const prefill = verifyPrefill(token, process.env.PREFILL_SECRET ?? "");
   const { user, business } = await getOwnBusiness().catch(() => ({ user: null, business: null }));
   if (business) redirect("/pro/agenda");
@@ -20,6 +21,7 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
 
   return (
     <main className="min-h-dvh bg-canvas px-4 py-10">
+      <ReferralCapture code={parrain} />
       <div className="mx-auto w-full max-w-2xl">
         <div className="mb-6 flex justify-center">
           <Logo />

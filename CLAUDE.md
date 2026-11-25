@@ -8,7 +8,7 @@ Le système tourne en autonomie : prospection sortante tous métiers, réponses 
 ## Stack & Commandes de Vérification
 - **App & Webhooks :** Next.js (App Router, TypeScript strict), Tailwind CSS, Lucide Icons, Zod, Vitest.
 - **Data & Auth :** Supabase (PostgreSQL, Auth, RLS stricte, fonctions RPC atomiques).
-- **Paiements :** Stripe Subscriptions (Pro 49 €/mois) + Stripe Connect Express (acomptes encaissés directement par l'établissement).
+- **Paiements :** Stripe Subscriptions (Pro 39 € le 1er agenda + 15 € par agenda supplémentaire) + Stripe Connect Express (acomptes encaissés directement par l'établissement).
 - **Emails sortants & entrants :** Resend (sortant) + Cloudflare Email Worker (`workers/email-inbound/`) -> `/api/webhooks/inbound-email` (entrant).
 - **IA & Prospection :** API Anthropic (`@anthropic-ai/sdk` côté Next.js avec Tool Use / Structured Outputs stricts, `anthropic` côté Python) + GitHub Actions.
 

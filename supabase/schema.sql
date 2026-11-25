@@ -435,9 +435,18 @@ alter table public.waitlist_entries enable row level security;
 alter table public.email_suppressions enable row level security;
 alter table public.email_events enable row level security;
 
+-- Double authentification appliquée par la base : un compte qui a activé un second facteur
+-- n'accède à ses données qu'avec une session vérifiée en deux étapes (aal2).
+create or replace function public.mfa_satisfied()
+returns boolean language sql stable security definer set search_path = public, auth
+as $$
+  select coalesce(auth.jwt() ->> 'aal', 'aal1') = 'aal2'
+      or not exists (select 1 from auth.mfa_factors f where f.user_id = auth.uid() and f.status::text = 'verified');
+$$;
+
 create or replace function public.owns_business(p_business_id uuid)
 returns boolean language sql stable security definer set search_path = public
-as $$ select exists (select 1 from public.businesses b where b.id = p_business_id and b.owner_id = auth.uid()); $$;
+as $$ select exists (select 1 from public.businesses b where b.id = p_business_id and b.owner_id = auth.uid()) and public.mfa_satisfied(); $$;
 
 -- Établissement : le propriétaire lit et modifie ses colonnes éditables. La création, le plan,
 -- Stripe, les notes et l'index de recherche passent uniquement par le serveur (service_role).
@@ -776,3 +785,89 @@ as $$
 $$;
 revoke all on function public.increment_ai_reply_count(uuid) from public, anon, authenticated;
 grant execute on function public.increment_ai_reply_count(uuid) to service_role;
+
+-- ---------------------------------------------------------------------
+-- Croissance : statistiques de visibilité, parrainage, relances de conversion
+-- ---------------------------------------------------------------------
+-- Vues de fiche agrégées par jour (aucun cookie, aucune donnée personnelle : compatible CNIL sans consentement).
+create table if not exists public.business_daily_stats (
+  business_id uuid not null references public.businesses(id) on delete cascade,
+  day date not null,
+  views integer not null default 0 check (views >= 0),
+  widget_views integer not null default 0 check (widget_views >= 0),
+  primary key (business_id, day)
+);
+alter table public.business_daily_stats enable row level security;
+drop policy if exists business_daily_stats_owner_select on public.business_daily_stats;
+create policy business_daily_stats_owner_select on public.business_daily_stats for select using (public.owns_business(business_id));
+revoke insert, update, delete on public.business_daily_stats from anon, authenticated;
+
+create or replace function public.track_business_view(p_business_id uuid, p_widget boolean default false)
+returns void
+language sql
+security definer
+set search_path = public
+as $$
+  insert into public.business_daily_stats (business_id, day, views, widget_views)
+  values (p_business_id, (now() at time zone 'Europe/Paris')::date, case when p_widget then 0 else 1 end, case when p_widget then 1 else 0 end)
+  on conflict (business_id, day) do update
+    set views = business_daily_stats.views + excluded.views,
+        widget_views = business_daily_stats.widget_views + excluded.widget_views;
+$$;
+revoke all on function public.track_business_view(uuid, boolean) from public, anon, authenticated;
+grant execute on function public.track_business_view(uuid, boolean) to service_role;
+
+-- Parrainage entre pros : 1 mois offert au parrain et au filleul au premier paiement du filleul.
+alter table public.businesses add column if not exists referral_code text;
+update public.businesses set referral_code = substr(replace(gen_random_uuid()::text, '-', ''), 1, 8) where referral_code is null;
+alter table public.businesses alter column referral_code set default substr(replace(gen_random_uuid()::text, '-', ''), 1, 8);
+alter table public.businesses alter column referral_code set not null;
+create unique index if not exists businesses_referral_code_idx on public.businesses (referral_code);
+alter table public.businesses add column if not exists referred_by uuid references public.businesses(id) on delete set null;
+alter table public.businesses add column if not exists referral_rewarded_at timestamptz;
+create index if not exists businesses_referred_by_idx on public.businesses (referred_by) where referred_by is not null;
+
+-- Relances de conversion (une par mois au plus) et bilan mensuel.
+alter table public.businesses add column if not exists quota_nudge_month text;
+alter table public.businesses add column if not exists quota_block_alert_at timestamptz;
+alter table public.businesses add column if not exists last_report_month text;
+
+-- Politiques restrictives : s'ajoutent (ET logique) aux politiques existantes pour les sessions connectées.
+do $$
+declare t text;
+begin
+  foreach t in array array['businesses', 'bookings', 'customer_profiles', 'favorites', 'waitlist_entries'] loop
+    execute format('drop policy if exists %1$s_mfa on public.%1$s', t);
+    execute format('create policy %1$s_mfa on public.%1$s as restrictive for all to authenticated using (public.mfa_satisfied()) with check (public.mfa_satisfied())', t);
+  end loop;
+end $$;
+
+-- Limitation de débit partagée entre toutes les instances (anti-abus : réservations, liste d'attente, assistant).
+-- Les clés sont des empreintes (IP hachée) : aucune adresse IP n'est stockée en clair.
+create table if not exists public.rate_limits (
+  key text not null,
+  window_start timestamptz not null,
+  hits integer not null default 0,
+  primary key (key, window_start)
+);
+alter table public.rate_limits enable row level security;
+revoke all on public.rate_limits from anon, authenticated;
+
+create or replace function public.hit_rate_limit(p_key text, p_window_seconds integer, p_max integer)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_window timestamptz := to_timestamp(floor(extract(epoch from now()) / p_window_seconds) * p_window_seconds);
+  v_hits integer;
+begin
+  insert into public.rate_limits (key, window_start, hits) values (p_key, v_window, 1)
+  on conflict (key, window_start) do update set hits = rate_limits.hits + 1
+  returning hits into v_hits;
+  return v_hits <= p_max;
+end;
+$$;
+revoke all on function public.hit_rate_limit(text, integer, integer) from public, anon, authenticated;
+grant execute on function public.hit_rate_limit(text, integer, integer) to service_role;

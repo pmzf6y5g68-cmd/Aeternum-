@@ -130,3 +130,27 @@ créneaux visibles dès les résultats, carte, fiche avec réservation pas à pa
   vérification Search Console / Bing, RPC `category_stats`, colonne `businesses.updated_at`.
 - Vérifs : `tsc` ✅ · 121 tests ✅ · build ✅ · SQL ✅ · HTTP : robots, sitemap index et parties, llms.txt, clé IndexNow,
   image OG, canoniques et types JSON-LD vérifiés.
+
+## Y — Croissance, sécurité, prospection ✅
+- **Visibilité des pros** (`/pro/visibilite`) : vues de fiche par jour sans cookie (`business_daily_stats`, RPC `track_business_view`,
+  robots exclus), réservations, taux vues → RDV, CA réservé (30 j), score de visibilité /100 (`src/lib/visibility.ts`) avec
+  actions classées par gain, rédaction de fiche assistée (`/api/pro/listing-copy`, outil strict, faits fournis uniquement,
+  10 / jour, relecture avant publication + ping IndexNow), guide Google Business / site / avis.
+- **Fiche publique** : FAQ factuelle visible + JSON-LD `FAQPage` (`businessFaq` : tarifs, horaires, lieu, paiement, annulation, avis).
+- **Module de réservation intégrable** : `/widget/[slug]` (noindex, `frame-ancestors *` uniquement ici), `public/embed.js`
+  (bouton flottant ou mode inline), réservations comptées « direct », paiement d'acompte ouvert dans un nouvel onglet.
+- **Parrainage pro** : `?parrain=CODE` mémorisé 30 j, filleul rattaché à l'inscription, 1 mois offert aux deux au premier
+  paiement (`invoice.paid`, crédit de solde Stripe idempotent, réservation atomique `referral_rewarded_at`), email au parrain.
+- **Conversion** : alerte « un client n'a pas pu réserver » (quota atteint, 1 / semaine), cron `growth` 9 h (proposition Pro à
+  80 % du quota, 1 / mois ; bilan mensuel du 1er au 3), relance paiement refusé (`invoice.payment_failed`).
+- **Connexion** : Google, Apple, Microsoft, Facebook (`NEXT_PUBLIC_AUTH_PROVIDERS`), code à 6 chiffres par email en plus du lien.
+- **Double authentification** : TOTP (`/compte/securite`, `/auth/mfa`), imposée par le proxy, `getOwnBusiness`/`getApiBusiness`
+  **et la base** (`mfa_satisfied()` dans `owns_business` + politiques restrictives sur établissements, RDV, profils, favoris,
+  liste d'attente) ; déconnexion de tous les appareils.
+- **Sécurité** : HSTS preload, anti-clickjacking (`X-Frame-Options DENY` + `frame-ancestors 'none'` hors widget), COOP,
+  `base-uri`/`object-src`, limitation de débit partagée en base (`hit_rate_limit`, IP hachée) sur réservation, liste d'attente,
+  distance et assistant, purge par `cleanup-pending`.
+- **Prospection** : envoi en heures ouvrées locales uniquement, 2ᵉ relance J+10 puis arrêt définitif, plafond par domaine
+  destinataire et par exécution, rejet des tournures stéréotypées (réécriture), signature `SENDER_NAME`, prompt mis en cache.
+- Vérifs : `tsc` ✅ · 125 tests ✅ · build ✅ · `py_compile` + `test_prospector.py` (8) ✅ · SQL (2FA aal1/aal2, vues, parrainage,
+  droits) ✅ · HTTP : en-têtes de sécurité, CSP widget, `embed.js`, page de connexion (capture mobile).
