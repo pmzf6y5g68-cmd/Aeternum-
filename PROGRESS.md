@@ -69,3 +69,31 @@ créneaux visibles dès les résultats, carte, fiche avec réservation pas à pa
   refusé par le bac à sable. La logique SQL est testée directement sur Postgres, l'API Next.js par tests unitaires
   et HTTP. À valider sur le projet Supabase réel (README, étape 1).
 - Appels réels Stripe / Resend / Anthropic / Serper et `wrangler deploy`.
+
+## V1 — Multi-plateformes & fonctions anti-concurrence ✅
+- Recherche publique (Doctolib, règles Gmail/Yahoo, CNIL) → liste d'attente, blocage des absences récurrentes,
+  désinscription en 1 clic, interdiction des pixels de suivi en prospection.
+- **PWA** : `manifest.ts` (raccourcis, display standalone/WCO), icônes PNG générées (`/icons/[size]`, maskable,
+  apple-touch), `public/sw.js` (réseau d'abord, cache des assets versionnés, jamais d'API en cache), `/offline`,
+  bannière d'installation (Android/Windows/macOS : bouton ; iOS : consigne), safe-area, en-têtes de sécurité.
+- **Liste d'attente** : `waitlist_entries`, `POST /api/waitlist`, formulaire dans le module de réservation,
+  `notifyWaitlistForSlot` appelé à chaque annulation (usager, pro) et expiration d'acompte.
+- **Anti-absence** : `no_show_block_threshold` (défaut 2, réglable dans « Ma page »), refus `blocked_no_show`.
+- **Synchronisation agenda** : flux iCalendar privé `/api/calendar/{token}.ics` (Google Agenda, Apple, Outlook),
+  carte dans `/pro/agenda`, jeton régénérable.
+
+## V2 — Prospection à grande échelle, délivrable ✅
+- Débit : warm-up 40/jour × 1,3 par jour jusqu'à `MAX_EMAILS_PER_DAY` (1 500), lissé sur 5 exécutions/jour,
+  freinage ×½ si rebonds ≥ 3 % ou plaintes ≥ 0,08 % sur 7 j, pause à 0,2 % (seuil Google 0,3 %).
+- Découverte en lots de recherches, scraping/qualification parallélisés (`CONCURRENCY`), pause 2-6 s entre envois,
+  reprise sur 429 Resend, vérification MX (dnspython), liste `email_suppressions` consultée avant chaque envoi.
+- RFC 8058 : `List-Unsubscribe` (https + mailto) + `List-Unsubscribe-Post`, `POST /api/unsubscribe`, page
+  `/desinscription`, jetons HMAC identiques TS/Python (vecteur partagé testé des deux côtés).
+- `POST /api/webhooks/resend` (signature Svix) : rebonds permanents et plaintes → suppression + prospect stoppé ;
+  `email_events` alimente le calcul du débit. STOP par email → suppression aussi.
+- Bug corrigé : `already_known` interrogeait encore l'ancienne table `studios`.
+
+## V3 — Vérification ✅
+- `tsc` ✅ · `npm test` 102 ✅ · `build` ✅ · `py_compile` ✅ · `scripts/test_prospector.py` ✅ · `scripts/test-sql.sh` ✅
+- HTTP : manifest, icônes 180/192/512/maskable, `sw.js` (en-têtes dédiés), `/offline`, désinscription, webhooks
+  Resend non signé 401, calendrier inconnu 404 ; service worker enregistré dans Chromium, aucune erreur JS.

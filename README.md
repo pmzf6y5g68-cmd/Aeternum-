@@ -69,7 +69,10 @@ Ajouter un métier : une entrée dans `src/config/categories.ts` (+ la ligne cor
 4. `STRIPE_SECRET_KEY`.
 
 ### 3. Resend (emails sortants)
-Ajoutez le domaine, créez les enregistrements **SPF, DKIM, DMARC**, puis `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_REPLY_TO`.
+Ajoutez le domaine, créez les enregistrements **SPF, DKIM, DMARC** (`p=quarantine` au minimum), puis `RESEND_API_KEY`,
+`EMAIL_FROM`, `EMAIL_REPLY_TO`. **Webhooks** → `https://votre-domaine/api/webhooks/resend` avec les événements
+`email.delivered`, `email.bounced`, `email.complained` → `RESEND_WEBHOOK_SECRET`. Inscrivez le domaine sur
+[Google Postmaster Tools](https://postmaster.google.com) pour suivre le taux de plaintes.
 Les Message-ID sont fixés par l'application (`<uuid@APP_DOMAIN>`) pour garder les fils Gmail / Outlook.
 
 ### 4. Cloudflare Email Routing + Worker (emails entrants)
@@ -89,12 +92,14 @@ Complétez `src/config/site.ts` (raison sociale, SIREN, adresse) : pages légale
 | Secrets | Usage |
 | --- | --- |
 | `APP_URL`, `CRON_SECRET` | `crons.yml` |
-| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SERPER_API_KEY`, `ANTHROPIC_API_KEY`, `RESEND_API_KEY` | `prospector.yml` |
+| `APP_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SERPER_API_KEY`, `ANTHROPIC_API_KEY`, `RESEND_API_KEY`, `UNSUBSCRIBE_SECRET` | `prospector.yml` |
 
 | Variables (optionnelles) | Défaut |
 | --- | --- |
 | `DRY_RUN` | `true` |
-| `MAX_EMAILS_PER_DAY` / `MAX_SEARCHES_PER_RUN` | `25` / `12` |
+| `MAX_EMAILS_PER_DAY` (plafond absolu) | `1500` |
+| `WARMUP_START` / `WARMUP_GROWTH` | `40` / `1.3` (≈ plafond atteint en 14 jours ouvrés si la santé est bonne) |
+| `CONCURRENCY` / `MAX_SEARCHES_PER_RUN` | `8` / auto |
 | `PROSPECT_CATEGORIES` (slugs séparés par des virgules) | tous les métiers |
 | `PROSPECT_CITIES` / `PROSPECT_COUNTRY` | 20 grandes villes / `FR` |
 
@@ -104,7 +109,20 @@ Testez chaque cron via *Actions → Rendez-vous crons → Run workflow* (`?force
 1. *Actions → Rendez-vous prospector → Run workflow* avec `dry_run = true` : relisez les emails générés.
 2. Écrivez à `bonjour@votre-domaine` : réponse automatique dans le même fil. Répondez « STOP » : fil `stopped`
    sans réponse. Parlez de remboursement : escalade reçue avec brouillon.
-3. Créez la variable de dépôt **`DRY_RUN=false`** (≤ 25 emails/jour, relance unique J+4).
+3. Créez la variable de dépôt **`DRY_RUN=false`**. Le robot tourne 5 fois par jour ouvré, démarre à 40 emails/jour
+   et augmente de 30 % par jour tant que rebonds < 3 % et plaintes < 0,08 % ; au-delà il divise le débit par deux,
+   et se met en pause à 0,2 % de plaintes (alerte dans le bilan de 20 h). Relance unique J+4.
+
+### Monter au-delà de 1 500 emails/jour
+Gmail et Yahoo bloquent un domaine qui envoie en masse sans engagement. Pour passer à plusieurs milliers par
+jour : laissez le warm-up atteindre le plafond avec des taux sains, vérifiez Google Postmaster (réputation
+« High »), puis relevez `MAX_EMAILS_PER_DAY` par paliers (+50 % par semaine). Le robot n'utilise volontairement
+ni rotation de domaines, ni listes achetées, ni pixels de suivi : ce sont les pratiques qui font blacklister.
+
+## Application (iPhone, Android, Windows, macOS)
+Rendez-vous est une web app installable (manifest, icônes, service worker, page hors ligne) :
+Android / Chrome / Edge proposent « Installer » ; sur iPhone : Partager → « Sur l'écran d'accueil » (une bannière le
+rappelle). Les pros peuvent abonner Google Agenda, Apple Calendrier ou Outlook à leur agenda depuis `/pro/agenda`.
 
 ---
 
@@ -115,6 +133,8 @@ Testez chaque cron via *Actions → Rendez-vous crons → Run workflow* (`?force
 - **Zéro double réservation** : `create_booking_atomic` (verrou, quota gratuit 30 RDV/mois, équipe, capacité,
   congés, `pending_deposit` > 20 min ignorés) après recalcul serveur de tout le devis et du créneau exact.
 - **Avis vérifiés** : un avis par rendez-vous honoré, classement des résultats transparent (CGU § 6).
+- **Prospection** : warm-up + freinage automatique, suppression, MX, désinscription 1 clic, pas de traçage.
+- **Liste d'attente & anti-absence** : créneau libéré → alerte aux inscrits ; réservation bloquée après N absences.
 - **Agent email** : filtres déterministes avant IA, STOP en base sans réponse, 4 réponses max par fil, escalade
   avec brouillon, sortie Claude validée par Zod puis post-traitée (≤ 110 mots, aucun lien inventé).
 - **Coût d'infra nul** pour la géo : Base Adresse Nationale + Nominatim, Haversine × 1,25, tuiles OpenStreetMap.
