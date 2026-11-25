@@ -56,3 +56,17 @@
 - `workers/email-inbound/` : `wrangler.toml`, `package.json` (postal-mime v4), `src/index.ts` (parse, en-têtes anti-boucle,
   HTML → texte, 3 essais avec backoff, transfert de secours optionnel). `tsc` du worker vert.
 - `npm test` : 80 tests (dont 15 sur l'agent avec client Anthropic simulé).
+
+## Phase 5 — Crons, Robot Python & GitHub Actions ✅
+- `src/lib/cron.ts` : `Authorization: Bearer ${CRON_SECRET}` en temps constant, garde horaire Paris (`?force=1` pour forcer).
+- `GET /api/cron/cleanup-pending` (30 min) : `pending_deposit` > 25 min → `cancelled` + expiration des sessions Checkout Connect.
+- `GET /api/cron/reminders` (horaire, Pro) : rappel J-1 (fenêtre H+6 → H+24) avec boutons confirmer / annuler, envoi « réservé » atomiquement.
+- `GET /api/cron/risk-check` (horaire, Pro) : RDV non confirmé à H-6 → `at_risk` + alerte au detailer.
+- `GET /api/cron/rebooking` (10h Paris, Pro) : relance entretien après `rebooking_days`, une fois par client, pas si un RDV ultérieur existe.
+- `GET /api/cron/health-digest` (20h Paris) : email à `OWNER_ALERT_EMAIL` seulement si escalades / erreurs, + récap dominical (MRR, studios, prospects, RDV).
+- `scripts/prospector.py` + `scripts/requirements.txt` : Serper Places multi-villes (FR/UK/US), exclusion des outils
+  (planity, planero, booksy, fresha, urable, orbisx, mobiletechrx, calendly, treatwell, resaclick, square.site…),
+  extraction d'email, qualification + rédaction < 80 mots par Claude (outil strict), envoi Resend avec Message-ID fixé,
+  création immédiate `prospects` + `email_threads` + `email_messages`, relance unique J+4 dans le même fil
+  (jamais si réponse, STOP ou OOO), `DRY_RUN=true` par défaut, `MAX_EMAILS_PER_DAY=25`, pauses aléatoires.
+- `.github/workflows/crons.yml`, `.github/workflows/prospector.yml`, `.github/workflows/ci.yml` (4 vérifications).

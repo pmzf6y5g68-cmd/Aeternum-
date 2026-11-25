@@ -1,0 +1,48 @@
+name: Slotly prospector
+
+on:
+  schedule:
+    - cron: "17 8 * * 1-5"   # du lundi au vendredi, ~9h/10h à Paris
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "DRY_RUN (aucun envoi, aucune écriture)"
+        required: true
+        default: "true"
+        type: choice
+        options: ["true", "false"]
+
+concurrency:
+  group: slotly-prospector
+  cancel-in-progress: false
+
+jobs:
+  prospect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: scripts/requirements.txt
+      - run: pip install -r scripts/requirements.txt
+      - run: python -m py_compile scripts/prospector.py
+      - name: Lancer la prospection
+        env:
+          # Sécurité : DRY_RUN=true tant que la variable de dépôt DRY_RUN n'est pas explicitement "false".
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || vars.DRY_RUN || 'true' }}
+          MAX_EMAILS_PER_DAY: ${{ vars.MAX_EMAILS_PER_DAY || '25' }}
+          PROSPECT_COUNTRY: ${{ vars.PROSPECT_COUNTRY || 'FR' }}
+          PROSPECT_CITIES: ${{ vars.PROSPECT_CITIES }}
+          ANTHROPIC_MODEL: ${{ vars.ANTHROPIC_MODEL || 'claude-haiku-4-5' }}
+          APP_DOMAIN: ${{ vars.APP_DOMAIN || 'slotly.fr' }}
+          EMAIL_FROM: ${{ vars.EMAIL_FROM }}
+          EMAIL_REPLY_TO: ${{ vars.EMAIL_REPLY_TO }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        run: python scripts/prospector.py

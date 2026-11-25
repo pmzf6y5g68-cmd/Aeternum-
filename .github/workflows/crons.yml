@@ -1,0 +1,49 @@
+name: Slotly crons
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"   # cleanup-pending
+    - cron: "7 * * * *"      # reminders + risk-check (toutes les heures)
+    - cron: "2 8,9 * * *"    # rebooking : la route ne s'exécute qu'à 10h Paris (hiver/été)
+    - cron: "2 18,19 * * *"  # health-digest : la route ne s'exécute qu'à 20h Paris
+  workflow_dispatch:
+    inputs:
+      job:
+        description: "Cron à lancer manuellement"
+        required: true
+        type: choice
+        options: [cleanup-pending, reminders, risk-check, rebooking, health-digest]
+
+concurrency:
+  group: slotly-crons-${{ github.event.schedule || inputs.job }}
+  cancel-in-progress: false
+
+jobs:
+  call:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Choisir les routes
+        id: routes
+        run: |
+          case "${{ github.event.schedule }}" in
+            "*/30 * * * *")   echo "list=cleanup-pending" >> "$GITHUB_OUTPUT" ;;
+            "7 * * * *")      echo "list=reminders risk-check" >> "$GITHUB_OUTPUT" ;;
+            "2 8,9 * * *")    echo "list=rebooking" >> "$GITHUB_OUTPUT" ;;
+            "2 18,19 * * *")  echo "list=health-digest" >> "$GITHUB_OUTPUT" ;;
+            *)                echo "list=${{ inputs.job }}" >> "$GITHUB_OUTPUT" ;;
+          esac
+      - name: Appeler les routes cron
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          FORCE: ${{ github.event_name == 'workflow_dispatch' && '?force=1' || '' }}
+        run: |
+          set -euo pipefail
+          for route in ${{ steps.routes.outputs.list }}; do
+            echo "→ /api/cron/${route}"
+            curl --fail-with-body --silent --show-error --max-time 300 --retry 2 --retry-delay 10 \
+              -H "Authorization: Bearer ${CRON_SECRET}" \
+              "${APP_URL%/}/api/cron/${route}${FORCE}"
+            echo
+          done
