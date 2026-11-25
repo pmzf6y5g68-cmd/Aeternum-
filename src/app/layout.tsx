@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { AssistantWidget } from "@/components/assistant-widget";
 import { Pwa } from "@/components/pwa";
 import { siteConfig } from "@/config/site";
 import "./globals.css";
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="fr">
       <body className="min-h-dvh bg-canvas pb-[env(safe-area-inset-bottom)] font-sans text-ink antialiased">
         {children}
+        <AssistantWidget />
         <Pwa />
       </body>
     </html>
