@@ -8,6 +8,8 @@ export interface PrefillData {
   name: string;
   city: string;
   email: string;
+  /** Slug de catégorie (métier) détecté par la prospection. */
+  category?: string;
 }
 
 interface PrefillPayload extends PrefillData {
@@ -30,6 +32,7 @@ export function signPrefill(data: PrefillData, secret: string, nowMs: number = D
     name: data.name.slice(0, 120),
     city: data.city.slice(0, 80),
     email: data.email.trim().toLowerCase().slice(0, 200),
+    ...(data.category ? { category: data.category.slice(0, 60) } : {}),
     exp: Math.floor(nowMs / 1000) + ttlSeconds,
   };
   const body = b64url(JSON.stringify(payload));
@@ -49,7 +52,12 @@ export function verifyPrefill(token: string | null | undefined, secret: string, 
     const payload = JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as Partial<PrefillPayload>;
     if (typeof payload.exp !== "number" || payload.exp * 1000 < nowMs) return null;
     if (typeof payload.name !== "string" || typeof payload.city !== "string" || typeof payload.email !== "string") return null;
-    return { name: payload.name, city: payload.city, email: payload.email };
+    return {
+      name: payload.name,
+      city: payload.city,
+      email: payload.email,
+      ...(typeof payload.category === "string" ? { category: payload.category } : {}),
+    };
   } catch {
     return null;
   }

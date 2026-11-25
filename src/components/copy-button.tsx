@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 
-export function CopyButton({ value, label, copiedLabel }: { value: string; label: string; copiedLabel: string }) {
+export function CopyButton({ value, label = "Copier", copiedLabel = "Copié" }: { value: string; label?: string; copiedLabel?: string }) {
   const [copied, setCopied] = useState(false);
   return (
     <button
@@ -15,7 +15,7 @@ export function CopyButton({ value, label, copiedLabel }: { value: string; label
         setTimeout(() => setCopied(false), 1800);
       }}
     >
-      {copied ? <Check className="size-4 text-brand" aria-hidden /> : <Copy className="size-4" aria-hidden />}
+      {copied ? <Check className="size-4 text-success" aria-hidden /> : <Copy className="size-4" aria-hidden />}
       {copied ? copiedLabel : label}
     </button>
   );
