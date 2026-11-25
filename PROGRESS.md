@@ -154,3 +154,16 @@ créneaux visibles dès les résultats, carte, fiche avec réservation pas à pa
   destinataire et par exécution, rejet des tournures stéréotypées (réécriture), signature `SENDER_NAME`, prompt mis en cache.
 - Vérifs : `tsc` ✅ · 125 tests ✅ · build ✅ · `py_compile` + `test_prospector.py` (8) ✅ · SQL (2FA aal1/aal2, vues, parrainage,
   droits) ✅ · HTTP : en-têtes de sécurité, CSP widget, `embed.js`, page de connexion (capture mobile).
+
+## Z — Stripe au maximum ✅
+- **Empreinte bancaire** (plan Pro, Connect) : Checkout `mode: setup` intégré sur le compte du pro (client Stripe créé sur ce
+  compte), créneau tenu comme un acompte, confirmation par webhook (`confirmGuarantee`), mention claire des frais avant
+  validation (widget, page de paiement, `custom_text` Stripe). « Absent » → `PaymentIntent` hors session idempotent
+  (`chargeNoShowFee`, réservation atomique `saved → charged`), email au client ; correction → remboursement (`refundNoShowFee`).
+- **Cartes cadeaux** : `gift_cards` (code `XXXX-XXXX-XXXX` sans caractères ambigus, 10–1 000 €, 1 an), page publique + Checkout
+  intégré Connect, activation par webhook, emails bénéficiaire / acheteur / pro, validation du code par le pro, bouton
+  « Offrir » sur la fiche, pages ajoutées au sitemap.
+- **Abonnement** : adresse + n° de TVA collectés, `automatic_tax` optionnel, rappel de fin d'essai (`trial_will_end`), passage
+  à l'annuel en 1 clic (`subscription_update_confirm`), résiliation avec offre de fidélité (coupon -50 % × 3 mois, une fois),
+  motifs de résiliation dans le portail.
+- Vérifs : `tsc` ✅ · 129 tests ✅ · build ✅ · SQL (cartes cadeaux, droits sur garantie) ✅.

@@ -871,3 +871,42 @@ end;
 $$;
 revoke all on function public.hit_rate_limit(text, integer, integer) from public, anon, authenticated;
 grant execute on function public.hit_rate_limit(text, integer, integer) to service_role;
+
+-- ---------------------------------------------------------------------
+-- Paiements avancés : empreinte bancaire anti-absence, cartes cadeaux
+-- ---------------------------------------------------------------------
+alter table public.businesses add column if not exists card_guarantee_enabled boolean not null default false;
+alter table public.businesses add column if not exists no_show_fee_percent integer not null default 50 check (no_show_fee_percent between 10 and 100);
+alter table public.businesses add column if not exists gift_cards_enabled boolean not null default false;
+grant update (card_guarantee_enabled, no_show_fee_percent, gift_cards_enabled) on public.businesses to authenticated;
+
+-- Carte enregistrée sur le compte Connect du pro (jamais sur la plateforme), débitée uniquement en cas d'absence.
+alter table public.bookings add column if not exists guarantee_status text not null default 'none'
+  check (guarantee_status in ('none', 'pending', 'saved', 'charged', 'failed', 'refunded'));
+alter table public.bookings add column if not exists stripe_customer_id text;
+alter table public.bookings add column if not exists stripe_payment_method_id text;
+alter table public.bookings add column if not exists no_show_fee_eur numeric(10,2) not null default 0 check (no_show_fee_eur >= 0);
+alter table public.bookings add column if not exists stripe_fee_payment_intent_id text;
+
+-- Cartes cadeaux : payées en ligne directement au pro (Connect), valables 1 an, utilisées en une fois.
+create table if not exists public.gift_cards (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid not null references public.businesses(id) on delete cascade,
+  code text not null unique check (code ~ '^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$'),
+  amount_eur numeric(10,2) not null check (amount_eur between 10 and 1000),
+  buyer_name text not null,
+  buyer_email text not null,
+  recipient_name text not null,
+  recipient_email text,
+  message text check (char_length(message) <= 500),
+  status text not null default 'pending' check (status in ('pending', 'active', 'redeemed', 'cancelled')),
+  stripe_checkout_session_id text unique,
+  expires_at timestamptz,
+  redeemed_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create index if not exists gift_cards_business_idx on public.gift_cards (business_id, created_at desc);
+alter table public.gift_cards enable row level security;
+drop policy if exists gift_cards_owner_select on public.gift_cards;
+create policy gift_cards_owner_select on public.gift_cards for select using (public.owns_business(business_id));
+revoke insert, update, delete on public.gift_cards from anon, authenticated;

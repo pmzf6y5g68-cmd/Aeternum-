@@ -34,6 +34,11 @@ export async function POST(request: Request) {
       metadata: { business_id: business.id },
       client_reference_id: business.id,
       allow_promotion_codes: true,
+      // Factures conformes pour les professionnels : adresse, raison sociale et n° de TVA intracommunautaire.
+      billing_address_collection: "required",
+      tax_id_collection: { enabled: true },
+      customer_update: { address: "auto", name: "auto" },
+      ...(process.env.STRIPE_AUTOMATIC_TAX === "true" ? { automatic_tax: { enabled: true } } : {}),
       // Carte, Apple Pay, Google Pay, Link, prélèvement SEPA… selon les moyens activés dans Stripe.
       locale: "fr",
       success_url: `${env.appUrl()}/pro/abonnement?checkout=success`,

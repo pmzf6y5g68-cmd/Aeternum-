@@ -131,6 +131,21 @@ do $$ begin
 end $$;
 
 -- RLS
+-- Cartes cadeaux : code au format, un seul code par carte.
+do $$
+declare v_id uuid := (select id from businesses where slug = 'salon-elegance');
+begin
+  insert into gift_cards (business_id, code, amount_eur, buyer_name, buyer_email, recipient_name) values (v_id, 'ABCD-EFGH-JKMN', 50, 'Léa', 'lea@x.fr', 'Tom');
+  begin
+    insert into gift_cards (business_id, code, amount_eur, buyer_name, buyer_email, recipient_name) values (v_id, 'abcd', 50, 'Léa', 'lea@x.fr', 'Tom');
+    raise exception 'code invalide accepté !';
+  exception when check_violation then null; end;
+  begin
+    insert into gift_cards (business_id, code, amount_eur, buyer_name, buyer_email, recipient_name) values (v_id, 'ABCD-EFGH-JKMN', 50, 'Léa', 'lea@x.fr', 'Tom');
+    raise exception 'code dupliqué accepté !';
+  exception when unique_violation then null; end;
+  assert (select guarantee_status from bookings limit 1) = 'none', 'garantie par défaut';
+end $$;
 -- Statistiques de vues (agrégat journalier) et codes de parrainage.
 do $$
 declare v_id uuid := (select id from businesses where slug = 'salon-elegance');
@@ -175,6 +190,16 @@ do $$ begin
   begin
     insert into business_daily_stats (business_id, day) values ((select id from businesses limit 1), '2020-01-01');
     raise exception 'statistiques modifiables !';
+  exception when insufficient_privilege then null; end;
+  assert (select count(*) from gift_cards) = 1, 'pro : ses cartes cadeaux';
+  begin
+    update gift_cards set status = 'redeemed';
+    raise exception 'carte cadeau modifiable par le client SQL !';
+  exception when insufficient_privilege then null; end;
+  update businesses set card_guarantee_enabled = true, no_show_fee_percent = 40 where slug = 'salon-elegance';
+  begin
+    update bookings set guarantee_status = 'charged';
+    raise exception 'statut de garantie modifiable !';
   exception when insufficient_privilege then null; end;
   begin
     update businesses set referral_rewarded_at = now();

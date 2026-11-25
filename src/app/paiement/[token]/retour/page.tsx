@@ -17,12 +17,12 @@ export default async function PaymentReturnPage({ params }: { params: Promise<{ 
   if (!found) return <StatusCard tone="neutral" title="Lien invalide." />;
   const { booking, business } = found;
 
-  let paid = booking.deposit_paid;
+  let paid = booking.deposit_paid || booking.guarantee_status === "saved";
   if (!paid && booking.stripe_checkout_session_id) {
     const { data: acct } = await createAdminClient().from("businesses").select("stripe_connect_account_id").eq("id", booking.business_id).single<{ stripe_connect_account_id: string | null }>();
     if (acct?.stripe_connect_account_id) {
       const session = await getStripe().checkout.sessions.retrieve(booking.stripe_checkout_session_id, {}, { stripeAccount: acct.stripe_connect_account_id }).catch(() => null);
-      paid = session?.payment_status === "paid";
+      paid = session?.payment_status === "paid" || (session?.mode === "setup" && session.status === "complete");
     }
   }
 
@@ -31,7 +31,7 @@ export default async function PaymentReturnPage({ params }: { params: Promise<{ 
       <StatusCard tone="success" title="Rendez-vous confirmé !">
         <p className="font-semibold capitalize text-brand">{formatDateTime(booking.start_at)}</p>
         <p>
-          Acompte reçu par {business.name}. Votre confirmation avec l&apos;invitation calendrier arrive par email.
+          {booking.guarantee_status === "none" ? `Acompte reçu par ${business.name}.` : "Votre rendez-vous est garanti, aucun montant n'a été débité."} Votre confirmation avec l&apos;invitation calendrier arrive par email.
         </p>
         <Link href="/compte" className="btn-primary w-full">
           Mes rendez-vous

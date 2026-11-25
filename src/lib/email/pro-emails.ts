@@ -101,3 +101,21 @@ export async function alertQuotaBlocked(businessId: string, limit: number): Prom
   const b = data?.[0];
   if (b) await sendQuotaBlocked(b, limit);
 }
+
+/** 3 jours avant la fin de l'essai (événement Stripe) : rappel transparent de ce qui va être facturé. */
+export async function notifyTrialEnding(customerId: string, trialEndUnix: number | null): Promise<void> {
+  const { data: b } = await createAdminClient().from("businesses").select("id, name, email").eq("stripe_customer_id", customerId).maybeSingle<Pro>();
+  if (!b) return;
+  const when = trialEndUnix ? new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" }).format(new Date(trialEndUnix * 1000)) : "dans 3 jours";
+  await send(
+    b.email,
+    `Votre essai Pro se termine le ${when}`,
+    "Votre essai Pro se termine bientôt",
+    [
+      `Votre essai gratuit de ${siteConfig.name} Pro pour ${b.name} se termine le ${when}. L'abonnement démarrera alors automatiquement, sans action de votre part.`,
+      "Vous gardez les réservations illimitées, les rappels, les relances de fidélisation, l'empreinte bancaire et la mise en avant.",
+      "Astuce : l'abonnement annuel vous offre 2 mois. Vous pouvez aussi résilier en 1 clic avant la fin de l'essai : vous ne serez pas débité.",
+    ],
+    [{ label: "Gérer mon abonnement", url: `${env.appUrl()}/pro/abonnement` }],
+  );
+}

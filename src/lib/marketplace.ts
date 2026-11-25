@@ -238,6 +238,8 @@ export function pricingOf(b: PublicBusiness): BusinessForPricing {
     deposit_enabled: b.deposit_enabled,
     deposit_percent: Number(b.deposit_percent),
     stripe_connect_onboarded: b.stripe_connect_onboarded,
+    card_guarantee: b.card_guarantee_enabled && b.plan === "pro",
+    no_show_fee_percent: Number(b.no_show_fee_percent),
   };
 }
 

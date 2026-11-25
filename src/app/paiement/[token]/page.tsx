@@ -39,6 +39,7 @@ export default async function PaymentPage({ params }: { params: Promise<{ token:
       </StatusCard>
     );
   }
+  const guarantee = booking.guarantee_status === "pending";
   const holdUntil = new Date(new Date(booking.created_at).getTime() + siteConfig.booking.pendingDepositTtlMinutes * 60_000).toISOString();
 
   return (
@@ -58,24 +59,43 @@ export default async function PaymentPage({ params }: { params: Promise<{ token:
                 </dt>
                 <dd>{formatEur(eurToCents(booking.total_price_eur))}</dd>
               </div>
-              <div className="flex justify-between gap-3 border-t border-line pt-2 text-base font-bold">
-                <dt>Acompte à régler</dt>
-                <dd>{formatEur(eurToCents(booking.deposit_amount_eur))}</dd>
-              </div>
-              <div className="flex justify-between gap-3 text-ink-soft">
-                <dt>Reste à payer sur place</dt>
-                <dd>{formatEur(eurToCents(booking.total_price_eur) - eurToCents(booking.deposit_amount_eur))}</dd>
-              </div>
+              {guarantee ? (
+                <>
+                  <div className="flex justify-between gap-3 border-t border-line pt-2 text-base font-bold">
+                    <dt>À régler aujourd&apos;hui</dt>
+                    <dd>0 €</dd>
+                  </div>
+                  <div className="flex justify-between gap-3 text-ink-soft">
+                    <dt>Paiement sur place</dt>
+                    <dd>{formatEur(eurToCents(booking.total_price_eur))}</dd>
+                  </div>
+                  <p className="rounded-lg bg-canvas p-3 text-xs leading-relaxed text-ink-soft">
+                    Garantie de rendez-vous : votre carte est enregistrée mais pas débitée. En cas d&apos;absence sans annulation
+                    {business.cancellation_hours > 0 ? ` au moins ${business.cancellation_hours} h avant` : ""}, {formatEur(eurToCents(booking.no_show_fee_eur))} pourront être prélevés.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="flex justify-between gap-3 border-t border-line pt-2 text-base font-bold">
+                    <dt>Acompte à régler</dt>
+                    <dd>{formatEur(eurToCents(booking.deposit_amount_eur))}</dd>
+                  </div>
+                  <div className="flex justify-between gap-3 text-ink-soft">
+                    <dt>Reste à payer sur place</dt>
+                    <dd>{formatEur(eurToCents(booking.total_price_eur) - eurToCents(booking.deposit_amount_eur))}</dd>
+                  </div>
+                </>
+              )}
             </dl>
           </section>
           <p className="flex items-start gap-2 text-xs text-ink-soft">
             <ShieldCheck className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />
-            L&apos;acompte est versé directement à {business.name}. Paiement chiffré et traité par Stripe : nous ne voyons jamais votre carte.
+            {guarantee ? `Votre carte est conservée par Stripe pour le compte de ${business.name}` : `L'acompte est versé directement à ${business.name}`}. Paiement chiffré et traité par Stripe : nous ne voyons jamais votre carte.
           </p>
         </div>
         <div className="md:order-1">
           <h2 className="mb-3 flex items-center gap-2 text-xl font-bold">
-            <Lock className="size-5 text-brand" aria-hidden /> Paiement sécurisé
+            <Lock className="size-5 text-brand" aria-hidden /> {guarantee ? "Garantir mon rendez-vous" : "Paiement sécurisé"}
           </h2>
           <DepositCheckout clientSecret={session.client_secret} account={acct.stripe_connect_account_id} publishableKey={publishableKey} holdUntil={holdUntil} />
         </div>

@@ -5,8 +5,10 @@ import { env } from "@/lib/env";
 import { errorMessage, logEvent } from "@/lib/events";
 import { json, jsonError } from "@/lib/http";
 import { rewardReferralOnFirstPayment } from "@/lib/referral";
+import { confirmGuarantee } from "@/lib/guarantee";
+import { activateGiftCard } from "@/lib/gift-cards";
 import { getStripe } from "@/lib/stripe";
-import { notifyPaymentFailed } from "@/lib/email/pro-emails";
+import { notifyPaymentFailed, notifyTrialEnding } from "@/lib/email/pro-emails";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Booking, Business } from "@/lib/supabase/types";
 
@@ -140,6 +142,8 @@ export async function POST(request: Request) {
       case "checkout.session.async_payment_succeeded": {
         const session = event.data.object;
         if (session.mode === "subscription") await handleSubscriptionCheckout(session);
+        else if (session.mode === "setup") await confirmGuarantee(session, event.account);
+        else if (session.mode === "payment" && session.metadata?.gift_card_id) await activateGiftCard(session, event.account);
         else if (session.mode === "payment") await confirmDeposit(session, event.account);
         break;
       }
@@ -152,6 +156,12 @@ export async function POST(request: Request) {
         const invoice = event.data.object;
         const customer = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
         if (customer && invoice.amount_paid > 0 && !event.account) await rewardReferralOnFirstPayment(customer);
+        break;
+      }
+      case "customer.subscription.trial_will_end": {
+        const sub = event.data.object;
+        const customer = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+        if (!event.account) await notifyTrialEnding(customer, sub.trial_end ?? null);
         break;
       }
       case "invoice.payment_failed": {

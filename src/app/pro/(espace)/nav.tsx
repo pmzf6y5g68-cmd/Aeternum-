@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, Clock, CreditCard, LayoutList, Share2, ShieldCheck, Star, Store, TrendingUp, Users } from "lucide-react";
+import { CalendarDays, Clock, CreditCard, Gift, LayoutList, Share2, ShieldCheck, Star, Store, TrendingUp, Users } from "lucide-react";
 import { fr } from "@/i18n/fr";
 
 const n = fr.dashboard.nav;
@@ -15,6 +15,7 @@ const items = [
   { href: "/pro/visibilite", label: "Visibilité", icon: TrendingUp },
   { href: "/pro/partager", label: n.share, icon: Share2 },
   { href: "/pro/avis", label: n.reviews, icon: Star },
+  { href: "/pro/cartes-cadeaux", label: "Cartes cadeaux", icon: Gift },
   { href: "/pro/abonnement", label: n.billing, icon: CreditCard },
   { href: "/compte/securite", label: "Sécurité", icon: ShieldCheck },
 ];

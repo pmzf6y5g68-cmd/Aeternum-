@@ -7,8 +7,9 @@ import { fr } from "@/i18n/fr";
 import { countMonthlyBookings, requireBusiness } from "@/lib/pro";
 import { updateDepositSettings } from "../actions";
 
-export default async function BillingPage({ searchParams }: { searchParams: Promise<{ checkout?: string }> }) {
-  const { checkout } = await searchParams;
+export default async function BillingPage({ searchParams }: { searchParams: Promise<{ checkout?: string; annuel?: string }> }) {
+  const { checkout, annuel } = await searchParams;
+  const annual = annuel === "1";
   const { supabase, business } = await requireBusiness();
   const used = await countMonthlyBookings(supabase, business.id);
   const limit = siteConfig.pricing.freeMonthlyBookings;
@@ -30,6 +31,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
   return (
     <div className="space-y-5">
       <h1 className="text-2xl font-bold tracking-tight">{fr.dashboard.nav.billing}</h1>
+      {annual && <p className="card border-green-200 bg-green-50 text-sm font-semibold text-success">C&apos;est fait : vous êtes passé à l&apos;abonnement annuel, 2 mois offerts.</p>}
       {checkout === "success" && <p className="card border-green-200 bg-green-50 text-sm font-semibold text-success">Merci ! Votre abonnement Pro est actif.</p>}
       <section className="card space-y-4">
         <div className="flex items-center justify-between gap-3">
@@ -60,7 +62,11 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
           </div>
         )}
         {isPro ? (
-          <PostRedirectButton endpoint="/api/stripe/portal" label="Gérer mon abonnement" className="btn-secondary" />
+          <div className="flex flex-wrap items-center gap-2">
+            <PostRedirectButton endpoint="/api/stripe/portal" body={{ flow: "annual" }} label="Passer à l'annuel : 2 mois offerts" />
+            <PostRedirectButton endpoint="/api/stripe/portal" label="Factures et moyen de paiement" className="btn-secondary" />
+            <PostRedirectButton endpoint="/api/stripe/portal" body={{ flow: "cancel" }} label="Résilier" className="btn-ghost text-sm text-ink-soft" />
+          </div>
         ) : (
           <>
             <ul className="grid gap-1 text-sm text-ink-soft sm:grid-cols-2">
@@ -74,19 +80,50 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
       </section>
       <section className="card space-y-4">
         <h2 className="flex items-center gap-2 font-bold">
-          <ShieldCheck className="size-4 text-brand" aria-hidden /> Acomptes anti-absence
+          <ShieldCheck className="size-4 text-brand" aria-hidden /> Paiements en ligne et anti-absence
         </h2>
-        <p className="text-sm text-ink-soft">Les acomptes sont versés directement sur votre propre compte Stripe : Rendez-vous ne touche jamais votre argent.</p>
+        <p className="text-sm text-ink-soft">Acomptes, frais d&apos;absence et cartes cadeaux arrivent directement sur votre propre compte Stripe : Rendez-vous ne touche jamais votre argent et ne prend aucune commission.</p>
         {business.stripe_connect_onboarded ? (
-          <form action={updateDepositSettings} className="flex flex-wrap items-end gap-4">
-            <label className="inline-flex items-center gap-2 text-sm font-semibold">
-              <input type="checkbox" name="deposit_enabled" defaultChecked={business.deposit_enabled} className="size-4 accent-[#1758E6]" /> Demander un acompte
-            </label>
-            <div className="w-32">
-              <label className="label">Pourcentage</label>
-              <input name="deposit_percent" type="number" min={5} max={100} step={5} defaultValue={business.deposit_percent} className="input" />
+          <form action={updateDepositSettings} className="space-y-4">
+            <div className="flex flex-wrap items-end gap-4 rounded-xl border border-line p-4">
+              <div className="min-w-0 flex-1">
+                <label className="inline-flex items-center gap-2 text-sm font-semibold">
+                  <input type="checkbox" name="deposit_enabled" defaultChecked={business.deposit_enabled} className="size-4 accent-[#1758E6]" /> Demander un acompte
+                </label>
+                <p className="mt-1 text-xs text-ink-soft">Le client paie une partie à la réservation (carte, Apple Pay, Google Pay, PayPal).</p>
+              </div>
+              <div className="w-32">
+                <label className="label">Pourcentage</label>
+                <input name="deposit_percent" type="number" min={5} max={100} step={5} defaultValue={business.deposit_percent} className="input" />
+              </div>
             </div>
-            <SubmitButton>{fr.common.save}</SubmitButton>
+            <div className={`flex flex-wrap items-end gap-4 rounded-xl border p-4 ${isPro ? "border-line" : "border-dashed border-line opacity-80"}`}>
+              <div className="min-w-0 flex-1">
+                <label className="inline-flex items-center gap-2 text-sm font-semibold">
+                  <input type="checkbox" name="card_guarantee_enabled" defaultChecked={business.card_guarantee_enabled} disabled={!isPro} className="size-4 accent-[#1758E6]" /> Empreinte bancaire
+                  {!isPro && <span className="rounded-full bg-brand-soft px-2 py-0.5 text-[11px] font-bold uppercase text-brand">Pro</span>}
+                </label>
+                <p className="mt-1 text-xs text-ink-soft">
+                  Le client enregistre sa carte sans être débité. S&apos;il ne vient pas, vous le marquez « Absent » et les frais sont prélevés automatiquement sur votre compte Stripe. S&apos;applique quand aucun acompte n&apos;est demandé.
+                </p>
+              </div>
+              <div className="w-32">
+                <label className="label">Frais d&apos;absence</label>
+                <div className="relative">
+                  <input name="no_show_fee_percent" type="number" min={10} max={100} step={5} defaultValue={business.no_show_fee_percent} className="input pr-8" />
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-ink-soft">%</span>
+                </div>
+              </div>
+            </div>
+            <div className="rounded-xl border border-line p-4">
+              <label className="inline-flex items-center gap-2 text-sm font-semibold">
+                <input type="checkbox" name="gift_cards_enabled" defaultChecked={business.gift_cards_enabled} className="size-4 accent-[#1758E6]" /> Vendre des cartes cadeaux
+              </label>
+              <p className="mt-1 text-xs text-ink-soft">Un bouton « Offrir une carte cadeau » apparaît sur votre page. L&apos;argent arrive sur votre compte et le bénéficiaire devient un nouveau client.</p>
+            </div>
+            <div className="text-right">
+              <SubmitButton>{fr.common.save}</SubmitButton>
+            </div>
           </form>
         ) : (
           <PostRedirectButton endpoint="/api/stripe/connect" label={business.stripe_connect_account_id ? "Finaliser mon compte Stripe" : "Activer les acomptes avec Stripe"} />

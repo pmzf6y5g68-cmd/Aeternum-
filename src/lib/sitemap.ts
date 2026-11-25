@@ -65,11 +65,17 @@ export async function businessEntries(page: number): Promise<UrlEntry[]> {
   const from = page * BUSINESSES_PER_SITEMAP;
   const { data } = await createAdminClient()
     .from("businesses")
-    .select("slug, category, city_slug, updated_at")
+    .select("slug, category, city_slug, updated_at, gift_cards_enabled, stripe_connect_onboarded")
     .eq("published", true)
     .not("min_price_eur", "is", null)
     .order("created_at")
     .range(from, from + BUSINESSES_PER_SITEMAP - 1)
-    .returns<{ slug: string; category: string; city_slug: string | null; updated_at: string }[]>();
-  return (data ?? []).map((b) => ({ loc: absoluteUrl(businessPath(b)), lastmod: b.updated_at.slice(0, 10), changefreq: "daily", priority: 0.7 }));
+    .returns<{ slug: string; category: string; city_slug: string | null; updated_at: string; gift_cards_enabled: boolean; stripe_connect_onboarded: boolean }[]>();
+  return (data ?? []).flatMap((b) => {
+    const lastmod = b.updated_at.slice(0, 10);
+    const entries: UrlEntry[] = [{ loc: absoluteUrl(businessPath(b)), lastmod, changefreq: "daily", priority: 0.7 }];
+    // Pages « carte cadeau » : très recherchées avant les fêtes (« carte cadeau coiffeur Lyon »).
+    if (b.gift_cards_enabled && b.stripe_connect_onboarded) entries.push({ loc: absoluteUrl(`/carte-cadeau/${b.slug}`), lastmod, changefreq: "weekly", priority: 0.5 });
+    return entries;
+  });
 }

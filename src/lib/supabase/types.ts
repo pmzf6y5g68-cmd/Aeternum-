@@ -50,6 +50,9 @@ export interface Business {
   updated_at: string;
   locale: "fr" | "en";
   created_at: string;
+  card_guarantee_enabled: boolean;
+  no_show_fee_percent: number;
+  gift_cards_enabled: boolean;
   referral_code: string;
   referred_by: string | null;
   referral_rewarded_at: string | null;
@@ -60,7 +63,7 @@ export interface Business {
 
 /** Colonnes exposables publiquement (marketplace). Jamais de Stripe, d'email ou d'owner. */
 export const PUBLIC_BUSINESS_COLUMNS =
-  "id, slug, name, category, tagline, description, phone, website, address, postal_code, city, city_slug, lat, lng, modes, cover_url, highlights, payment_methods, free_radius_km, max_radius_km, price_per_extra_km, travel_buffer_minutes, slot_step_minutes, min_lead_minutes, max_days_ahead, cancellation_hours, deposit_enabled, deposit_percent, plan, stripe_connect_onboarded, min_price_eur, rating_avg, rating_count, published, locale" as const;
+  "id, slug, name, category, tagline, description, phone, website, address, postal_code, city, city_slug, lat, lng, modes, cover_url, highlights, payment_methods, free_radius_km, max_radius_km, price_per_extra_km, travel_buffer_minutes, slot_step_minutes, min_lead_minutes, max_days_ahead, cancellation_hours, deposit_enabled, deposit_percent, plan, stripe_connect_onboarded, min_price_eur, rating_avg, rating_count, published, locale, card_guarantee_enabled, no_show_fee_percent, gift_cards_enabled" as const;
 
 export type PublicBusiness = Omit<
   Business,
@@ -132,6 +135,11 @@ export interface Booking {
   deposit_amount_eur: number;
   deposit_paid: boolean;
   stripe_checkout_session_id: string | null;
+  guarantee_status: "none" | "pending" | "saved" | "charged" | "failed" | "refunded";
+  stripe_customer_id: string | null;
+  stripe_payment_method_id: string | null;
+  no_show_fee_eur: number;
+  stripe_fee_payment_intent_id: string | null;
   client_user_id: string | null;
   client_name: string;
   client_email: string;

@@ -13,6 +13,8 @@ import { slugify } from "@/lib/slug";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Booking } from "@/lib/supabase/types";
 import { notifyWaitlistForSlot } from "@/lib/waitlist";
+import { chargeNoShowFee, refundNoShowFee } from "@/lib/guarantee";
+import { formatGiftCode, isGiftCode } from "@/lib/domain/gift-code";
 import { syncSeats } from "@/lib/stripe-catalog";
 import { businessUrlsToPing, pingIndexNow } from "@/lib/indexnow";
 
@@ -48,6 +50,9 @@ export async function updateBookingStatus(formData: FormData): Promise<void> {
     return;
   }
   const admin = createAdminClient();
+  // Empreinte bancaire : frais d'absence une fois l'heure du RDV passée, remboursés si le pro corrige.
+  if (status === "no_show" && booking.guarantee_status === "saved" && new Date(booking.start_at) <= new Date()) await chargeNoShowFee(id);
+  if (status !== "no_show" && booking.guarantee_status === "charged") await refundNoShowFee(id);
   if (status === "cancelled") {
     await admin.from("bookings").update({ cancelled_by: "business" }).eq("id", id);
     if (booking.status !== "cancelled") await notifyWaitlistForSlot(booking);
@@ -367,7 +372,17 @@ export async function updateDepositSettings(formData: FormData): Promise<void> {
   const { supabase, business } = await requireBusiness();
   const percent = num(5, 100).parse(formData.get("deposit_percent"));
   const enabled = checkbox(formData, "deposit_enabled") && business.stripe_connect_onboarded;
-  const { error } = await supabase.from("businesses").update({ deposit_enabled: enabled, deposit_percent: Math.round(percent) }).eq("id", business.id);
+  const feePercent = num(10, 100).parse(formData.get("no_show_fee_percent") ?? 50);
+  const { error } = await supabase
+    .from("businesses")
+    .update({
+      deposit_enabled: enabled,
+      deposit_percent: Math.round(percent),
+      card_guarantee_enabled: checkbox(formData, "card_guarantee_enabled") && business.stripe_connect_onboarded,
+      no_show_fee_percent: Math.round(feePercent),
+      gift_cards_enabled: checkbox(formData, "gift_cards_enabled") && business.stripe_connect_onboarded,
+    })
+    .eq("id", business.id);
   if (error) await logEvent("pro.updateDepositSettings", error.message);
   revalidatePath("/pro/abonnement");
 }
@@ -399,4 +414,36 @@ export async function applyListingCopy(input: { tagline: string; description: st
   revalidatePath("/pro/visibilite");
   revalidatePath("/pro/ma-page");
   return { ok: true };
+}
+
+export interface RedeemState {
+  status: "idle" | "ok" | "error";
+  message?: string;
+}
+
+/** Validation d'une carte cadeau le jour du rendez-vous (une seule utilisation, dans sa durée de validité). */
+export async function redeemGiftCard(_prev: RedeemState, formData: FormData): Promise<RedeemState> {
+  const { business } = await requireBusiness();
+  const code = formatGiftCode(String(formData.get("code") ?? ""));
+  if (!isGiftCode(code)) return { status: "error", message: "Code incomplet : il comporte 12 caractères." };
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("gift_cards")
+    .update({ status: "redeemed", redeemed_at: new Date().toISOString() })
+    .eq("business_id", business.id)
+    .eq("code", code)
+    .eq("status", "active")
+    .gt("expires_at", new Date().toISOString())
+    .select("amount_eur, recipient_name")
+    .returns<{ amount_eur: number; recipient_name: string }[]>();
+  const card = data?.[0];
+  if (!card) {
+    const { data: existing } = await admin.from("gift_cards").select("status, expires_at").eq("business_id", business.id).eq("code", code).maybeSingle<{ status: string; expires_at: string | null }>();
+    if (!existing) return { status: "error", message: "Code inconnu pour votre établissement." };
+    if (existing.status === "redeemed") return { status: "error", message: "Cette carte a déjà été utilisée." };
+    if (existing.status !== "active") return { status: "error", message: "Cette carte n'a pas été payée." };
+    return { status: "error", message: "Cette carte a expiré." };
+  }
+  revalidatePath("/pro/cartes-cadeaux");
+  return { status: "ok", message: `Carte de ${Number(card.amount_eur)} € validée pour ${card.recipient_name}.` };
 }

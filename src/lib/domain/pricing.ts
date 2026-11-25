@@ -33,6 +33,9 @@ export interface BusinessForPricing {
   deposit_enabled: boolean;
   deposit_percent: number;
   stripe_connect_onboarded: boolean;
+  /** Empreinte bancaire (plan Pro + Stripe Connect) : carte enregistrée, débitée seulement en cas d'absence. */
+  card_guarantee?: boolean;
+  no_show_fee_percent?: number;
 }
 
 export interface LatLng {
@@ -116,6 +119,15 @@ export function depositCents(totalCents: number, business: BusinessForPricing): 
   return Math.round((totalCents * pct) / 100);
 }
 
+/** Frais d'absence garantis par empreinte bancaire (jamais cumulés avec un acompte). */
+export function noShowFeeCents(totalCents: number, business: BusinessForPricing): number {
+  if (!business.card_guarantee || !business.stripe_connect_onboarded) return 0;
+  if (depositCents(totalCents, business) > 0) return 0;
+  const pct = Math.min(100, Math.max(10, Number(business.no_show_fee_percent ?? 50)));
+  const fee = Math.round((totalCents * pct) / 100);
+  return fee >= 100 ? fee : 0; // Stripe : pas de débit sous 1 €.
+}
+
 export interface QuoteInput {
   service: ServiceForPricing;
   variantKey?: string | null;
@@ -135,6 +147,8 @@ export interface Quote {
   travelFeeCents: number;
   totalCents: number;
   depositCents: number;
+  /** Montant débité en cas d'absence (empreinte bancaire), 0 si non applicable. */
+  guaranteeFeeCents: number;
   /** Durée de la prestation elle-même. */
   workMinutes: number;
   /** Durée bloquée dans l'agenda (prestation + tampon trajet si à domicile). */
@@ -175,6 +189,7 @@ export function computeQuote(input: QuoteInput): Quote {
     travelFeeCents,
     totalCents,
     depositCents: depositCents(totalCents, input.business),
+    guaranteeFeeCents: noShowFeeCents(totalCents, input.business),
     workMinutes,
     blockedMinutes,
     distanceKm,

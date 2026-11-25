@@ -50,7 +50,11 @@ export async function ensureBillingPortal(): Promise<void> {
       invoice_history: { enabled: true },
       payment_method_update: { enabled: true },
       customer_update: { enabled: true, allowed_updates: ["email", "address", "tax_id"] },
-      subscription_cancel: { enabled: true, mode: "at_period_end" },
+      subscription_cancel: {
+        enabled: true,
+        mode: "at_period_end",
+        cancellation_reason: { enabled: true, options: ["too_expensive", "missing_features", "switched_service", "unused", "customer_service", "too_complex", "other"] },
+      },
       subscription_update: {
         enabled: true,
         default_allowed_updates: ["price"],
@@ -59,6 +63,19 @@ export async function ensureBillingPortal(): Promise<void> {
       },
     },
   });
+}
+
+export const RETENTION_COUPON_ID = "rdv_retention_50_3m";
+
+/** Offre de fidélité affichée au moment de résilier : -50 % pendant 3 mois (créée une fois, réutilisée ensuite). */
+export async function ensureRetentionCoupon(): Promise<string> {
+  const stripe = getStripe();
+  try {
+    await stripe.coupons.retrieve(RETENTION_COUPON_ID);
+  } catch {
+    await stripe.coupons.create({ id: RETENTION_COUPON_ID, name: "Fidélité : -50 % pendant 3 mois", percent_off: 50, duration: "repeating", duration_in_months: 3 });
+  }
+  return RETENTION_COUPON_ID;
 }
 
 /** Nombre d'agendas facturés = membres actifs (au moins 1). Synchronisé à chaque modification d'équipe. */

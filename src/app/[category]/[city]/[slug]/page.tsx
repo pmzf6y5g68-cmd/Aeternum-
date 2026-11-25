@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
-import { Clock, CreditCard, House, Info, MapPin, Monitor, Navigation, Phone, ShieldCheck, Store, UserRound } from "lucide-react";
+import { Clock, CreditCard, Gift, House, Info, MapPin, Monitor, Navigation, Phone, ShieldCheck, Store, UserRound } from "lucide-react";
 import { Attribution } from "@/components/attribution";
 import { BusinessAvatar } from "@/components/business-avatar";
 import { FavoriteButton, ShareButton } from "@/components/favorite-button";
@@ -120,7 +120,12 @@ export default async function BusinessPage({ params, searchParams }: { params: P
               )}
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            {biz.gift_cards_enabled && biz.stripe_connect_onboarded && (
+              <Link href={`/carte-cadeau/${biz.slug}`} className="inline-flex items-center gap-2 rounded-lg bg-white/15 px-3.5 py-2 text-sm font-semibold text-white hover:bg-white/25">
+                <Gift className="size-4" aria-hidden /> Offrir
+              </Link>
+            )}
             <FavoriteButton businessId={biz.id} initial={isFavorite} loggedIn={Boolean(user)} path={canonical} />
             <ShareButton title={biz.name} />
           </div>

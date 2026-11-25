@@ -363,11 +363,11 @@ export function BookingWidget({
   if (paymentUrl && slot) {
     return (
       <div className="p-5 text-center">
-        <h3 className="text-xl font-bold">Acompte à régler</h3>
+        <h3 className="text-xl font-bold">Dernière étape</h3>
         <p className="mt-1 font-semibold capitalize text-brand">{slotLabel(slot.startAt)}</p>
-        <p className="mt-2 text-sm text-ink-soft">Votre créneau est réservé quelques minutes, le temps de régler l&apos;acompte sur la page de paiement sécurisée.</p>
+        <p className="mt-2 text-sm text-ink-soft">Votre créneau est réservé quelques minutes, le temps de finaliser sur la page de paiement sécurisée.</p>
         <a href={paymentUrl} target="_blank" rel="noopener" className="btn-primary mt-5 w-full">
-          Payer l&apos;acompte
+          Continuer vers le paiement sécurisé
         </a>
       </div>
     );
@@ -754,12 +754,17 @@ export function BookingWidget({
                 {quote.depositCents > 0 && <span>{formatEur(quote.depositCents)}</span>}
               </div>
               <p className="text-xs text-ink-soft">{formatDuration(service ? servicePrice(service, variantKey).duration_minutes : 0)}</p>
+              {quote.guaranteeFeeCents > 0 && (
+                <p className="rounded-lg bg-white p-2.5 text-xs leading-relaxed text-ink-soft">
+                  Rendez-vous garanti par carte : aucun débit aujourd&apos;hui. En cas d&apos;absence sans annulation, {formatEur(quote.guaranteeFeeCents)} pourront être prélevés.
+                </p>
+              )}
             </div>
           )}
           {error && <p className="text-sm text-danger">{error}</p>}
           <button type="submit" disabled={busy || !slot} className="btn-primary w-full py-3.5 text-base">
             {busy && <Loader2 className="size-4 animate-spin" aria-hidden />}
-            {quote && quote.depositCents > 0 ? t.payDeposit : t.confirm}
+            {quote && quote.depositCents > 0 ? t.payDeposit : quote && quote.guaranteeFeeCents > 0 ? "Garantir et confirmer" : t.confirm}
           </button>
           <p className="text-center text-xs text-ink-soft">{t.acceptTerms}</p>
         </form>

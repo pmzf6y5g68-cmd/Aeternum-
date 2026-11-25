@@ -5,7 +5,7 @@ import { siteConfig } from "@/config/site";
 import { BookingInputError, locationSchema, resolveSelection } from "@/lib/booking-request";
 import { rankStaffByLoad } from "@/lib/domain/availability";
 import { commissionCents } from "@/lib/domain/commission";
-import { centsToEur, computeQuote } from "@/lib/domain/pricing";
+import { centsToEur, computeQuote, formatEur } from "@/lib/domain/pricing";
 import { zonedDateString } from "@/lib/domain/time";
 import { BUSINESS_CONTACT_COLUMNS, sendBookingConfirmation, type BusinessContact } from "@/lib/email/booking-emails";
 import { env } from "@/lib/env";
@@ -126,6 +126,7 @@ export async function POST(request: Request) {
   const { data: auth } = await session.auth.getUser();
 
   const needsDeposit = quote.depositCents > 0;
+  const needsGuarantee = !needsDeposit && quote.guaranteeFeeCents > 0;
   const admin = createAdminClient();
 
   // 4. Création atomique (verrou, quota, équipe, capacité, congés).
@@ -154,7 +155,7 @@ export async function POST(request: Request) {
       p_client_notes: input.client_notes || null,
       p_start_at: slot.startAt,
       p_end_at: slot.endAt,
-      p_status: needsDeposit ? "pending_deposit" : "scheduled",
+      p_status: needsDeposit || needsGuarantee ? "pending_deposit" : "scheduled",
       p_free_monthly_limit: siteConfig.pricing.freeMonthlyBookings,
       p_pending_ttl_minutes: siteConfig.booking.pendingDepositTtlMinutes,
     })
@@ -236,7 +237,52 @@ export async function POST(request: Request) {
     }
   }
 
-  // 5b. Sans acompte : confirmation immédiate par email avec invitation .ics.
+  // 5b. Empreinte bancaire : la carte est enregistrée sur le compte Connect du pro (mode « setup »), sans aucun débit.
+  if (needsGuarantee) {
+    const { data: acct } = await admin.from("businesses").select("stripe_connect_account_id, cancellation_hours").eq("id", business.id).single<{ stripe_connect_account_id: string | null; cancellation_hours: number }>();
+    try {
+      if (!acct?.stripe_connect_account_id) throw new Error("connect account missing");
+      const stripeAccount = acct.stripe_connect_account_id;
+      const customer = await getStripe().customers.create(
+        { email: input.client_email, name: input.client_name, phone: input.client_phone || undefined, metadata: { booking_id: booking.id } },
+        { stripeAccount, idempotencyKey: `guarantee-customer-${booking.id}` },
+      );
+      const fee = formatEur(quote.guaranteeFeeCents);
+      const session = await getStripe().checkout.sessions.create(
+        {
+          mode: "setup",
+          ui_mode: "embedded_page",
+          currency: "eur",
+          customer: customer.id,
+          metadata: { booking_id: booking.id, business_id: business.id, kind: "guarantee" },
+          setup_intent_data: {
+            metadata: { booking_id: booking.id, business_id: business.id },
+            description: `Garantie de rendez-vous — ${business.name}, ${date}`,
+          },
+          custom_text: {
+            submit: {
+              message: `Aucun débit aujourd'hui. Si vous ne venez pas sans avoir annulé${acct.cancellation_hours > 0 ? ` au moins ${acct.cancellation_hours} h avant` : ""}, ${fee} pourront être prélevés par ${business.name}.`,
+            },
+          },
+          expires_at: Math.floor(Date.now() / 1000) + 31 * 60,
+          return_url: `${env.appUrl()}/paiement/${booking.confirm_token}/retour?session_id={CHECKOUT_SESSION_ID}`,
+          locale: "fr",
+        },
+        { stripeAccount },
+      );
+      await admin
+        .from("bookings")
+        .update({ stripe_checkout_session_id: session.id, stripe_customer_id: customer.id, guarantee_status: "pending", no_show_fee_eur: centsToEur(quote.guaranteeFeeCents) })
+        .eq("id", booking.id);
+      return json({ booking_id: booking.id, payment_url: `/paiement/${booking.confirm_token}` });
+    } catch (err) {
+      await admin.from("bookings").update({ status: "cancelled", cancelled_by: "system" }).eq("id", booking.id);
+      await logEvent("api.bookings.guarantee", errorMessage(err), { booking_id: booking.id });
+      return jsonError("payment_unavailable", 502);
+    }
+  }
+
+  // 5c. Sans acompte : confirmation immédiate par email avec invitation .ics.
   try {
     const { data: contact } = await admin.from("businesses").select(BUSINESS_CONTACT_COLUMNS).eq("id", business.id).single<BusinessContact>();
     const staffName = booking.staff_id ? (sel.catalog.staff.find((s) => s.id === booking.staff_id)?.name ?? null) : null;

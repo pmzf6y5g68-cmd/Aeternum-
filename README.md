@@ -67,9 +67,10 @@ Ajouter un métier : une entrée dans `src/config/categories.ts` (+ la ligne cor
 1. Rien à créer pour l'abonnement : produit, prix et portail sont provisionnés automatiquement.
 2. Activez **Connect** (comptes **Express**, France) et le **Customer portal**.
 3. Webhook `https://votre-domaine/api/webhooks/stripe`, créé **deux fois** :
-   - *Votre compte* : `checkout.session.completed`, `customer.subscription.created|updated|deleted` → `STRIPE_WEBHOOK_SECRET`.
+   - *Votre compte* : `checkout.session.completed`, `customer.subscription.created|updated|deleted|trial_will_end`, `invoice.paid`, `invoice.payment_failed` → `STRIPE_WEBHOOK_SECRET`.
    - *Comptes connectés* : `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `account.updated` → `STRIPE_CONNECT_WEBHOOK_SECRET`.
-4. `STRIPE_SECRET_KEY`.
+4. `STRIPE_SECRET_KEY`. Optionnel : `STRIPE_AUTOMATIC_TAX=true` si Stripe Tax est activé (TVA calculée automatiquement).
+5. Recommandé : **Billing › Revenue recovery** (Smart Retries + emails de carte expirée) et **Payment methods** : carte, Apple Pay, Google Pay, Link, PayPal, prélèvement SEPA.
 
 ### 3. Resend (emails sortants)
 Ajoutez le domaine, créez les enregistrements **SPF, DKIM, DMARC** (`p=quarantine` au minimum), puis `RESEND_API_KEY`,
@@ -186,6 +187,13 @@ Android / Chrome / Edge proposent « Installer » ; sur iPhone : Partager → «
 rappelle). Les pros peuvent abonner Google Agenda, Apple Calendrier ou Outlook à leur agenda depuis `/pro/agenda`.
 
 ---
+
+## Paiements des pros (sans commission)
+- **Acompte** à la réservation, **empreinte bancaire** (carte enregistrée sans débit, frais d'absence prélevés quand le pro
+  marque « Absent », remboursés s'il corrige — plan Pro) et **cartes cadeaux** (page `/carte-cadeau/[slug]`, code envoyé par
+  email, validation dans `/pro/cartes-cadeaux`). Tout est encaissé sur le compte Stripe Connect du pro.
+- **Abonnement** : factures avec adresse et n° de TVA, rappel 3 jours avant la fin de l'essai, passage à l'annuel en 1 clic,
+  offre de fidélité (-50 % pendant 3 mois) au moment de résilier, motifs de résiliation collectés.
 
 ## Croissance et sécurité
 - **Pros** : `/pro/visibilite` (vues, réservations, score /100, rédaction de fiche), module à intégrer sur leur site
