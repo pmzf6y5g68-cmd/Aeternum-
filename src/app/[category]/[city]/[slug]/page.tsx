@@ -41,7 +41,7 @@ function hhmm(v: string | null): string {
   return v ? v.slice(0, 5).replace(":", "h") : "";
 }
 
-export default async function BusinessPage({ params, searchParams }: { params: Params; searchParams: Promise<{ date?: string; service?: string }> }) {
+export default async function BusinessPage({ params, searchParams }: { params: Params; searchParams: Promise<{ date?: string; service?: string; reservation?: string }> }) {
   const [{ category, city, slug }, sp] = await Promise.all([params, searchParams]);
   const biz = await loadPublicBusiness(slug);
   if (!biz) notFound();
@@ -115,6 +115,13 @@ export default async function BusinessPage({ params, searchParams }: { params: P
         </div>
       </section>
 
+      {sp.reservation === "ok" && (
+        <div className="mx-auto mt-4 max-w-6xl px-4">
+          <p className="rounded-xl border border-green-200 bg-green-50 p-4 text-sm font-semibold text-success">
+            {fr.booking.successTitle} {fr.booking.depositSuccessText}
+          </p>
+        </div>
+      )}
       <main className="mx-auto grid max-w-6xl gap-6 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
         <aside id="reserver" className="scroll-mt-24 lg:order-2">
           <div className="sticky top-24 overflow-hidden rounded-xl border border-line bg-white shadow-(--shadow-card)">

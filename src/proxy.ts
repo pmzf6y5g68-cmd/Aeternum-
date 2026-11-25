@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-/** Rafraîchit la session Supabase et protège /dashboard. */
+/** Rafraîchit la session Supabase ; les layouts protégés (/compte, /pro/*) gèrent eux-mêmes les redirections. */
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -20,17 +20,10 @@ export async function proxy(request: NextRequest) {
       },
     },
   });
-
-  const { data } = await supabase.auth.getUser();
-  if (!data.user && request.nextUrl.pathname.startsWith("/dashboard")) {
-    const login = request.nextUrl.clone();
-    login.pathname = "/login";
-    login.search = `?next=${encodeURIComponent(request.nextUrl.pathname)}`;
-    return NextResponse.redirect(login);
-  }
+  await supabase.auth.getUser();
   return response;
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/onboarding", "/login", "/auth/:path*"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/webhooks|api/cron|api/suggest|api/slots|.*\\.(?:png|jpg|svg|ico|webp)$).*)"],
 };

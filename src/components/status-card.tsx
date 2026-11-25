@@ -11,9 +11,9 @@ export function StatusCard({
   children?: React.ReactNode;
 }) {
   const Icon = tone === "success" ? CheckCircle2 : tone === "warning" ? CircleAlert : XCircle;
-  const color = tone === "success" ? "text-accent" : tone === "warning" ? "text-amber-500" : "text-slate-400";
+  const color = tone === "success" ? "text-brand" : tone === "warning" ? "text-amber-500" : "text-slate-400";
   return (
-    <main className="grid min-h-dvh place-items-center bg-muted px-4">
+    <main className="grid min-h-dvh place-items-center bg-canvas px-4">
       <div className="w-full max-w-md">
         <div className="mb-6 flex justify-center">
           <Logo />
