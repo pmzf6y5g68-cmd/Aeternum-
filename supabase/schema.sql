@@ -451,9 +451,9 @@ as $$ select exists (select 1 from public.businesses b where b.id = p_business_i
 -- Établissement : le propriétaire lit et modifie ses colonnes éditables. La création, le plan,
 -- Stripe, les notes et l'index de recherche passent uniquement par le serveur (service_role).
 drop policy if exists businesses_owner_select on public.businesses;
-create policy businesses_owner_select on public.businesses for select using (auth.uid() = owner_id);
+create policy businesses_owner_select on public.businesses for select using ((select auth.uid()) = owner_id);
 drop policy if exists businesses_owner_update on public.businesses;
-create policy businesses_owner_update on public.businesses for update using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
+create policy businesses_owner_update on public.businesses for update using ((select auth.uid()) = owner_id) with check ((select auth.uid()) = owner_id);
 revoke insert, update, delete on public.businesses from anon, authenticated;
 grant update (name, tagline, description, email, phone, website, address, postal_code, city, city_slug, lat, lng, modes,
   cover_url, highlights, payment_methods, free_radius_km, max_radius_km, price_per_extra_km, travel_buffer_minutes,
@@ -470,16 +470,16 @@ begin
 end $$;
 
 drop policy if exists customer_profiles_own on public.customer_profiles;
-create policy customer_profiles_own on public.customer_profiles for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy customer_profiles_own on public.customer_profiles for all using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 
 drop policy if exists favorites_own on public.favorites;
-create policy favorites_own on public.favorites for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy favorites_own on public.favorites for all using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 
 -- Rendez-vous : lus par l'établissement et par l'usager concerné ; créés uniquement par la RPC.
 drop policy if exists bookings_owner_select on public.bookings;
 create policy bookings_owner_select on public.bookings for select using (public.owns_business(business_id));
 drop policy if exists bookings_client_select on public.bookings;
-create policy bookings_client_select on public.bookings for select using (auth.uid() = client_user_id);
+create policy bookings_client_select on public.bookings for select using ((select auth.uid()) = client_user_id);
 drop policy if exists bookings_owner_update on public.bookings;
 create policy bookings_owner_update on public.bookings for update using (public.owns_business(business_id)) with check (public.owns_business(business_id));
 revoke insert, update, delete on public.bookings from anon, authenticated;
@@ -495,7 +495,7 @@ grant update (reply) on public.reviews to authenticated;
 
 -- Liste d'attente : l'usager connecté voit ses inscriptions ; l'établissement voit les siennes.
 drop policy if exists waitlist_own_select on public.waitlist_entries;
-create policy waitlist_own_select on public.waitlist_entries for select using (auth.uid() = user_id or public.owns_business(business_id));
+create policy waitlist_own_select on public.waitlist_entries for select using ((select auth.uid()) = user_id or public.owns_business(business_id));
 revoke insert, update, delete on public.waitlist_entries from anon, authenticated;
 
 -- prospects / email_threads / email_messages / email_suppressions / email_events / system_events :
@@ -963,3 +963,14 @@ revoke all on function public.trg_services_listing() from public, anon, authenti
 revoke all on function public.trg_businesses_listing() from public, anon, authenticated;
 revoke all on function public.trg_reviews_rating() from public, anon, authenticated;
 grant execute on function public.refresh_business_listing(uuid) to service_role;
+
+-- Index des clés étrangères (advisors performance)
+create index if not exists bookings_service_idx on public.bookings (service_id);
+create index if not exists bookings_staff_idx on public.bookings (staff_id);
+create index if not exists email_threads_business_idx on public.email_threads (business_id);
+create index if not exists email_threads_prospect_idx on public.email_threads (prospect_id);
+create index if not exists favorites_business_idx on public.favorites (business_id);
+create index if not exists reviews_author_idx on public.reviews (author_user_id);
+create index if not exists time_off_staff_idx on public.time_off (staff_id);
+create index if not exists waitlist_service_idx on public.waitlist_entries (service_id);
+create index if not exists waitlist_user_idx on public.waitlist_entries (user_id);
