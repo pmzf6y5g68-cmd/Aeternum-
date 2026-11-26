@@ -9,20 +9,24 @@
   --ink:#0b1f3a;--ink-soft:#4a5b75;--canvas:#f2f5f9;--surface:#ffffff;--line:#dce3ec;
   --sun:#ffc93c;--head:#1758e6;--ok:#0f8a5f;--ok-soft:#e6f5ee;--bad:#d92d3a;--bad-soft:#fdecee;--warn:#b26a00;--warn-soft:#fff4dc;
   --shadow:0 1px 2px rgb(11 31 58/.06),0 2px 8px rgb(11 31 58/.05);--pop:0 12px 32px rgb(11 31 58/.16);
+  --map-land:#eef1ec;--map-park:#cfe6c6;--map-water:#a9d0ee;--map-road:#ffffff;--map-road-edge:#d9dfe6;--map-major:#ffe7a8;--map-text:#5a6878;
   --f-display:"Manrope",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --f-body:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --map-land:#152033;--map-park:#18352a;--map-water:#1d3b5e;--map-road:#26354d;--map-road-edge:#0e1726;--map-major:#4a4027;--map-text:#9fb0c8;
   --brand:#5b8cff;--brand-dark:#3f74f5;--brand-deep:#0b1c45;--head:#173a8f;--brand-soft:#16264a;--brand-softer:#111d38;
   --ink:#e8eef8;--ink-soft:#9fb0c8;--canvas:#0a1222;--surface:#111b2e;--line:#22314b;
   --ok:#3ccf95;--ok-soft:#0f2b22;--bad:#ff6b76;--bad-soft:#36161b;--warn:#ffc35c;--warn-soft:#33270e;
   --shadow:0 1px 2px rgb(0 0 0/.3);--pop:0 12px 32px rgb(0 0 0/.5);color-scheme:dark}}
 :root[data-theme="dark"]{
+  --map-land:#152033;--map-park:#18352a;--map-water:#1d3b5e;--map-road:#26354d;--map-road-edge:#0e1726;--map-major:#4a4027;--map-text:#9fb0c8;
   --brand:#5b8cff;--brand-dark:#3f74f5;--brand-deep:#0b1c45;--brand-soft:#16264a;--brand-softer:#111d38;
   --ink:#e8eef8;--ink-soft:#9fb0c8;--canvas:#0a1222;--surface:#111b2e;--line:#22314b;
   --ok:#3ccf95;--ok-soft:#0f2b22;--bad:#ff6b76;--bad-soft:#36161b;--warn:#ffc35c;--warn-soft:#33270e;
   --shadow:0 1px 2px rgb(0 0 0/.3);--pop:0 12px 32px rgb(0 0 0/.5);color-scheme:dark}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{background:var(--canvas);color:var(--ink);font:15px/1.5 var(--f-body);-webkit-font-smoothing:antialiased}
 h1,h2,h3{font-family:var(--f-display);line-height:1.15;text-wrap:balance;margin:0;letter-spacing:-.01em}
 button,input,select,textarea{font:inherit;color:inherit}
@@ -70,7 +74,7 @@ label.lbl{display:block;font-size:13.5px;font-weight:600;margin-bottom:6px}
 .searchbar{display:grid;grid-template-columns:1.3fr 1fr auto;background:var(--surface);border-radius:14px;padding:6px;gap:6px;box-shadow:var(--pop);max-width:860px;position:relative;z-index:1}
 .searchbar .field{display:flex;flex-direction:column;padding:6px 12px;min-width:0}
 .searchbar .field+.field{border-left:1px solid var(--line)}
-.searchbar span{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft)}
+.searchbar .field>span{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft)}
 .searchbar input{border:0;outline:none;background:none;padding:2px 0;font-size:15.5px;color:var(--ink);min-width:0}
 .cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-top:-40px;position:relative;z-index:2}
 .cat{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 8px;text-align:center;cursor:pointer;font-weight:600;font-size:14px;border-radius:14px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);color:var(--ink)}
@@ -82,7 +86,7 @@ label.lbl{display:block;font-size:13.5px;font-weight:600;margin-bottom:6px}
 .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
 .kpi{font:800 28px var(--f-display)}
 /* Recherche */
-.layout-search{display:grid;grid-template-columns:260px minmax(0,1fr) 340px;gap:16px;padding-block:20px}
+.layout-search{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:18px;padding-block:16px 30px}
 .filters .group{padding-block:12px;border-top:1px solid var(--line)}
 .filters .group:first-child{border-top:0;padding-top:0}
 .result{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:14px;align-items:start;cursor:pointer}
@@ -91,9 +95,70 @@ label.lbl{display:block;font-size:13.5px;font-weight:600;margin-bottom:6px}
 .slots-mini{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
 .slot-mini{border:1px solid var(--brand);color:var(--brand);background:var(--brand-softer);border-radius:8px;padding:4px 9px;font-size:13px;font-weight:700;cursor:pointer}
 .stars{color:#f2a900;letter-spacing:1px}
-.map{position:sticky;top:76px;height:calc(100dvh - 110px);min-height:360px;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:var(--brand-softer)}
-.map svg{width:100%;height:100%;display:block}
-.pin{cursor:pointer}
+.mapcol{position:sticky;top:calc(env(safe-area-inset-top,0px) + 176px);height:calc(100dvh - 244px);min-height:380px}
+.map{position:relative;width:100%;height:100%;border-radius:16px;overflow:hidden;border:1px solid var(--line);background:var(--map-land);touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+.map:active{cursor:grabbing}.map.picking{cursor:crosshair;box-shadow:inset 0 0 0 3px var(--brand)}
+.map svg.base{position:absolute;inset:0;display:block}
+.map-place{font:700 11.5px var(--f-body);fill:var(--map-text);text-anchor:middle;paint-order:stroke;stroke:var(--map-land);stroke-width:3px;letter-spacing:.02em}
+.map-river{font:italic 600 11px var(--f-body);fill:color-mix(in srgb,var(--map-water) 40%,var(--ink));paint-order:stroke;stroke:var(--map-land);stroke-width:3px}
+.map-street{font:500 10px var(--f-body);fill:var(--map-text);text-anchor:middle;paint-order:stroke;stroke:var(--map-land);stroke-width:3px}
+.pins{position:absolute;inset:0;pointer-events:none}
+.mpin,.cluster{position:absolute;left:0;top:0;pointer-events:auto;cursor:pointer;font:800 12.5px var(--f-body);white-space:nowrap;transition:background .15s,color .15s,box-shadow .15s}
+.mpin{margin:-15px 0 0 -26px;min-width:52px;padding:6px 9px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);box-shadow:0 2px 6px rgb(11 31 58/.18)}
+.mpin::after{content:"";position:absolute;left:50%;bottom:-5px;width:9px;height:9px;background:inherit;border-right:1px solid var(--line);border-bottom:1px solid var(--line);transform:translateX(-50%) rotate(45deg)}
+.mpin:hover,.mpin.hot{background:var(--ink);color:var(--surface);z-index:2}
+.mpin.on{background:var(--brand);color:#fff;border-color:var(--brand);z-index:3;box-shadow:0 6px 16px rgb(23 88 230/.35)}
+.cluster{margin:-19px 0 0 -19px;width:38px;height:38px;border-radius:50%;border:3px solid var(--surface);background:var(--brand);color:#fff;box-shadow:0 0 0 6px color-mix(in srgb,var(--brand) 22%,transparent)}
+.mcard{position:absolute;left:0;top:0;width:300px;max-width:calc(100% - 16px);background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;box-shadow:var(--pop);z-index:5;cursor:default}
+.mc-x{position:absolute;right:6px;top:4px;border:0;background:none;font-size:20px;color:var(--ink-soft);cursor:pointer}
+.map-tools{position:absolute;right:10px;bottom:34px;display:grid;gap:6px;z-index:4}
+.mt{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:700 18px var(--f-body);cursor:pointer;display:grid;place-items:center;box-shadow:var(--shadow)}
+.mt:hover{color:var(--brand)}
+.map-here{position:absolute;left:50%;top:12px;transform:translateX(-50%);z-index:4;box-shadow:var(--pop);border-radius:999px}
+.map-scale{position:absolute;left:10px;bottom:10px;z-index:4;display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--map-text)}
+.map-scale i{display:block;height:5px;border:2px solid var(--map-text);border-top:0}
+.map-attr{position:absolute;right:10px;bottom:8px;font-size:10px;color:var(--map-text);z-index:3}
+.fsep{flex:0 0 1px;background:var(--line);margin:4px 2px}
+.searchtop{position:sticky;top:calc(env(safe-area-inset-top,0px) + 60px);z-index:15;background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:saturate(1.4) blur(10px);-webkit-backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--line);padding-block:10px}
+.sbar{display:flex;gap:8px;align-items:stretch;flex-wrap:wrap}
+.sfield{display:flex;align-items:center;gap:8px;flex:1 1 200px;min-width:0;background:var(--canvas);border:1px solid var(--line);border-radius:10px;padding:0 12px;height:42px;color:var(--ink)}
+.sfield input{border:0;background:none;outline:none;flex:1;min-width:0;font-size:15px}
+.locfield{cursor:pointer;font-weight:600;text-align:left;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.locfield span{overflow:hidden;text-overflow:ellipsis}
+.searchbar .locfield{border:0;background:none;padding:2px 0;font-size:15.5px;display:flex;align-items:center;gap:6px;color:var(--ink)}
+.fbar{display:flex;gap:6px;overflow-x:auto;padding-top:10px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.fbar::-webkit-scrollbar{display:none}.fbar .chip{flex:0 0 auto}
+.sortchip select{border:0;background:none;font-weight:700;outline:none;cursor:pointer}
+.chip-on{background:var(--brand-soft);border-color:transparent;color:var(--brand)}
+.hero-chip{background:rgb(255 255 255/.12)!important;border-color:transparent!important;color:#fff!important}
+.pop{position:absolute;z-index:45;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--pop);padding:12px}
+.pop .opt{gap:12px;justify-content:flex-start}
+.fgroup{padding-block:14px;border-top:1px solid var(--line)}.fgroup:first-of-type{border-top:0}
+.modal-bg.sheet{place-items:end center}
+.modal-bg.sheet .modal{max-width:560px;border-radius:18px 18px 0 0;max-height:88dvh;padding-bottom:calc(22px + env(safe-area-inset-bottom,0px));animation:up .22s ease-out}
+@media (min-width:760px){.modal-bg.sheet{place-items:center}.modal-bg.sheet .modal{border-radius:18px}}
+@keyframes up{from{transform:translateY(24px)}to{transform:none}}
+.result{transition:border-color .15s,box-shadow .15s,transform .15s;animation:rise .28s ease-out both;animation-delay:calc(var(--i,0) * 25ms)}
+.result:hover,.result.on{border-color:var(--brand);box-shadow:0 6px 20px rgb(11 31 58/.1)}
+@keyframes rise{from{transform:translateY(6px)}to{transform:none}}
+.price{text-align:right}
+.hscroll{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(240px,260px);gap:12px;overflow-x:auto;padding-bottom:6px;scroll-snap-type:x mandatory;scrollbar-width:thin}
+.tilebiz{display:grid;gap:4px;text-align:left;scroll-snap-align:start;cursor:pointer;padding:12px}
+.tilebiz:hover{border-color:var(--brand);transform:translateY(-2px)}
+.cover{display:flex;align-items:flex-start;height:86px;border-radius:10px;padding:10px;margin-bottom:6px;background:linear-gradient(135deg,color-mix(in srgb,var(--c) 22%,var(--surface)),color-mix(in srgb,var(--c) 8%,var(--surface)))}
+.cover .avatar{width:44px;height:44px;font-size:17px;border-radius:12px}
+.tb-name{font-family:var(--f-display);font-size:16px}
+.viewtoggle{display:none}
+.chat{position:absolute;right:0;bottom:68px;width:min(400px,calc(100vw - 24px));background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:var(--pop);overflow:hidden;display:flex;flex-direction:column;max-height:min(620px,calc(100dvh - 120px))}
+.chat-head{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.chat .msgs{flex:1;max-height:none;overflow:auto;padding:14px;display:grid;gap:8px;align-content:start}
+.chat-form{display:flex;gap:6px;padding:10px;border-top:1px solid var(--line)}
+.chatcard{margin:0;gap:10px;justify-content:flex-start;padding:8px 10px}
+.msg{white-space:pre-wrap;line-height:1.45}
+.dots{display:inline-flex;gap:4px}.dots i{width:6px;height:6px;border-radius:50%;background:var(--ink-soft);animation:blink 1s infinite}.dots i:nth-child(2){animation-delay:.15s}.dots i:nth-child(3){animation-delay:.3s}
+@keyframes blink{0%,100%{opacity:.25}50%{opacity:1}}
+.fab{height:52px;min-width:52px;border-radius:999px;border:0;background:var(--brand);color:#fff;box-shadow:var(--pop);cursor:pointer;display:inline-flex;align-items:center;gap:8px;padding:0 18px;font-weight:700}
+.fab:hover{background:var(--brand-dark)}
 /* Fiche */
 .bizhead{background:var(--head);color:#fff;padding-block:22px}
 .layout-biz{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:20px;padding-block:20px}
@@ -146,13 +211,13 @@ details.faq[open] summary{color:var(--brand)}
 .modal-bg{position:fixed;inset:0;background:rgb(11 31 58/.5);display:grid;place-items:center;z-index:40;padding:16px}
 .modal{background:var(--surface);border-radius:16px;max-width:460px;width:100%;padding:22px;box-shadow:var(--pop);max-height:90dvh;overflow:auto}
 .assistant{position:fixed;right:max(18px,calc(env(safe-area-inset-right,0px) + 12px));bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:25}
-.assistant>button{width:54px;height:54px;border-radius:50%;border:0;background:var(--brand);color:#fff;box-shadow:var(--pop);cursor:pointer;display:grid;place-items:center}
-.chat{position:absolute;right:0;bottom:66px;width:min(360px,calc(100vw - 36px));background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--pop);overflow:hidden}
 .chat .msgs{max-height:300px;overflow:auto;padding:12px;display:grid;gap:8px}
 .msg{padding:9px 12px;border-radius:12px;font-size:14px;max-width:88%}
 .msg.bot{background:var(--canvas)}.msg.me{background:var(--brand);color:#fff;justify-self:end}
 footer{border-top:1px solid var(--line);margin-top:40px;padding-block:24px;color:var(--ink-soft);font-size:13px}
-@media (max-width:1020px){.layout-search{grid-template-columns:minmax(0,1fr)}.map{position:relative;top:0;height:300px}.filters{order:0}}
+@media (max-width:900px){.layout-search{grid-template-columns:minmax(0,1fr)}.mapcol{display:none;position:relative;top:0;height:calc(100dvh - 230px)}.show-map .mapcol{display:block}.show-map .results{display:none}
+.viewtoggle{display:inline-flex;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:24;align-items:center;gap:8px;border:0;border-radius:999px;background:var(--ink);color:var(--surface);padding:12px 20px;font-weight:700;box-shadow:var(--pop);cursor:pointer}
+.fab-label{display:none}.sbtn{display:none}.chat{position:fixed;left:max(8px,env(safe-area-inset-left,0px));right:max(8px,env(safe-area-inset-right,0px));bottom:calc(78px + env(safe-area-inset-bottom,0px));width:auto;max-height:calc(100dvh - 150px)}.fab{padding:0;justify-content:center;width:52px}.searchtop{top:calc(env(safe-area-inset-top,0px) + 60px)}}
 @media (max-width:860px){.layout-biz,.layout-pro{grid-template-columns:minmax(0,1fr)}.booking{position:relative;top:0;max-height:none}.pronav{flex-direction:row;overflow-x:auto}.pronav button{flex:0 0 auto}.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.steps{grid-template-columns:1fr}}
 @media (max-width:620px){.searchbar{grid-template-columns:1fr}.searchbar .field+.field{border-left:0;border-top:1px solid var(--line)}.navlabel{display:none}.mob{display:inline}.result{grid-template-columns:48px minmax(0,1fr)}.result .price{grid-column:2}.avatar{width:48px;height:48px;font-size:17px}.appt{grid-template-columns:56px minmax(0,1fr)}.appt .acts{grid-column:1/-1}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -199,6 +264,7 @@ const I={
  share:'<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98M15.41 6.51l-6.82 3.98"/>',
  chat:'<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
  pin:'<path d="M20 10c0 4.99-5.54 10.19-7.4 11.8a1 1 0 0 1-1.2 0C9.54 20.19 4 14.99 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>',
+ search:'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
  shield:'<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>'
 };
 const icon=(n,s="")=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ${s}>${I[n]||""}</svg>`;
@@ -267,14 +333,152 @@ const B=[
 ];
 const BY=Object.fromEntries(B.map(b=>[b.id,b]));
 const catOf=s=>CATS.find(c=>c.slug===s);
-const USER={lat:45.7578,x:50,y:46};
+// ---------- Géographie de Lyon (coordonnées WGS84 réelles, tracés simplifiés) ----------
+const GEO={
+ rivers:[
+  {name:"Rhône",w:230,pts:[[45.8128,4.8975],[45.8072,4.8880],[45.8016,4.8768],[45.7966,4.8676],[45.7921,4.8605],[45.7873,4.8546],[45.7824,4.8497],[45.7772,4.8458],[45.7722,4.8431],[45.7676,4.8414],[45.7636,4.8404],[45.7592,4.8399],[45.7550,4.8395],[45.7505,4.8384],[45.7462,4.8361],[45.7422,4.8323],[45.7384,4.8276],[45.7346,4.8228],[45.7309,4.8191],[45.7262,4.8167],[45.7205,4.8150]]},
+  {name:"Saône",w:140,pts:[[45.8205,4.8352],[45.8105,4.8325],[45.8018,4.8299],[45.7941,4.8276],[45.7878,4.8246],[45.7829,4.8196],[45.7792,4.8140],[45.7752,4.8113],[45.7713,4.8155],[45.7686,4.8212],[45.7663,4.8262],[45.7634,4.8289],[45.7600,4.8287],[45.7565,4.8276],[45.7526,4.8262],[45.7487,4.8247],[45.7448,4.8222],[45.7408,4.8198],[45.7368,4.8183],[45.7329,4.8175],[45.7290,4.8172]]}
+ ],
+ parks:[
+  {name:"Parc de la Tête d'Or",pts:[[45.7858,4.8460],[45.7866,4.8530],[45.7845,4.8598],[45.7800,4.8622],[45.7760,4.8590],[45.7738,4.8535],[45.7752,4.8478],[45.7800,4.8455]]},
+  {name:"Parc de Gerland",pts:[[45.7330,4.8295],[45.7340,4.8350],[45.7290,4.8385],[45.7255,4.8350],[45.7268,4.8300]]},
+  {name:"Parc de la Cerisaie",pts:[[45.7782,4.8268],[45.7790,4.8300],[45.7772,4.8312],[45.7763,4.8282]]},
+  {name:"Fourvière",pts:[[45.7650,4.8175],[45.7660,4.8240],[45.7610,4.8255],[45.7585,4.8215],[45.7605,4.8170]]},
+  {name:"Parc Blandan",pts:[[45.7468,4.8525],[45.7472,4.8580],[45.7440,4.8590],[45.7432,4.8540]]},
+  {name:"Parc de la Feyssine",pts:[[45.7980,4.8690],[45.7990,4.8760],[45.7950,4.8790],[45.7925,4.8730],[45.7945,4.8680]]}
+ ],
+ roads:[
+  {name:"Boulevard Laurent Bonnevay",c:1,pts:[[45.7960,4.8880],[45.7880,4.8930],[45.7790,4.8960],[45.7700,4.8980],[45.7600,4.8985],[45.7500,4.8960],[45.7420,4.8920],[45.7330,4.8860],[45.7260,4.8800]]},
+  {name:"M7 — tunnel de Fourvière",c:1,pts:[[45.7840,4.8080],[45.7760,4.8130],[45.7680,4.8160],[45.7600,4.8190],[45.7520,4.8230],[45.7460,4.8250],[45.7390,4.8240],[45.7300,4.8240],[45.7200,4.8230]]},
+  {name:"Cours Lafayette",c:2,pts:[[45.7637,4.8404],[45.7640,4.8480],[45.7642,4.8560],[45.7645,4.8650],[45.7648,4.8760],[45.7651,4.8870]]},
+  {name:"Cours Gambetta",c:2,pts:[[45.7533,4.8394],[45.7530,4.8470],[45.7522,4.8560],[45.7510,4.8660],[45.7495,4.8760],[45.7480,4.8850]]},
+  {name:"Cours Émile Zola",c:2,pts:[[45.7690,4.8560],[45.7702,4.8650],[45.7708,4.8740],[45.7712,4.8830],[45.7716,4.8930]]},
+  {name:"Avenue Jean Jaurès",c:2,pts:[[45.7540,4.8420],[45.7480,4.8418],[45.7420,4.8412],[45.7350,4.8398],[45.7280,4.8385]]},
+  {name:"Rue Garibaldi",c:2,pts:[[45.7765,4.8520],[45.7700,4.8520],[45.7630,4.8517],[45.7560,4.8512],[45.7490,4.8505],[45.7440,4.8500]]},
+  {name:"Avenue Berthelot",c:2,pts:[[45.7490,4.8390],[45.7480,4.8470],[45.7470,4.8560],[45.7460,4.8660],[45.7452,4.8760]]},
+  {name:"Rue de la République",c:3,pts:[[45.7578,4.8320],[45.7605,4.8345],[45.7635,4.8357],[45.7660,4.8360],[45.7672,4.8340]]},
+  {name:"Quai Saint-Antoine",c:3,pts:[[45.7650,4.8300],[45.7610,4.8305],[45.7575,4.8297]]},
+  {name:"Cours de Verdun",c:3,pts:[[45.7495,4.8240],[45.7497,4.8290],[45.7499,4.8340]]},
+  {name:"Boulevard de la Croix-Rousse",c:3,pts:[[45.7760,4.8220],[45.7752,4.8270],[45.7745,4.8320],[45.7745,4.8370]]},
+  {name:"Avenue de Saxe",c:3,pts:[[45.7700,4.8455],[45.7640,4.8460],[45.7580,4.8462],[45.7520,4.8462]]},
+  {name:"Cours Vitton",c:3,pts:[[45.7697,4.8460],[45.7697,4.8530],[45.7698,4.8600]]},
+  {name:"Avenue des Frères Lumière",c:3,pts:[[45.7505,4.8520],[45.7470,4.8620],[45.7440,4.8710]]},
+  {name:"Rue de Marseille",c:3,pts:[[45.7550,4.8425],[45.7500,4.8428],[45.7455,4.8430]]},
+  {name:"Rue Victor Hugo",c:3,pts:[[45.7578,4.8318],[45.7545,4.8297],[45.7512,4.8278],[45.7490,4.8268]]},
+  {name:"Rue Édouard Herriot",c:3,pts:[[45.7580,4.8335],[45.7620,4.8343],[45.7665,4.8346]]},
+  {name:"Cours Charlemagne",c:3,pts:[[45.7490,4.8265],[45.7440,4.8230],[45.7390,4.8200],[45.7340,4.8190]]},
+  {name:"Grande Rue de la Croix-Rousse",c:3,pts:[[45.7745,4.8318],[45.7790,4.8305],[45.7840,4.8295]]},
+  {name:"Montée de la Grande Côte",c:3,pts:[[45.7690,4.8335],[45.7715,4.8330],[45.7740,4.8322]]},
+  {name:"Boulevard des Belges",c:3,pts:[[45.7735,4.8475],[45.7720,4.8530],[45.7712,4.8600]]},
+  {name:"Avenue Thiers",c:2,pts:[[45.7790,4.8620],[45.7720,4.8615],[45.7650,4.8610],[45.7570,4.8605]]},
+  {name:"Boulevard Vivier Merle",c:3,pts:[[45.7660,4.8595],[45.7610,4.8590],[45.7560,4.8585]]},
+  {name:"Rue Servient",c:3,pts:[[45.7600,4.8420],[45.7600,4.8500],[45.7598,4.8580]]},
+  {name:"Rue Duguesclin",c:3,pts:[[45.7720,4.8475],[45.7650,4.8473],[45.7580,4.8470],[45.7520,4.8468]]},
+  {name:"Avenue Félix Faure",c:3,pts:[[45.7570,4.8480],[45.7560,4.8580],[45.7550,4.8680]]},
+  {name:"Cours Albert Thomas",c:3,pts:[[45.7490,4.8630],[45.7470,4.8720],[45.7455,4.8800]]},
+  {name:"Avenue Tony Garnier",c:3,pts:[[45.7380,4.8330],[45.7330,4.8340],[45.7280,4.8345]]},
+  {name:"Avenue Henri Barbusse",c:3,pts:[[45.7690,4.8800],[45.7720,4.8800],[45.7750,4.8800]]},
+  {name:"Rue de Créqui",c:3,pts:[[45.7720,4.8490],[45.7640,4.8488],[45.7560,4.8486]]},
+  {name:"Quai Pierre Scize",c:3,pts:[[45.7730,4.8140],[45.7700,4.8185],[45.7672,4.8240],[45.7648,4.8272]]}
+ ],
+ bridges:[[45.7695,"Rhône"],[45.7638,"Rhône"],[45.7592,"Rhône"],[45.7553,"Rhône"],[45.7505,"Rhône"],[45.7462,"Rhône"],[45.7385,"Rhône"],[45.7740,"Rhône"],[45.7810,"Rhône"],[45.7663,"Saône"],[45.7634,"Saône"],[45.7600,"Saône"],[45.7565,"Saône"],[45.7526,"Saône"],[45.7448,"Saône"],[45.7713,"Saône"],[45.7792,"Saône"]],
+ places:[
+  {n:"Presqu'île",lat:45.7600,lng:4.8340,z:12},{n:"Vieux Lyon",lat:45.7625,lng:4.8270,z:14},{n:"Croix-Rousse",lat:45.7755,lng:4.8320,z:12},
+  {n:"Part-Dieu",lat:45.7605,lng:4.8595,z:12},{n:"Brotteaux",lat:45.7690,lng:4.8505,z:13},{n:"Guillotière",lat:45.7525,lng:4.8440,z:13},
+  {n:"Confluence",lat:45.7420,lng:4.8190,z:13},{n:"Gerland",lat:45.7300,lng:4.8400,z:13},{n:"Monplaisir",lat:45.7445,lng:4.8705,z:13},
+  {n:"Vaise",lat:45.7765,lng:4.8045,z:13},{n:"Villeurbanne",lat:45.7710,lng:4.8850,z:12},{n:"Fourvière",lat:45.7625,lng:4.8210,z:14},
+  {n:"Bellecour",lat:45.7578,lng:4.8320,z:14},{n:"Terreaux",lat:45.7672,lng:4.8338,z:15},{n:"Ainay",lat:45.7530,lng:4.8290,z:15}
+ ]
+};
+(function(){
+  const k=Math.cos(45.76*Math.PI/180),M=111320;
+  const off=(pts,m)=>pts.map((p,i)=>{const a=pts[Math.max(0,i-1)],b=pts[Math.min(pts.length-1,i+1)];const dx=(b[1]-a[1])*k,dy=b[0]-a[0];const L=Math.hypot(dx,dy)||1;const nx=-dy/L,ny=dx/L;return [p[0]+ny*m/M,p[1]+nx*m/M/k]});
+  for(const rv of GEO.rivers){const m=rv.w/2+22;GEO.roads.push({name:"Quais du "+rv.name,c:2,pts:off(rv.pts,m)},{name:"Quais du "+rv.name,c:2,pts:off(rv.pts,-m)})}
+  for(const [lat,name] of GEO.bridges){const rv=GEO.rivers.find(r=>r.name===name);let best=null;for(let i=0;i<rv.pts.length-1;i++){const a=rv.pts[i],b=rv.pts[i+1];if((a[0]-lat)*(b[0]-lat)<=0){const t=(lat-a[0])/((b[0]-a[0])||1e-9);best=[lat,a[1]+(b[1]-a[1])*t];break}}
+    if(best){const half=(rv.w/2+30)/M/k;GEO.roads.push({name:"Pont sur le "+name,c:3,pts:[[best[0],best[1]-half],[best[0],best[1]+half]]})}}
+})();
+const QUARTIERS=[
+ ["Bellecour (2e)",45.7578,4.8320],["Terreaux (1er)",45.7672,4.8338],["Vieux Lyon (5e)",45.7625,4.8270],["Croix-Rousse (4e)",45.7745,4.8315],
+ ["Part-Dieu (3e)",45.7605,4.8595],["Brotteaux (6e)",45.7690,4.8505],["Guillotière (7e)",45.7530,4.8430],["Confluence (2e)",45.7420,4.8190],
+ ["Gerland (7e)",45.7300,4.8400],["Monplaisir (8e)",45.7445,4.8705],["Vaise (9e)",45.7765,4.8045],["Villeurbanne Gratte-Ciel",45.7705,4.8800]
+];
+const HOURS={
+ std:{1:["09:00","19:00"],2:["09:00","19:00"],3:["09:00","19:00"],4:["09:00","20:00"],5:["09:00","20:00"],6:["09:00","17:00"]},
+ late:{1:["10:00","20:30"],2:["10:00","20:30"],3:["10:00","20:30"],4:["10:00","21:00"],5:["10:00","21:00"],6:["09:30","19:00"]},
+ week:{1:["08:00","18:00"],2:["08:00","18:00"],3:["08:00","18:00"],4:["08:00","18:00"],5:["08:00","18:00"]},
+ sport:{0:["09:00","13:00"],1:["07:00","21:00"],2:["07:00","21:00"],3:["07:00","21:00"],4:["07:00","21:00"],5:["07:00","21:00"],6:["08:00","18:00"]},
+ resto:{2:["12:00","22:30"],3:["12:00","22:30"],4:["12:00","22:30"],5:["12:00","23:00"],6:["12:00","23:00"],0:["12:00","15:00"]}
+};
+const TAGS={pmr:"Accès PMR",parking:"Parking",gift:"Carte cadeau",online:"Paiement en ligne",pets:"Animaux acceptés",visio:"Visio",new:"Nouveau"};
+
+// Positions réelles des adresses d'exemple, quartier, horaires, lieux d'intervention et équipements.
+const POS={
+ "salon-elegance":[45.7652,4.8357,"Terreaux","std",["on_site"],["pmr"]],
+ "barber-club":[45.7745,4.8313,"Croix-Rousse","late",["on_site"],[]],
+ "zen-massage":[45.7697,4.8528,"Brotteaux","std",["on_site","at_home"],["parking"]],
+ "fit-coach":[45.7772,4.8530,"Tête d'Or","sport",["on_site","at_home","online"],["visio"]],
+ "garage-saxe":[45.7588,4.8461,"Part-Dieu","week",["on_site"],["parking","pmr"]],
+ "shine-detailing":[45.7480,4.8605,"Monplaisir","week",["at_home"],[]],
+ "plomberie-rapide":[45.7712,4.8885,"Villeurbanne","week",["at_home"],[]],
+ "toilettage-pattes":[45.7547,4.8452,"Guillotière","std",["on_site"],["pets"]],
+ "maths-plus":[45.7531,4.8287,"Ainay","late",["at_home","online"],["visio"]],
+ "cabinet-durand":[45.7601,4.8366,"Bellecour","week",["on_site","online"],["pmr","visio"]],
+ "chez-lucien":[45.7624,4.8326,"Presqu'île","resto",["on_site"],["pmr"]],
+ "beaute-ines":[45.7706,4.8762,"Villeurbanne","std",["on_site"],["parking"]]
+};
+const EXTRA=[
+ {id:"barbier-guillotiere",name:"Le Comptoir du Barbier",cat:"barbier",addr:"34 rue de Marseille, 69007 Lyon",lat:45.7512,lng:4.8429,q:"Guillotière",rating:4.7,reviews:241,color:"#14532d",pro:true,hours:"late",tags:["new"],guarantee:30,gift:true,
+  tagline:"Barbier de quartier, ouvert tard en semaine.",desc:"Coupes courtes, dégradés américains, rasage traditionnel à la lame. Ouvert jusqu'à 21 h le jeudi et le vendredi.",
+  services:[{id:"x1",name:"Coupe homme",price:22,dur:30},{id:"x2",name:"Coupe + barbe",price:35,dur:45},{id:"x3",name:"Rasage traditionnel",price:28,dur:30}],staff:["Adam","Yassine"]},
+ {id:"coiffure-monplaisir",name:"Atelier Coiffure Monplaisir",cat:"coiffeur",addr:"112 avenue des Frères Lumière, 69008 Lyon",lat:45.7448,lng:4.8698,q:"Monplaisir",rating:4.6,reviews:118,color:"#7c2d12",hours:"std",tags:["pmr","parking"],gift:true,
+  tagline:"Coiffeur mixte, couleurs végétales.",desc:"Salon familial : coupes enfants, hommes et femmes, colorations végétales sans ammoniaque.",
+  services:[{id:"y1",name:"Coupe femme",price:38,dur:45,variants:[["Courts",1,1],["Longs",1.3,1.25]]},{id:"y2",name:"Coupe enfant",price:16,dur:20},{id:"y3",name:"Coloration végétale",price:65,dur:90}],staff:["Laura","Mehdi"]},
+ {id:"ongles-partdieu",name:"Studio Ongles Part-Dieu",cat:"institut",addr:"8 rue Servient, 69003 Lyon",lat:45.7598,lng:4.8548,q:"Part-Dieu",rating:4.8,reviews:302,color:"#9d174d",pro:true,hours:"late",tags:["online"],guarantee:50,gift:true,
+  tagline:"Pose de gel, semi-permanent et nail art.",desc:"Prothésistes ongulaires diplômées, matériel stérilisé, plus de 200 teintes.",
+  services:[{id:"o1",name:"Semi-permanent mains",price:30,dur:45},{id:"o2",name:"Pose gel complète",price:55,dur:90},{id:"o3",name:"Beauté des pieds",price:35,dur:50}],staff:["Lina","Chloé"]},
+ {id:"spa-confluence",name:"Spa Confluence",cat:"massage",addr:"112 cours Charlemagne, 69002 Lyon",lat:45.7415,lng:4.8188,q:"Confluence",rating:4.8,reviews:176,color:"#155e75",pro:true,hours:"late",tags:["pmr","parking","online"],guarantee:50,gift:true,
+  tagline:"Hammam, massages et soins en duo face à la Saône.",desc:"Espace détente avec hammam, sauna et cabines duo. Accès au spa offert pour tout massage de 60 minutes.",
+  services:[{id:"sp1",name:"Massage californien",price:79,dur:60},{id:"sp2",name:"Rituel duo (2 pers.)",price:169,dur:90},{id:"sp3",name:"Accès spa 2 h",price:35,dur:120}],staff:["Maëlle","Hugo"]},
+ {id:"yoga-brotteaux",name:"Studio Shanti Yoga",cat:"coach",addr:"21 rue Tête d'Or, 69006 Lyon",lat:45.7683,lng:4.8488,q:"Brotteaux",rating:4.9,reviews:98,color:"#4d7c0f",hours:"sport",modes:["on_site","online"],tags:["visio"],
+  tagline:"Hatha, vinyasa et yoga prénatal, petits groupes.",desc:"Cours de 8 personnes maximum, tapis fournis, cours en ligne en direct pour les jours de pluie.",
+  services:[{id:"yo1",name:"Cours collectif",price:18,dur:60},{id:"yo2",name:"Cours particulier",price:60,dur:60},{id:"yo3",name:"Yoga prénatal",price:20,dur:75}],staff:["Anaïs"]},
+ {id:"garage-vaise",name:"Garage du Pont Mouton",cat:"garage",addr:"5 quai Arloing, 69009 Lyon",lat:45.7728,lng:4.8102,q:"Vaise",rating:4.5,reviews:87,color:"#1f2937",hours:"week",tags:["parking"],
+  tagline:"Entretien, pneus et climatisation, toutes marques.",desc:"Garage indépendant au bord de la Saône. Devis envoyé par SMS avant toute intervention.",
+  services:[{id:"gv1",name:"Vidange + filtre",price:79,dur:60},{id:"gv2",name:"Recharge climatisation",price:69,dur:45},{id:"gv3",name:"Montage 4 pneus",price:60,dur:60}],staff:["Patrick"]},
+ {id:"toilettage-villeurbanne",name:"Toutou Chic",cat:"toilettage",addr:"40 rue Francis de Pressensé, 69100 Villeurbanne",lat:45.7660,lng:4.8790,q:"Villeurbanne",rating:4.6,reviews:64,color:"#a16207",hours:"std",tags:["pets","parking"],
+  tagline:"Toilettage chiens et chats, avec ou sans rendez-vous.",desc:"Bain, tonte, coupe ciseaux et soin des griffes. Photos envoyées par SMS pendant le toilettage.",
+  services:[{id:"tv1",name:"Bain + brushing",price:32,dur:60,variants:[["Petit",1,1],["Moyen",1.3,1.2],["Grand",1.7,1.5]]},{id:"tv2",name:"Toilettage chat",price:45,dur:60}],staff:["Julie"]},
+ {id:"coach-gerland",name:"Gerland Fit Studio",cat:"coach",addr:"60 avenue Tony Garnier, 69007 Lyon",lat:45.7318,lng:4.8336,q:"Gerland",rating:4.7,reviews:152,color:"#b91c1c",pro:true,hours:"sport",tags:["parking","online"],guarantee:100,
+  tagline:"Small group training et coaching individuel.",desc:"Salle privée de 300 m², séances de 45 minutes, suivi nutrition inclus dans les packs.",
+  services:[{id:"cg1",name:"Small group (6 pers.)",price:15,dur:45},{id:"cg2",name:"Coaching individuel",price:55,dur:60},{id:"cg3",name:"Bilan forme",price:0,dur:30}],staff:["Kevin","Sonia"]},
+ {id:"resto-croixrousse",name:"La Table du Plateau",cat:"restaurant",addr:"9 rue d'Austerlitz, 69004 Lyon",lat:45.7760,lng:4.8302,q:"Croix-Rousse",rating:4.7,reviews:389,color:"#881337",pro:true,hours:"resto",tags:["pmr"],gift:true,
+  tagline:"Cuisine de marché, vins nature, terrasse sur la place.",desc:"Carte courte qui change chaque semaine selon le marché de la Croix-Rousse.",
+  services:[{id:"rc1",name:"Table déjeuner",price:0,dur:90,variants:[["1-2 pers.",1,1],["3-4 pers.",1,1],["5-8 pers.",1,1.2]]},{id:"rc2",name:"Table dîner",price:0,dur:120,variants:[["1-2 pers.",1,1],["3-4 pers.",1,1],["5-8 pers.",1,1.2]]}],staff:["Salle"]},
+ {id:"comptable-partdieu",name:"Cabinet Martin Expertise",cat:"avocat",addr:"107 boulevard Vivier Merle, 69003 Lyon",lat:45.7616,lng:4.8579,q:"Part-Dieu",rating:4.6,reviews:42,color:"#0f172a",hours:"week",modes:["on_site","online"],tags:["visio","pmr"],
+  tagline:"Conseil juridique et fiscal pour indépendants et TPE.",desc:"Création d'entreprise, statut auto-entrepreneur, déclarations. Premier rendez-vous de 30 minutes offert.",
+  services:[{id:"cm1",name:"Premier rendez-vous",price:0,dur:30},{id:"cm2",name:"Conseil fiscal (1 h)",price:90,dur:60}],staff:["M. Martin"]},
+ {id:"escape-vieuxlyon",name:"Escape Room Saint-Jean",cat:"restaurant",addr:"14 rue Saint-Jean, 69005 Lyon",lat:45.7616,lng:4.8274,q:"Vieux Lyon",rating:4.9,reviews:612,color:"#3730a3",pro:true,hours:"resto",tags:["gift"],gift:true,
+  tagline:"Trois salles d'énigmes dans des caves Renaissance.",desc:"Jeux de 60 minutes de 2 à 6 joueurs, scénarios inspirés de l'histoire du Vieux Lyon.",
+  services:[{id:"ev1",name:"Partie 60 min",price:25,dur:60,variants:[["2-3 joueurs",1.2,1],["4-6 joueurs",1,1]]}],staff:["Game master"]},
+ {id:"detailing-villeurbanne",name:"Auto Spa Villeurbanne",cat:"detailing",addr:"Atelier : 12 rue Léon Blum, 69100 Villeurbanne",lat:45.7653,lng:4.8930,q:"Villeurbanne",rating:4.8,reviews:131,color:"#0e7490",hours:"week",modes:["on_site","at_home"],tags:["parking","online"],guarantee:30,
+  tagline:"Lavage à la main, polissage et céramique.",desc:"Atelier couvert ou intervention à domicile. Produits sans eau et biodégradables.",
+  services:[{id:"dv1",name:"Lavage intérieur + extérieur",price:69,dur:90,variants:[["Citadine",.85,.85],["Berline",1,1],["SUV",1.2,1.2]]},{id:"dv2",name:"Protection céramique",price:390,dur:360}],staff:["Rayan"]},
+ {id:"cours-musique",name:"Atelier Musique Croix-Rousse",cat:"cours",addr:"3 rue Dumenge, 69004 Lyon",lat:45.7776,lng:4.8277,q:"Croix-Rousse",rating:4.9,reviews:57,color:"#6d28d9",hours:"late",modes:["on_site","online"],tags:["visio"],
+  tagline:"Piano, guitare et chant, tous niveaux.",desc:"Professeurs diplômés du conservatoire, cours individuels de 30 ou 60 minutes.",
+  services:[{id:"mu1",name:"Cours individuel 30 min",price:28,dur:30},{id:"mu2",name:"Cours individuel 1 h",price:50,dur:60}],staff:["Élise","Tom"]},
+ {id:"serrurier-lyon7",name:"Serrurerie Jean Macé",cat:"plombier",addr:"18 avenue Berthelot, 69007 Lyon",lat:45.7478,lng:4.8436,q:"Guillotière",rating:4.4,reviews:73,color:"#78350f",hours:"week",modes:["at_home"],tags:[],
+  tagline:"Ouverture de porte, serrures et blindage, prix annoncé.",desc:"Artisan agréé assurances. Tarif fixe annoncé avant le déplacement, aucune surprise.",
+  services:[{id:"se1",name:"Ouverture de porte claquée",price:89,dur:30},{id:"se2",name:"Remplacement de cylindre",price:120,dur:45}],staff:["Fabien"]}
+];
+
+
 
 // ---------- État (persistant pour ce navigateur) ----------
-const KEY="rdv-demo-v1";
-function load(){try{const v=JSON.parse(localStorage.getItem(KEY)||"null");if(v&&v.v===1)return v}catch(e){}return null}
+const KEY="rdv-demo-v2";
+function load(){try{const v=JSON.parse(localStorage.getItem(KEY)||"null");if(v&&v.v===2)return v}catch(e){}return null}
 function seed(){
   const t=new Date();const d=(n,h,m)=>{const x=new Date(t);x.setDate(x.getDate()+n);x.setHours(h,m,0,0);return x.toISOString()};
-  return {v:1,mode:"client",bookings:[
+  return {v:2,loc:null,mode:"client",bookings:[
     {id:"k1",biz:"salon-elegance",svc:"Coupe + brushing",variant:"Mi-longs",staff:"Julie",start:d(0,10,0),dur:69,total:5400,client:"Camille R.",email:"camille@exemple.fr",status:"confirmed",guarantee:2700,source:"marketplace"},
     {id:"k2",biz:"salon-elegance",svc:"Balayage",variant:"Longs",staff:"Inès",start:d(0,14,30),dur:180,total:15000,client:"Sophie L.",email:"sophie@exemple.fr",status:"scheduled",guarantee:7500,source:"direct"},
     {id:"k3",biz:"salon-elegance",svc:"Brushing",variant:null,staff:"Karim",start:d(0,17,0),dur:30,total:2800,client:"Nadia B.",email:"nadia@exemple.fr",status:"scheduled",guarantee:1400,source:"marketplace"},
@@ -286,8 +490,195 @@ function seed(){
 let S=load()||seed();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 
+// ---------- Normalisation des établissements ----------
+for(const b of B){const p=POS[b.id];if(p){[b.lat,b.lng,b.q,b.hours,b.modes,b.tags]=[p[0],p[1],p[2],p[3],p[4],p[5].slice()];}}
+B.push(...EXTRA.map(x=>Object.assign({highlights:[],pay:["Carte bancaire","Espèces"],guarantee:0,gift:false,staff:["Équipe"],pro:false,city:x.addr.includes("Villeurbanne")?"Villeurbanne":"Lyon",hours:"std",modes:["on_site"],tags:[]},x)));
+for(const b of B){
+  b.home=b.modes.includes("at_home");
+  if(b.gift&&!b.tags.includes("gift"))b.tags.push("gift");
+  if(b.guarantee>0&&!b.tags.includes("online"))b.tags.push("online");
+  if(!b.highlights.length)b.highlights=b.tags.map(t=>TAGS[t]).filter(Boolean);
+}
+for(const b of B)BY[b.id]=b;
+
+// ---------- Position, distances, horaires ----------
+const DEFAULT_LOC={label:"Bellecour (2e)",lat:45.7578,lng:4.8320,src:"quartier"};
+function loc(){return S.loc||DEFAULT_LOC}
+function haversine(a,b){const R=6371,r=Math.PI/180,dLat=(b.lat-a.lat)*r,dLng=(b.lng-a.lng)*r;const h=Math.sin(dLat/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dLng/2)**2;return 2*R*Math.asin(Math.sqrt(h))}
+function dist(b){return Math.round(haversine(loc(),b)*10)/10}
+function fmtKm(k){return k<1?Math.round(k*1000/10)*10+" m":k.toLocaleString("fr-FR",{maximumFractionDigits:1})+" km"}
+function walkMin(k){return Math.max(1,Math.round(k*1.25/4.8*60))}
+function hoursOf(b){return HOURS[b.hours]||HOURS.std}
+function openState(b,now=new Date()){
+  const h=hoursOf(b)[now.getDay()];const m=now.getHours()*60+now.getMinutes();
+  const toMin=s=>{const[a,c]=s.split(":").map(Number);return a*60+c};
+  if(h&&m>=toMin(h[0])&&m<toMin(h[1]))return {open:true,label:`Ouvert · ferme à ${h[1].replace(":","h")}`};
+  for(let i=0;i<7;i++){const d=new Date(now);d.setDate(d.getDate()+i);const x=hoursOf(b)[d.getDay()];if(!x)continue;if(i===0&&m>=toMin(x[0]))continue;return {open:false,label:`Fermé · ouvre ${i===0?"à":i===1?"demain à":d.toLocaleDateString("fr-FR",{weekday:"long"})+" à"} ${x[0].replace(":","h")}`}}
+  return {open:false,label:"Fermé"};
+}
+function slotsFor(b,date,dur){
+  const h=hoursOf(b)[date.getDay()];if(!h)return [];
+  const [oh,om]=h[0].split(":").map(Number),[ch,cm]=h[1].split(":").map(Number);
+  const out=[];const now=new Date();
+  for(let m=oh*60+om;m+dur<=ch*60+cm;m+=30){
+    const st=new Date(date);st.setHours(Math.floor(m/60),m%60,0,0);
+    const lead=st-now<90*60e3;
+    const taken=S.bookings.some(k=>k.biz===b.id&&k.status!=="cancelled"&&Math.abs(new Date(k.start)-st)<k.dur*60e3)||((m/30+date.getDate()*3+b.name.length)%4===0);
+    out.push({t:`${String(Math.floor(m/60)).padStart(2,"0")}h${String(m%60).padStart(2,"0")}`,iso:st.toISOString(),off:lead||taken,min:m});
+  }
+  return out;
+}
+function freeSlots(b,dayOffset){const d=new Date();d.setDate(d.getDate()+dayOffset);return slotsFor(b,d,b.services[0].dur).filter(s=>!s.off)}
+function nextSlots(b,n){const res=[];for(let i=0;i<10&&res.length<n;i++){const d=new Date();d.setDate(d.getDate()+i);for(const s of freeSlots(b,i)){res.push({...s,label:i===0?"Auj. "+s.t:i===1?"Dem. "+s.t:d.toLocaleDateString("fr-FR",{weekday:"short"})+" "+s.t});if(res.length>=n)break}}return res}
+function availOk(b,a){
+  if(!a)return true;
+  if(a==="today")return freeSlots(b,0).length>0;
+  if(a==="tomorrow")return freeSlots(b,1).length>0;
+  if(a==="evening"){for(let i=0;i<3;i++)if(freeSlots(b,i).some(s=>s.min>=18*60))return true;return false}
+  if(a==="weekend"){for(let i=0;i<7;i++){const d=new Date();d.setDate(d.getDate()+i);if([0,6].includes(d.getDay())&&freeSlots(b,i).length)return true}return false}
+  return true;
+}
+
+// ---------- Filtres ----------
+const F0={q:"",cat:null,maxPrice:400,minRating:0,radius:0,avail:"",mode:"",openNow:false,tags:[],sort:"pertinence",area:null};
+function activeFilters(){
+  const out=[];
+  if(V.cat)out.push(["cat",catOf(V.cat).label]);
+  if(V.q)out.push(["q",`« ${V.q} »`]);
+  if(V.avail)out.push(["avail",{today:"Dispo aujourd'hui",tomorrow:"Dispo demain",evening:"En soirée",weekend:"Ce week-end"}[V.avail]]);
+  if(V.mode)out.push(["mode",{on_site:"Sur place",at_home:"À domicile",online:"En visio"}[V.mode]]);
+  if(V.maxPrice<400)out.push(["maxPrice",`≤ ${V.maxPrice} €`]);
+  if(V.minRating)out.push(["minRating",`${V.minRating.toLocaleString("fr-FR")} ★ et +`]);
+  if(V.radius)out.push(["radius",`≤ ${fmtKm(V.radius)}`]);
+  if(V.openNow)out.push(["openNow","Ouvert maintenant"]);
+  for(const t of V.tags)out.push(["tag:"+t,TAGS[t]]);
+  if(V.area)out.push(["area","Zone de la carte"]);
+  return out;
+}
+function filtered(){
+  const q=norm(V.q.trim());
+  let list=B.filter(b=>{
+    if(V.cat&&b.cat!==V.cat)return false;
+    if(q){const hay=norm([b.name,catOf(b.cat).label,b.tagline,b.q,b.addr,...b.services.map(s=>s.name)].join(" "));if(!q.split(/\s+/).every(w=>hay.includes(w)))return false}
+    if(minPrice(b)/100>V.maxPrice)return false;
+    if(b.rating<V.minRating)return false;
+    if(V.mode&&!b.modes.includes(V.mode))return false;
+    if(V.radius&&dist(b)>V.radius&&!(V.mode==="online"))return false;
+    if(V.openNow&&!openState(b).open)return false;
+    if(V.tags.some(t=>!b.tags.includes(t)))return false;
+    if(V.area&&!(b.lat<=V.area.n&&b.lat>=V.area.s&&b.lng<=V.area.e&&b.lng>=V.area.w))return false;
+    if(!availOk(b,V.avail))return false;
+    return true;
+  });
+  const score=b=>b.rating*Math.log(b.reviews+1)+(b.pro?0.15:0)-dist(b)*0.08;
+  const next=b=>{const s=nextSlots(b,1)[0];return s?new Date(s.iso).getTime():Infinity};
+  const sorts={prix:(a,b)=>minPrice(a)-minPrice(b),note:(a,b)=>b.rating-a.rating||b.reviews-a.reviews,avis:(a,b)=>b.reviews-a.reviews,distance:(a,b)=>dist(a)-dist(b),dispo:(a,b)=>next(a)-next(b),pertinence:(a,b)=>score(b)-score(a)};
+  list.sort(sorts[V.sort]||sorts.pertinence);
+  return list;
+}
+
+// ---------- Carte vectorielle (projection Web Mercator, déplacement, zoom, regroupement) ----------
+const TILE=256;
+function project(lat,lng,z){const s=TILE*2**z;const r=Math.PI/180;const y=Math.log(Math.tan(Math.PI/4+lat*r/2));return {x:(lng+180)/360*s,y:(1-y/Math.PI)/2*s}}
+function unproject(x,y,z){const s=TILE*2**z;const lng=x/s*360-180;const n=Math.PI-2*Math.PI*y/s;return {lat:180/Math.PI*Math.atan(0.5*(Math.exp(n)-Math.exp(-n))),lng}}
+const MAP={lat:45.7600,lng:4.8420,z:13.2,el:null,w:0,h:0,moved:false,pick:false,list:[],active:null,anim:0};
+function mpp(){return 156543.03392*Math.cos(MAP.lat*Math.PI/180)/2**MAP.z}
+function toScreen(lat,lng){const c=project(MAP.lat,MAP.lng,MAP.z),p=project(lat,lng,MAP.z);return {x:p.x-c.x+MAP.w/2,y:p.y-c.y+MAP.h/2}}
+function fromScreen(x,y){const c=project(MAP.lat,MAP.lng,MAP.z);return unproject(c.x+x-MAP.w/2,c.y+y-MAP.h/2,MAP.z)}
+function path(pts,close){return pts.map((p,i)=>{const s=toScreen(p[0],p[1]);return (i?"L":"M")+s.x.toFixed(1)+" "+s.y.toFixed(1)}).join("")+(close?"Z":"")}
+function fitMap(list){
+  const pts=list.length?list.map(b=>[b.lat,b.lng]):[[loc().lat,loc().lng]];pts.push([loc().lat,loc().lng]);
+  const lats=pts.map(p=>p[0]),lngs=pts.map(p=>p[1]);const n=Math.max(...lats),s=Math.min(...lats),e=Math.max(...lngs),w=Math.min(...lngs);
+  MAP.lat=(n+s)/2;MAP.lng=(e+w)/2;
+  const W=Math.max(200,MAP.w-90),H=Math.max(200,MAP.h-110);
+  let z=17;while(z>10){const a=project(n,w,z),b=project(s,e,z);if(b.x-a.x<W&&b.y-a.y<H)break;z-=0.25}
+  MAP.z=Math.min(15.5,z);MAP.moved=false;
+}
+function mapFrame(){
+  const el=MAP.el;if(!el||!el.isConnected)return;
+  const r=el.getBoundingClientRect();MAP.w=r.width;MAP.h=r.height;
+  const z=MAP.z,m=mpp();
+  const svg=el.querySelector("svg.base");
+  const roadW=c=>Math.max(c===1?2.2:c===2?1.4:0.9,(c===1?28:c===2?18:11)/m);
+  let g=`<rect width="100%" height="100%" fill="var(--map-land)"/>`;
+  g+=GEO.parks.map(p=>`<path d="${path(p.pts,true)}" fill="var(--map-park)"/>`).join("");
+  g+=GEO.rivers.map(rv=>`<path d="${path(rv.pts)}" stroke="var(--map-water)" stroke-width="${Math.max(3,rv.w/m).toFixed(1)}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`).join("");
+  const roads=GEO.roads.filter(rd=>rd.c<3||z>=13.5);
+  g+=roads.map(rd=>`<path d="${path(rd.pts)}" stroke="var(--map-road-edge)" stroke-width="${(roadW(rd.c)+1.6).toFixed(1)}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`).join("");
+  g+=roads.map(rd=>`<path d="${path(rd.pts)}" stroke="${rd.c===1?"var(--map-major)":"var(--map-road)"}" stroke-width="${roadW(rd.c).toFixed(1)}" fill="none" stroke-linecap="round" stroke-linejoin="round"><title>${esc(rd.name)}</title></path>`).join("");
+  if(z>=13)g+=GEO.rivers.map(rv=>{const p=rv.pts[Math.floor(rv.pts.length*0.62)];const s=toScreen(p[0],p[1]);return `<text x="${s.x+10}" y="${s.y}" class="map-river">${rv.name}</text>`}).join("");
+  if(z>=14.6){const placed=[];for(const rd of GEO.roads){if(rd.c<2&&z<15.5)continue;if(/^(Quais|Pont)/.test(rd.name))continue;const p=rd.pts[Math.floor(rd.pts.length/2)];const s=toScreen(p[0],p[1]);if(s.x<30||s.y<20||s.x>MAP.w-30||s.y>MAP.h-20)continue;if(placed.some(q=>Math.abs(q.x-s.x)<120&&Math.abs(q.y-s.y)<18))continue;placed.push(s);g+=`<text x="${s.x}" y="${s.y-6}" class="map-street">${esc(rd.name)}</text>`}}
+  g+=GEO.places.filter(p=>z>=p.z).map(p=>{const s=toScreen(p.lat,p.lng);return `<text x="${s.x}" y="${s.y-10}" class="map-place">${esc(p.n)}</text>`}).join("");
+  const L=loc(),me=toScreen(L.lat,L.lng);
+  if(V.radius)g+=`<circle cx="${me.x}" cy="${me.y}" r="${(V.radius*1000/m).toFixed(1)}" fill="var(--brand)" fill-opacity=".06" stroke="var(--brand)" stroke-width="1.2" stroke-dasharray="4 4"/>`;
+  g+=`<circle cx="${me.x}" cy="${me.y}" r="16" fill="var(--brand)" fill-opacity=".16"/><circle cx="${me.x}" cy="${me.y}" r="7" fill="var(--brand)" stroke="#fff" stroke-width="3"/>`;
+  svg.innerHTML=g;
+  // Pastilles + regroupement à l'écran
+  const pins=el.querySelector(".pins");const cell=z<13.8?64:z<15?42:0;const groups=[];
+  for(const b of MAP.list){const s=toScreen(b.lat,b.lng);if(s.x<-40||s.y<-40||s.x>MAP.w+40||s.y>MAP.h+40)continue;
+    const gr=cell?groups.find(gp=>Math.abs(gp.x-s.x)<cell&&Math.abs(gp.y-s.y)<cell*0.6):null;
+    if(gr){gr.items.push(b);gr.x=(gr.x*(gr.items.length-1)+s.x)/gr.items.length;gr.y=(gr.y*(gr.items.length-1)+s.y)/gr.items.length}else groups.push({x:s.x,y:s.y,items:[b]})}
+  pins.innerHTML=groups.map(gp=>{
+    if(gp.items.length>1){const ids=gp.items.map(b=>b.id).join(",");return `<button class="cluster" style="transform:translate(${gp.x}px,${gp.y}px)" data-cluster="${ids}" aria-label="${gp.items.length} établissements, zoomer">${gp.items.length}</button>`}
+    const b=gp.items[0];const on=MAP.active===b.id;
+    return `<button class="mpin${on?" on":""}${MAP.hover===b.id?" hot":""}" style="transform:translate(${gp.x}px,${gp.y}px)" data-mpin="${b.id}" aria-label="${esc(b.name)}, ${b.rating} étoiles">${minPrice(b)?eur(minPrice(b)):"Réserver"}</button>`;
+  }).join("");
+  const card=el.querySelector(".mcard");const ab=MAP.active&&BY[MAP.active];
+  if(ab&&MAP.list.includes(ab)){const s=toScreen(ab.lat,ab.lng);const st=openState(ab);const ns=nextSlots(ab,3);
+    card.hidden=false;card.style.transform=`translate(${Math.min(Math.max(s.x-150,8),MAP.w-308)}px,${Math.max(8,s.y-210)}px)`;
+    card.innerHTML=`<button class="mc-x" data-mclose aria-label="Fermer">×</button><div class="row" style="gap:10px;flex-wrap:nowrap"><span class="avatar" style="width:42px;height:42px;font-size:16px;background:${ab.color}">${esc(ab.name[0])}</span><div style="min-width:0"><b style="display:block">${esc(ab.name)}</b><span class="xs muted">${catOf(ab.cat).label} · ${fmtKm(dist(ab))} · ${ab.rating.toLocaleString("fr-FR")} ★ (${ab.reviews})</span></div></div><p class="xs" style="margin:8px 0 6px;color:${st.open?"var(--ok)":"var(--ink-soft)"};font-weight:600">${st.label}</p><div class="slots-mini" style="margin:0">${ns.map(x=>`<button class="slot-mini" data-biz="${ab.id}" data-slot="${x.iso}">${x.label}</button>`).join("")}</div><button class="btn btn-primary btn-sm" style="width:100%;margin-top:10px" data-biz="${ab.id}">Voir la fiche</button>`;
+  }else card.hidden=true;
+  el.querySelector(".map-here").hidden=!MAP.moved;
+  el.querySelector(".map-scale").innerHTML=scaleBar(m);
+  el.classList.toggle("picking",MAP.pick);
+}
+function scaleBar(m){const opts=[50,100,200,500,1000,2000,5000];const target=m*90;const v=opts.reduce((a,c)=>Math.abs(c-target)<Math.abs(a-target)?c:a);return `<i style="width:${(v/m).toFixed(0)}px"></i><span>${v>=1000?v/1000+" km":v+" m"}</span>`}
+let rafId=0;function redraw(){cancelAnimationFrame(rafId);rafId=requestAnimationFrame(mapFrame)}
+function zoomAt(dz,x,y){const before=fromScreen(x,y);MAP.z=Math.min(18,Math.max(10.5,MAP.z+dz));const after=fromScreen(x,y);MAP.lat+=before.lat-after.lat;MAP.lng+=before.lng-after.lng;MAP.moved=true;redraw()}
+function flyTo(lat,lng,z,ms=450){const a={lat:MAP.lat,lng:MAP.lng,z:MAP.z},t0=performance.now();const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  cancelAnimationFrame(MAP.anim);const step=t=>{const k=reduce?1:Math.min(1,(t-t0)/ms),e=1-Math.pow(1-k,3);MAP.lat=a.lat+(lat-a.lat)*e;MAP.lng=a.lng+(lng-a.lng)*e;MAP.z=a.z+(z-a.z)*e;mapFrame();if(k<1)MAP.anim=requestAnimationFrame(step)};MAP.anim=requestAnimationFrame(step)}
+function mountMap(el,list){
+  MAP.el=el;MAP.list=list;
+  const r=el.getBoundingClientRect();MAP.w=r.width;MAP.h=r.height;
+  if(!MAP.keepView)fitMap(list);MAP.keepView=false;
+  mapFrame();
+  if(el.dataset.bound)return;el.dataset.bound="1";
+  const pts=new Map();let last=null,startDist=0,startZ=0,dragged=false;
+  el.addEventListener("pointerdown",e=>{if(e.target.closest("button,.mcard"))return;el.setPointerCapture(e.pointerId);pts.set(e.pointerId,{x:e.clientX,y:e.clientY});dragged=false;
+    if(pts.size===2){const [a,b]=[...pts.values()];startDist=Math.hypot(a.x-b.x,a.y-b.y);startZ=MAP.z}last={x:e.clientX,y:e.clientY}});
+  el.addEventListener("pointermove",e=>{if(!pts.has(e.pointerId))return;pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pts.size===2){const [a,b]=[...pts.values()];const d=Math.hypot(a.x-b.x,a.y-b.y);const rr=el.getBoundingClientRect();const target=startZ+Math.log2(d/startDist);zoomAt(target-MAP.z,(a.x+b.x)/2-rr.left,(a.y+b.y)/2-rr.top);dragged=true;return}
+    const dx=e.clientX-last.x,dy=e.clientY-last.y;if(Math.abs(dx)+Math.abs(dy)>2)dragged=true;last={x:e.clientX,y:e.clientY};
+    const c=project(MAP.lat,MAP.lng,MAP.z);const n=unproject(c.x-dx,c.y-dy,MAP.z);MAP.lat=n.lat;MAP.lng=n.lng;MAP.moved=true;redraw()});
+  const up=e=>{pts.delete(e.pointerId);if(pts.size<2)startDist=0;if(!dragged&&MAP.pick&&e.type==="pointerup"){const rr=el.getBoundingClientRect();const p=fromScreen(e.clientX-rr.left,e.clientY-rr.top);setLoc({label:"Point choisi sur la carte",lat:p.lat,lng:p.lng,src:"map"});MAP.pick=false}};
+  el.addEventListener("pointerup",up);el.addEventListener("pointercancel",up);
+  el.addEventListener("wheel",e=>{e.preventDefault();const rr=el.getBoundingClientRect();zoomAt(-e.deltaY*(e.ctrlKey?0.01:0.0022),e.clientX-rr.left,e.clientY-rr.top)},{passive:false});
+  el.addEventListener("dblclick",e=>{if(e.target.closest("button"))return;const rr=el.getBoundingClientRect();zoomAt(1,e.clientX-rr.left,e.clientY-rr.top)});
+  el.addEventListener("keydown",e=>{const k={ArrowUp:[0,-60],ArrowDown:[0,60],ArrowLeft:[-60,0],ArrowRight:[60,0]}[e.key];if(k){e.preventDefault();const c=project(MAP.lat,MAP.lng,MAP.z);const n=unproject(c.x+k[0],c.y+k[1],MAP.z);MAP.lat=n.lat;MAP.lng=n.lng;MAP.moved=true;redraw()}if(e.key==="+"||e.key==="=")zoomAt(.5,MAP.w/2,MAP.h/2);if(e.key==="-")zoomAt(-.5,MAP.w/2,MAP.h/2)});
+  new ResizeObserver(()=>redraw()).observe(el);
+}
+function mapShell(){return `<div class="map" id="map" tabindex="0" aria-label="Carte interactive : glissez pour déplacer, molette ou pincement pour zoomer">
+  <svg class="base" width="100%" height="100%" aria-hidden="true"></svg><div class="pins"></div><div class="mcard" hidden></div>
+  <button class="map-here btn btn-secondary btn-sm" data-here hidden>Rechercher dans cette zone</button>
+  <div class="map-tools"><button class="mt" data-zoom="1" aria-label="Zoomer">+</button><button class="mt" data-zoom="-1" aria-label="Dézoomer">−</button><button class="mt" data-locate aria-label="Centrer sur ma position">${icon("pin",'width="17" height="17"')}</button></div>
+  <div class="map-scale"></div><div class="map-attr">Tracé simplifié · positions réelles</div></div>`}
+
+// ---------- Choix de la position ----------
+function setLoc(l){S.loc=l;save();if(!V.radius&&V.page==="recherche")V.radius=0;if(V.sort==="pertinence"&&l.src!=="quartier")V.sort="distance";V.area=null;toast(`Position : ${l.label}`);render();if(MAP.el)flyTo(l.lat,l.lng,Math.max(MAP.z,14))}
+function locPopover(){return `<div class="pop" id="locpop" role="dialog" aria-label="Choisir ma position">
+  <button class="opt" data-gps>${icon("pin",'width="18" height="18"')}<span style="flex:1"><b>Ma position actuelle</b><br><span class="xs muted">Par la localisation de votre appareil</span></span></button>
+  <button class="opt" data-pickmap>${icon("trend",'width="18" height="18"')}<span style="flex:1"><b>Choisir sur la carte</b><br><span class="xs muted">Touchez l'endroit voulu</span></span></button>
+  <p class="xs muted" style="margin:8px 2px 6px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Quartiers</p>
+  <div class="row" style="gap:6px">${QUARTIERS.map(([n,la,ln])=>`<button class="chip" data-quartier="${esc(n)}" data-lat="${la}" data-lng="${ln}" aria-pressed="${loc().label===n}">${esc(n)}</button>`).join("")}</div></div>`}
+function gps(){
+  if(!("geolocation" in navigator)){toast("La localisation n'est pas disponible ici : choisissez un quartier ou un point sur la carte.");return}
+  toast("Localisation en cours…");
+  navigator.geolocation.getCurrentPosition(p=>{const l={label:"Ma position",lat:p.coords.latitude,lng:p.coords.longitude,src:"gps"};if(haversine(l,DEFAULT_LOC)>40){toast("Vous êtes loin de Lyon : la démo couvre Lyon et Villeurbanne. Position placée à Bellecour.");setLoc(DEFAULT_LOC)}else setLoc(l)},
+    ()=>toast("Localisation refusée par le navigateur. Choisissez un quartier ou un point sur la carte."),{enableHighAccuracy:true,timeout:8000,maximumAge:60000});
+}
+
 // ---------- Vue courante ----------
-let V={page:"accueil",biz:null,q:"",where:"Lyon",cat:null,maxPrice:200,minRating:0,home:false,today:false,sort:"pertinence",proTab:"agenda"};
+let V={page:"accueil",biz:null,...F0,tags:[],view:"list",proTab:"agenda"};
 const app=document.getElementById("app");
 function toast(msg){document.querySelectorAll(".toast").forEach(x=>x.remove());const t=document.createElement("div");t.className="toast";t.setAttribute("role","status");t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3200)}
 function go(page,extra){Object.assign(V,{page},extra||{});const h=page==="fiche"&&V.biz?"fiche-"+V.biz:page;if(location.hash.slice(1)!==h)history.replaceState(null,"","#"+h);render();window.scrollTo({top:0})}
@@ -295,117 +686,13 @@ function go(page,extra){Object.assign(V,{page},extra||{});const h=page==="fiche"
 // ---------- Calculs ----------
 function startPrice(s){const f=s.variants?Math.min(...s.variants.map(v=>v[1])):1;return Math.round(s.price*f*100)}
 function minPrice(b){return Math.min(...b.services.map(startPrice))}
-function dist(b){const dx=(b.x-USER.x)*0.12,dy=(b.y-USER.y)*0.12;return Math.round(Math.sqrt(dx*dx+dy*dy)*1.25*10)/10}
 function stars(r){const f=Math.round(r);return `<span class="stars" aria-label="${r} sur 5">${"★".repeat(f)}${"☆".repeat(5-f)}</span>`}
 function dayKey(d){return d.toISOString().slice(0,10)}
-function slotsFor(b,date,dur){
-  const dow=date.getDay();const h=HOURS_STD[dow];if(!h)return [];
-  const [oh,om]=h[0].split(":").map(Number),[ch,cm]=h[1].split(":").map(Number);
-  const out=[];const now=new Date();
-  for(let m=oh*60+om;m+dur<=ch*60+cm;m+=30){
-    const st=new Date(date);st.setHours(Math.floor(m/60),m%60,0,0);
-    const lead=st-now<2*3600e3;
-    // créneaux pris : réservations réelles + charge simulée stable par établissement
-    const taken=S.bookings.some(k=>k.biz===b.id&&k.status!=="cancelled"&&Math.abs(new Date(k.start)-st)<k.dur*60e3)||((m/30+date.getDate()+b.name.length)%5===0);
-    out.push({t:`${String(Math.floor(m/60)).padStart(2,"0")}h${String(m%60).padStart(2,"0")}`,iso:st.toISOString(),off:lead||taken});
-  }
-  return out;
-}
-function nextSlots(b,n){const res=[];for(let i=0;i<7&&res.length<n;i++){const d=new Date();d.setDate(d.getDate()+i);for(const s of slotsFor(b,d,b.services[0].dur)){if(!s.off){res.push({...s,label:i===0?"Auj. "+s.t:i===1?"Dem. "+s.t:d.toLocaleDateString("fr-FR",{weekday:"short"})+" "+s.t});if(res.length>=n)break}}}return res}
 function fmtDate(iso){return new Date(iso).toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})+" à "+new Date(iso).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}).replace(":","h")}
 function code(){const A="ABCDEFGHJKMNPQRSTUVWXYZ23456789";let s="";for(let i=0;i<12;i++)s+=A[Math.floor(Math.random()*A.length)];return s.match(/.{4}/g).join("-")}
 function norm(s){return s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase()}
 
 // ---------- Pages client ----------
-function pageHome(){
-  return `<section class="hero"><div class="wrap">
-    <h1>Tous vos rendez-vous, au même endroit</h1>
-    <p>Coiffeur, garage, coach, avocat, restaurant, plombier… Comparez les prix, voyez les créneaux libres en temps réel et réservez en quelques secondes.</p>
-    <form class="searchbar" id="f-search" role="search">
-      <label class="field"><span>Quoi</span><input id="q" placeholder="Métier, établissement ou prestation" value="${esc(V.q)}" autocomplete="off"></label>
-      <label class="field"><span>Où</span><input id="where" value="${esc(V.where)}" placeholder="Ville ou adresse" autocomplete="off"></label>
-      <button class="btn btn-primary" type="submit" style="padding:12px 22px">Rechercher</button>
-    </form>
-    <div class="row" style="margin-top:16px;gap:8px">${["Coiffeur","Barbier","Massage","Garage","Coach sportif"].map(l=>`<button class="chip" style="background:rgb(255 255 255/.12);border-color:transparent;color:#fff" data-cat="${CATS.find(c=>c.label===l).slug}">${l}</button>`).join("")}</div>
-  </div></section>
-  <div class="wrap"><div class="cats">${CATS.map(c=>`<button class="cat" data-cat="${c.slug}"><span class="ico">${icon(c.ic)}</span>${c.label}</button>`).join("")}</div></div>
-  <section class="section"><div class="wrap">
-    <h2>Comment ça marche</h2>
-    <div class="steps">
-      ${[["Cherchez","Par métier, prestation ou nom, près de chez vous ou à domicile.","pin"],["Comparez","Prix exacts, avis vérifiés, créneaux libres affichés en direct.","star"],["Réservez","Confirmation immédiate, rappel la veille, annulation en 1 clic.","cal"]].map(([t,x,i])=>`<div class="card"><span class="ico">${icon(i)}</span><h3 style="font-size:18px;margin-top:12px">${t}</h3><p class="muted" style="margin:6px 0 0">${x}</p></div>`).join("")}
-    </div>
-  </div></section>
-  <section class="section" style="padding-top:0"><div class="wrap">
-    <h2>Les mieux notés près de Lyon</h2>
-    <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr))">${B.slice().sort((a,b)=>b.rating*Math.log(b.reviews)-a.rating*Math.log(a.reviews)).slice(0,6).map(b=>`
-      <button class="card result" style="grid-template-columns:48px minmax(0,1fr);text-align:left" data-biz="${b.id}">
-        <span class="avatar" style="width:48px;height:48px;font-size:17px;background:${b.color}">${esc(b.name[0])}</span>
-        <span style="min-width:0"><b style="display:block">${esc(b.name)}</b><span class="small muted">${catOf(b.cat).label} · ${b.city}</span><br><span class="small">${stars(b.rating)} <b>${b.rating.toLocaleString("fr-FR")}</b> <span class="muted">(${b.reviews})</span></span></span>
-      </button>`).join("")}</div>
-  </div></section>
-  <section class="wrap"><div class="card row" style="background:var(--brand-deep);color:#fff;border:0;justify-content:space-between;padding:28px">
-    <div style="max-width:620px"><h2 style="font-size:24px;color:#fff">Vous recevez sur rendez-vous ?</h2><p style="color:rgb(255 255 255/.82);margin:8px 0 0">Votre page en 60 secondes, visible par tous les clients de Rendez-vous. Agenda d'équipe, rappels, empreinte bancaire, cartes cadeaux. 0 % de commission.</p></div>
-    <button class="btn btn-sun" data-mode="pro">Découvrir l'espace pro</button>
-  </div></section>`;
-}
-
-function filtered(){
-  const q=norm(V.q.trim());
-  let list=B.filter(b=>{
-    if(V.cat&&b.cat!==V.cat)return false;
-    if(q){const hay=norm([b.name,catOf(b.cat).label,b.tagline,...b.services.map(s=>s.name)].join(" "));if(!q.split(/\s+/).every(w=>hay.includes(w)))return false}
-    if(minPrice(b)/100>V.maxPrice)return false;
-    if(b.rating<V.minRating)return false;
-    if(V.home&&!b.home)return false;
-    if(V.today&&!slotsFor(b,new Date(),b.services[0].dur).some(s=>!s.off))return false;
-    return true;
-  });
-  const score=b=>b.rating*Math.log(b.reviews+1)+(b.pro?0.15:0);
-  list.sort(V.sort==="prix"?(a,b)=>minPrice(a)-minPrice(b):V.sort==="note"?(a,b)=>b.rating-a.rating:V.sort==="distance"?(a,b)=>dist(a)-dist(b):(a,b)=>score(b)-score(a));
-  return list;
-}
-function pageSearch(){
-  const list=filtered();const c=V.cat?catOf(V.cat):null;
-  return `<div class="wrap layout-search">
-  <aside class="filters card" aria-label="Filtres">
-    <div class="group"><label class="lbl" for="sq">Recherche</label><input class="input" id="sq" value="${esc(V.q)}" placeholder="Ex. balayage, révision…"></div>
-    <div class="group"><span class="lbl">Métier</span><div class="row" style="gap:6px"><button class="chip" aria-pressed="${!V.cat}" data-cat="">Tous</button>${CATS.map(x=>`<button class="chip" aria-pressed="${V.cat===x.slug}" data-cat="${x.slug}">${x.label}</button>`).join("")}</div></div>
-    <div class="group"><label class="lbl" for="fp">Prix maximum : <span class="tab">${V.maxPrice} €</span></label><input type="range" id="fp" min="10" max="200" step="5" value="${V.maxPrice}" style="width:100%"></div>
-    <div class="group"><span class="lbl">Note minimum</span><div class="row" style="gap:6px">${[0,4,4.5,4.8].map(r=>`<button class="chip" aria-pressed="${V.minRating===r}" data-rating="${r}">${r?r.toLocaleString("fr-FR")+" ★":"Toutes"}</button>`).join("")}</div></div>
-    <div class="group"><label class="row small" style="gap:8px;font-weight:600"><input type="checkbox" id="fh" ${V.home?"checked":""}> Se déplace à domicile</label><label class="row small" style="gap:8px;font-weight:600;margin-top:8px"><input type="checkbox" id="ft" ${V.today?"checked":""}> Disponible aujourd'hui</label></div>
-  </aside>
-  <section style="min-width:0">
-    <div class="row" style="justify-content:space-between;margin-bottom:12px">
-      <h1 style="font-size:22px">${c?c.label+"s":"Établissements"} à ${esc(V.where||"Lyon")} <span class="muted" style="font-weight:600;font-size:16px">· ${list.length} résultat${list.length>1?"s":""}</span></h1>
-      <label class="small row" style="gap:6px">Trier par <select class="input" id="sort" style="width:auto;padding:6px 10px">${[["pertinence","Pertinence"],["distance","Distance"],["prix","Prix croissant"],["note","Note"]].map(([v,l])=>`<option value="${v}" ${V.sort===v?"selected":""}>${l}</option>`).join("")}</select></label>
-    </div>
-    <div class="grid" style="gap:12px">${list.length?list.map(b=>{const ns=nextSlots(b,4);return `
-      <article class="card result" data-biz="${b.id}" tabindex="0">
-        <span class="avatar" style="background:${b.color}">${esc(b.name[0])}</span>
-        <div style="min-width:0">
-          <div class="row" style="gap:8px"><h2 style="font-size:17px">${esc(b.name)}</h2>${b.pro&&V.sort==="pertinence"?'<span class="pill brand">Mis en avant</span>':""}</div>
-          <p class="small muted" style="margin:2px 0">${catOf(b.cat).label} · ${esc(b.city)} · ${dist(b).toLocaleString("fr-FR")} km${b.home?" · à domicile":""}</p>
-          <p class="small" style="margin:2px 0">${stars(b.rating)} <b>${b.rating.toLocaleString("fr-FR")}</b> <span class="muted">(${b.reviews} avis vérifiés)</span></p>
-          <div class="slots-mini">${ns.map(s=>`<button class="slot-mini" data-biz="${b.id}" data-slot="${s.iso}">${s.label}</button>`).join("")||'<span class="small muted">Complet cette semaine</span>'}</div>
-        </div>
-        <div class="price" style="text-align:right"><span class="xs muted">à partir de</span><br><b style="font-size:17px">${minPrice(b)?eur(minPrice(b)):"Gratuit"}</b></div>
-      </article>`}).join(""):`<div class="card"><h2 style="font-size:18px">Aucun résultat</h2><p class="muted">Élargissez le prix maximum ou retirez un filtre.</p><button class="btn btn-secondary" data-reset>Réinitialiser les filtres</button></div>`}</div>
-  </section>
-  <aside class="map" aria-label="Carte des résultats">${mapSvg(list)}</aside>
-  </div>`;
-}
-function mapSvg(list){
-  return `<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Carte de Lyon avec ${list.length} établissements">
-    <rect width="100" height="100" fill="var(--brand-softer)"/>
-    <path d="M30 0 C 36 20, 32 40, 40 55 S 44 80, 38 100" stroke="var(--brand-soft)" stroke-width="5" fill="none"/>
-    <path d="M70 0 C 62 18, 58 35, 50 48 S 44 70, 46 100" stroke="var(--brand-soft)" stroke-width="7" fill="none"/>
-    <g stroke="var(--line)" stroke-width=".4">${[15,30,45,60,75,90].map(v=>`<line x1="0" y1="${v}" x2="100" y2="${v}"/><line x1="${v}" y1="0" x2="${v}" y2="100"/>`).join("")}</g>
-    <text x="4" y="96" font-size="2.6" fill="var(--ink-soft)" font-weight="700">Lyon · vous êtes ici ●</text>
-    <circle cx="${USER.x+2}" cy="${USER.y+6}" r="1.2" fill="var(--ok)" stroke="var(--surface)" stroke-width=".5"/>
-    ${list.map(b=>`<g class="pin" data-biz="${b.id}" tabindex="0" role="link" aria-label="${esc(b.name)}"><rect x="${b.x-5}" y="${b.y-6.2}" width="10" height="3.8" rx="1.9" fill="var(--brand)"/><path d="M${b.x-1} ${b.y-2.5} L${b.x} ${b.y-1.2} L${b.x+1} ${b.y-2.5}Z" fill="var(--brand)"/><text x="${b.x}" y="${b.y-3.6}" text-anchor="middle" font-size="2" font-weight="800" fill="#fff">${minPrice(b)?eur(minPrice(b)):"Table"}</text></g>`).join("")}
-  </svg>`;
-}
-
 function faqFor(b){
   const hrs=Object.entries(HOURS_STD).map(([d,h])=>["","lundi","mardi","mercredi","jeudi","vendredi","samedi"][d]+" "+h[0].replace(":","h")+"–"+h[1].replace(":","h")).join(", ");
   return [[`Comment prendre rendez-vous chez ${b.name} ?`,"En ligne, 24 h/24 : choisissez la prestation puis un créneau libre. Confirmation immédiate par email et rappel la veille."],
@@ -492,6 +779,176 @@ function pageAccount(){
   </div>`;
 }
 
+// ---------- Accueil ----------
+function bizTile(b){const st=openState(b);const ns=nextSlots(b,1)[0];return `
+  <button class="card tilebiz" data-biz="${b.id}">
+    <span class="cover" style="--c:${b.color}"><span class="avatar" style="background:${b.color}">${esc(b.name[0])}</span><span class="pill ${st.open?"ok":"warn"}" style="margin-left:auto">${st.open?"Ouvert":"Fermé"}</span></span>
+    <b class="tb-name">${esc(b.name)}</b>
+    <span class="small muted">${catOf(b.cat).label} · ${esc(b.q)} · ${fmtKm(dist(b))}</span>
+    <span class="small">${stars(b.rating)} <b>${b.rating.toLocaleString("fr-FR")}</b> <span class="muted">(${b.reviews})</span></span>
+    <span class="small" style="color:var(--brand);font-weight:700">${ns?"Prochain créneau : "+ns.label:"Complet cette semaine"}</span>
+  </button>`}
+function pageHome(){
+  const near=B.slice().sort((a,b)=>dist(a)-dist(b)).slice(0,8);
+  const today=B.filter(b=>freeSlots(b,0).some(s=>s.min>=17*60)).sort((a,b)=>b.rating-a.rating).slice(0,8);
+  return `<section class="hero"><div class="wrap">
+    <h1>Tous vos rendez-vous, au même endroit</h1>
+    <p>Coiffeur, garage, coach, avocat, restaurant, plombier… Comparez les prix, voyez les créneaux libres en temps réel et réservez en quelques secondes.</p>
+    ${searchBar()}
+    <div class="row" style="margin-top:16px;gap:8px">${["Barbier dispo ce soir près de moi","Massage à domicile moins de 70 €","Le garage le mieux noté"].map(s=>`<button class="chip hero-chip" data-ask="${esc(s)}">${icon("chat",'width="14" height="14"')} ${esc(s)}</button>`).join("")}</div>
+  </div></section>
+  <div class="wrap"><div class="cats">${CATS.map(c=>`<button class="cat" data-cat="${c.slug}"><span class="ico">${icon(c.ic)}</span>${c.label}<span class="xs muted" style="font-weight:500">${B.filter(b=>b.cat===c.slug).length} à proximité</span></button>`).join("")}</div></div>
+  <section class="section"><div class="wrap">
+    <div class="row" style="justify-content:space-between;margin-bottom:14px"><h2 style="margin:0">À côté de chez vous</h2><button class="btn btn-ghost btn-sm" data-locbtn>${icon("pin",'width="15" height="15"')} ${esc(loc().label)} · modifier</button></div>
+    <div class="hscroll">${near.map(bizTile).join("")}</div>
+  </div></section>
+  <section class="section" style="padding-top:0"><div class="wrap">
+    <div class="row" style="justify-content:space-between;margin-bottom:14px"><h2 style="margin:0">Encore des créneaux ce soir</h2><button class="btn btn-ghost btn-sm" data-preset="evening">Tout voir</button></div>
+    <div class="hscroll">${today.map(bizTile).join("")}</div>
+  </div></section>
+  <section class="section" style="padding-top:0"><div class="wrap">
+    <div class="steps">
+      ${[["Cherchez","Par métier, prestation, nom ou en le demandant à l'assistant, autour de vous ou à domicile.","pin"],["Comparez","Prix exacts, avis vérifiés, distance, créneaux libres affichés en direct.","star"],["Réservez","Confirmation immédiate, rappel la veille, annulation en 1 clic.","cal"]].map(([t,x,i])=>`<div class="card"><span class="ico">${icon(i)}</span><h3 style="font-size:18px;margin-top:12px">${t}</h3><p class="muted" style="margin:6px 0 0">${x}</p></div>`).join("")}
+    </div>
+  </div></section>
+  <section class="wrap"><div class="card row" style="background:var(--brand-deep);color:#fff;border:0;justify-content:space-between;padding:28px">
+    <div style="max-width:620px"><h2 style="font-size:24px;color:#fff">Vous recevez sur rendez-vous ?</h2><p style="color:rgb(255 255 255/.82);margin:8px 0 0">Votre page en 60 secondes, visible par tous les clients de Rendez-vous. Agenda d'équipe, rappels, empreinte bancaire, cartes cadeaux. 0 % de commission.</p></div>
+    <button class="btn btn-sun" data-mode="pro">Découvrir l'espace pro</button>
+  </div></section>`;
+}
+function searchBar(){return `<form class="searchbar" id="f-search" role="search">
+      <label class="field"><span>Quoi</span><input id="q" placeholder="Métier, établissement ou prestation" value="${esc(V.q)}" autocomplete="off" list="sugg"></label>
+      <div class="field" style="position:relative"><span>Où</span><button type="button" class="locfield" data-locbtn aria-haspopup="dialog">${icon("pin",'width="15" height="15"')} <span>${esc(loc().label)}</span></button></div>
+      <button class="btn btn-primary" type="submit" style="padding:12px 22px">Rechercher</button>
+      <datalist id="sugg">${CATS.map(c=>`<option value="${esc(c.label)}">`).join("")}${B.map(b=>`<option value="${esc(b.name)}">`).join("")}</datalist>
+    </form>`}
+
+// ---------- Recherche ----------
+function resultCard(b,i){const ns=nextSlots(b,5);const st=openState(b);const d=dist(b);return `
+  <article class="card result${MAP.active===b.id?" on":""}" data-biz="${b.id}" data-hover="${b.id}" tabindex="0" style="--i:${i}">
+    <span class="avatar" style="background:${b.color}">${esc(b.name[0])}</span>
+    <div style="min-width:0">
+      <div class="row" style="gap:8px"><h2 style="font-size:17px">${esc(b.name)}</h2>${b.pro&&V.sort==="pertinence"?'<span class="pill brand">Mis en avant</span>':""}</div>
+      <p class="small muted" style="margin:2px 0">${catOf(b.cat).label} · ${esc(b.addr)}</p>
+      <p class="small" style="margin:2px 0">${stars(b.rating)} <b>${b.rating.toLocaleString("fr-FR")}</b> <span class="muted">(${b.reviews} avis)</span> · <b>${fmtKm(d)}</b><span class="muted"> · ${walkMin(d)} min à pied</span></p>
+      <p class="xs" style="margin:4px 0 0;font-weight:600;color:${st.open?"var(--ok)":"var(--ink-soft)"}">${st.label}${b.modes.includes("at_home")?' · <span style="color:var(--ink)">se déplace à domicile</span>':""}${b.modes.includes("online")?' · <span style="color:var(--ink)">visio</span>':""}</p>
+      <div class="slots-mini">${ns.map(s=>`<button class="slot-mini" data-biz="${b.id}" data-slot="${s.iso}">${s.label}</button>`).join("")||'<span class="small muted">Complet cette semaine</span>'}</div>
+    </div>
+    <div class="price"><span class="xs muted">à partir de</span><br><b style="font-size:17px">${minPrice(b)?eur(minPrice(b)):"Gratuit"}</b></div>
+  </article>`}
+function pageSearch(){
+  const list=filtered();const c=V.cat?catOf(V.cat):null;const af=activeFilters();
+  const n=v=>V.sort===v?"selected":"";
+  return `<div class="searchtop"><div class="wrap">
+    <form class="sbar" id="f-search2" role="search">
+      <label class="sfield">${icon("search",'width="16" height="16"')}<input id="sq" value="${esc(V.q)}" placeholder="${c?c.label:"Métier, nom, prestation…"}" aria-label="Recherche" list="sugg2"></label>
+      <button type="button" class="sfield locfield" data-locbtn>${icon("pin",'width="16" height="16"')} <span>${esc(loc().label)}</span></button>
+      <button class="btn btn-primary btn-sm sbtn" type="submit">Rechercher</button>
+      <datalist id="sugg2">${CATS.map(x=>`<option value="${esc(x.label)}">`).join("")}</datalist>
+    </form>
+    <div class="fbar" role="toolbar" aria-label="Filtres rapides">
+      <button class="chip" data-drawer>${icon("trend",'width="14" height="14"')} Tous les filtres${af.length?` · ${af.length}`:""}</button>
+      <button class="chip" data-quick="avail:today" aria-pressed="${V.avail==="today"}">Aujourd'hui</button>
+      <button class="chip" data-quick="avail:evening" aria-pressed="${V.avail==="evening"}">En soirée</button>
+      <button class="chip" data-quick="openNow" aria-pressed="${V.openNow}">Ouvert maintenant</button>
+      <button class="chip" data-quick="mode:at_home" aria-pressed="${V.mode==="at_home"}">À domicile</button>
+      <button class="chip" data-quick="radius:1" aria-pressed="${V.radius===1}">Moins de 1 km</button>
+      <button class="chip" data-quick="minRating:4.7" aria-pressed="${V.minRating===4.7}">4,7 ★ et +</button>
+      <label class="chip sortchip">Trier : <select id="sort" aria-label="Trier">${[["pertinence","Pertinence"],["distance","Distance"],["dispo","Disponibilité"],["prix","Prix"],["note","Note"],["avis","Nombre d'avis"]].map(([v,l])=>`<option value="${v}" ${n(v)}>${l}</option>`).join("")}</select></label>
+      ${af.length?`<span class="fsep" aria-hidden="true"></span>${af.map(([k,l])=>`<button class="chip chip-on" data-unset="${k}" aria-label="Retirer le filtre ${esc(l)}">${esc(l)} ×</button>`).join("")}<button class="btn btn-ghost btn-sm" style="flex:0 0 auto" data-reset>Tout effacer</button>`:""}
+    </div>
+  </div></div>
+  <div class="wrap layout-search${V.view==="map"?" show-map":""}">
+    <section class="results" style="min-width:0" aria-live="polite">
+      <p class="small muted" style="margin:0 0 10px"><b class="tab" style="color:var(--ink)">${list.length}</b> ${c?c.label.toLowerCase()+(list.length>1?"s":""):"établissement"+(list.length>1?"s":"")} autour de <b style="color:var(--ink)">${esc(loc().label)}</b></p>
+      <div class="grid" style="gap:12px" id="results">${list.length?list.map(resultCard).join(""):`<div class="card"><h2 style="font-size:18px">Aucun résultat avec ces filtres</h2><p class="muted">Élargissez la distance ou retirez un filtre. Vous pouvez aussi demander à l'assistant.</p><div class="row"><button class="btn btn-secondary" data-reset>Réinitialiser les filtres</button><button class="btn btn-ghost" data-ask="${esc(V.q||c?.label||"un professionnel")} près de moi">Demander à l'assistant</button></div></div>`}</div>
+    </section>
+    <aside class="mapcol">${mapShell()}</aside>
+  </div>
+  <button class="viewtoggle" data-view>${V.view==="map"?icon("cal",'width="16" height="16"')+" Liste":icon("pin",'width="16" height="16"')+" Carte"}</button>`;
+}
+function drawer(){
+  const seg=(key,opts)=>`<div class="row" style="gap:6px">${opts.map(([v,l])=>`<button class="chip" data-set="${key}:${v}" aria-pressed="${String(V[key])===String(v)}">${l}</button>`).join("")}</div>`;
+  return `<h2 style="font-size:20px">Filtres</h2>
+  <div class="fgroup"><span class="lbl">Métier</span><select class="input" id="d-cat"><option value="">Tous les métiers</option>${CATS.map(c=>`<option value="${c.slug}" ${V.cat===c.slug?"selected":""}>${c.label}</option>`).join("")}</select></div>
+  <div class="fgroup"><span class="lbl">Disponibilité</span>${seg("avail",[["","Peu importe"],["today","Aujourd'hui"],["tomorrow","Demain"],["evening","En soirée (après 18 h)"],["weekend","Ce week-end"]])}</div>
+  <div class="fgroup"><span class="lbl">Lieu du rendez-vous</span>${seg("mode",[["","Tous"],["on_site","Sur place"],["at_home","À domicile"],["online","En visio"]])}</div>
+  <div class="fgroup"><label class="lbl" for="d-radius">Distance maximum : <span class="tab" id="d-radius-v">${V.radius?fmtKm(V.radius):"illimitée"}</span></label><input type="range" id="d-radius" min="0" max="12" step="0.5" value="${V.radius}" style="width:100%"><span class="xs muted">Autour de ${esc(loc().label)}</span></div>
+  <div class="fgroup"><label class="lbl" for="d-price">Prix maximum : <span class="tab" id="d-price-v">${V.maxPrice>=400?"illimité":V.maxPrice+" €"}</span></label><input type="range" id="d-price" min="10" max="400" step="5" value="${V.maxPrice}" style="width:100%"></div>
+  <div class="fgroup"><span class="lbl">Note minimum</span>${seg("minRating",[[0,"Toutes"],[4,"4 ★"],[4.5,"4,5 ★"],[4.7,"4,7 ★"],[4.8,"4,8 ★"]])}</div>
+  <div class="fgroup"><span class="lbl">Équipements et services</span><div class="row" style="gap:6px">${Object.entries(TAGS).filter(([k])=>k!=="new").map(([k,l])=>`<button class="chip" data-tag="${k}" aria-pressed="${V.tags.includes(k)}">${l}</button>`).join("")}<button class="chip" data-quick="openNow" aria-pressed="${V.openNow}">Ouvert maintenant</button></div></div>
+  <div class="row" style="justify-content:space-between;margin-top:16px;position:sticky;bottom:-22px;background:var(--surface);padding-block:12px"><button class="btn btn-ghost" data-reset>Tout effacer</button><button class="btn btn-primary" data-close>Voir ${filtered().length} résultat${filtered().length>1?"s":""}</button></div>`;
+}
+
+// ---------- Compagnon IA (Claude via la page, outils de recherche réels) ----------
+let chatOpen=false,chat=[],chatBusy=null,sampleFn,sampleReady=false;
+const RULES=`Tu es le compagnon de Rendez-vous, une application de prise de rendez-vous à Lyon et Villeurbanne (coiffeurs, barbiers, instituts, massages, coachs, garages, detailing, plombiers, toilettage, cours, conseil, restaurants).
+Règles :
+- Utilise l'outil "chercher" pour toute demande de professionnel : il applique aussi les filtres à l'écran et met la carte à jour. Utilise "details" pour les prix, prestations, horaires et prochains créneaux d'un établissement précis, et "position" quand l'utilisateur indique un quartier.
+- Réponds en français, vouvoiement, 1 à 4 phrases courtes, ton naturel. Pas d'emoji, pas de liste à puces sauf pour comparer 2 ou 3 établissements.
+- N'invente jamais un établissement, un prix, un horaire ou un avis : uniquement ce que renvoient les outils.
+- Tu ne réserves, ne paies et n'annules jamais à la place de l'utilisateur : indique le créneau et dis qu'il peut toucher la carte ou le créneau affiché pour réserver.
+- Pour un litige, un remboursement ou un problème de compte, propose de contacter l'équipe à bonjour@rendez-vous.app.`;
+const TOOLS=()=>[
+ {name:"chercher",description:"Cherche des établissements autour de la position de l'utilisateur, applique les filtres à l'écran et renvoie les 6 premiers (id, nom, métier, note, nb_avis, prix_des, distance_km, quartier, ouvert, prochain_creneau) et le total.",
+  inputSchema:{type:"object",properties:{
+   texte:{type:"string",description:"Mots-clés libres : prestation ou nom (ex. balayage, dégradé). Vide si seul le métier compte."},
+   metier:{type:"string",enum:CATS.map(c=>c.slug)},
+   prix_max:{type:"number"},note_min:{type:"number"},distance_max_km:{type:"number"},
+   disponibilite:{type:"string",enum:["","today","tomorrow","evening","weekend"]},
+   lieu:{type:"string",enum:["","on_site","at_home","online"]},
+   ouvert_maintenant:{type:"boolean"},
+   options:{type:"array",items:{type:"string",enum:Object.keys(TAGS)}},
+   tri:{type:"string",enum:["pertinence","distance","dispo","prix","note","avis"]}}},
+  execute(i){Object.assign(V,F0,{q:String(i.texte||""),cat:CATS.some(c=>c.slug===i.metier)?i.metier:null,maxPrice:Number(i.prix_max)||400,minRating:Number(i.note_min)||0,radius:Number(i.distance_max_km)||0,avail:["today","tomorrow","evening","weekend"].includes(i.disponibilite)?i.disponibilite:"",mode:["on_site","at_home","online"].includes(i.lieu)?i.lieu:"",openNow:Boolean(i.ouvert_maintenant),tags:Array.isArray(i.options)?i.options.filter(t=>TAGS[t]):[],sort:["distance","dispo","prix","note","avis"].includes(i.tri)?i.tri:"pertinence"});
+   if(S.mode==="pro"){S.mode="client"}go("recherche",{view:"list"});const list=filtered();chatCards=list.slice(0,4).map(b=>b.id);
+   return {total:list.length,position:loc().label,resultats:list.slice(0,6).map(b=>({id:b.id,nom:b.name,metier:catOf(b.cat).label,note:b.rating,nb_avis:b.reviews,prix_des:minPrice(b)/100,distance_km:dist(b),quartier:b.q,ouvert:openState(b).label,prochain_creneau:nextSlots(b,1)[0]?.label||null}))}}},
+ {name:"details",description:"Détails d'un établissement par id : adresse, prestations avec prix et durée, horaires de la semaine, équipements, 6 prochains créneaux libres.",
+  inputSchema:{type:"object",properties:{id:{type:"string"}},required:["id"]},
+  execute(i){const b=BY[String(i.id)];if(!b)throw new Error("id inconnu");chatCards=[b.id];return {nom:b.name,adresse:b.addr,distance_km:dist(b),note:b.rating,nb_avis:b.reviews,etat:openState(b).label,lieux:b.modes,equipements:b.tags.map(t=>TAGS[t]),prestations:b.services.map(s=>({nom:s.name,prix_des:startPrice(s)/100,duree_min:s.dur,options:(s.variants||[]).map(v=>v[0])})),horaires:Object.fromEntries(Object.entries(hoursOf(b)).map(([d,h])=>[["dim","lun","mar","mer","jeu","ven","sam"][d],h.join("-")])),creneaux:nextSlots(b,6).map(s=>s.label),empreinte_bancaire_pct:b.guarantee||0,carte_cadeau:b.gift}}},
+ {name:"position",description:"Place la position de l'utilisateur sur un quartier de Lyon (pour les distances). Renvoie le quartier retenu.",
+  inputSchema:{type:"object",properties:{quartier:{type:"string",enum:QUARTIERS.map(q=>q[0])}},required:["quartier"]},
+  execute(i){const q=QUARTIERS.find(x=>x[0]===i.quartier)||QUARTIERS.find(x=>norm(x[0]).includes(norm(String(i.quartier||"")).split(" ")[0]));if(!q)throw new Error("quartier inconnu");S.loc={label:q[0],lat:q[1],lng:q[2],src:"quartier"};save();return {position:q[0]}}}
+];
+let chatCards=[];
+function localAnswer(q){
+  const n=norm(q);const c=CATS.find(x=>n.includes(norm(x.label).split(" ")[0].slice(0,6)));
+  const qt=QUARTIERS.find(x=>n.includes(norm(x[0]).split(" ")[0]));if(qt)S.loc={label:qt[0],lat:qt[1],lng:qt[2],src:"quartier"};
+  const pm=n.match(/(?:moins de|max(?:imum)?|<)\s*(\d+)/);
+  Object.assign(V,F0,{cat:c?c.slug:null,q:c?"":q.replace(/[?!.]/g,"").split(" ").filter(w=>w.length>4).slice(0,1).join(""),avail:/ce soir|soiree/.test(n)?"evening":/aujourd|maintenant/.test(n)?"today":/demain/.test(n)?"tomorrow":/week/.test(n)?"weekend":"",mode:/domicile|chez moi/.test(n)?"at_home":/visio|en ligne/.test(n)?"online":"",maxPrice:pm?Number(pm[1]):400,sort:/mieux note|meilleur/.test(n)?"note":/pres|proche|autour/.test(n)?"distance":"pertinence"});
+  let list=filtered();if(!list.length&&V.q){V.q="";list=filtered()}
+  go("recherche",{view:"list"});chatCards=list.slice(0,3).map(b=>b.id);
+  return list.length?`J'ai trouvé ${list.length} résultat${list.length>1?"s":""} autour de ${loc().label}, affiché${list.length>1?"s":""} sur la carte. Le plus adapté : ${list[0].name}, ${fmtKm(dist(list[0]))}, ${list[0].rating.toLocaleString("fr-FR")} ★, prochain créneau ${nextSlots(list[0],1)[0]?.label||"la semaine prochaine"}.`:"Je n'ai rien trouvé avec ces critères. Essayez sans limite de prix ou un autre quartier.";
+}
+async function ask(q){
+  q=q.trim();if(!q||chatBusy)return;chatOpen=true;chat.push({role:"user",content:q});chatCards=[];chat.push({role:"assistant",content:"",pending:true});renderAssistant();
+  const bubble=chat[chat.length-1];
+  if(sampleFn){
+    const ctl=new AbortController();chatBusy=ctl;renderAssistant();
+    const turns=[{role:"user",content:RULES+`\n\nPosition actuelle de l'utilisateur : ${loc().label}. Date : ${new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})}, ${new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}.`},...chat.slice(-9,-1).filter(m=>m.content).map(m=>({role:m.role,content:m.content}))];
+    try{const r=await sampleFn(turns,{tools:TOOLS(),modelTier:"quick",signal:ctl.signal,onText:({text})=>{bubble.content=text;bubble.pending=false;paintBubble()}});bubble.content=r.text}
+    catch(e){if(e&&(e.code==="not_granted"||e.code==="sampling_disabled"||e.code==="tools_unavailable"||e.code==="capability_disabled")){sampleFn=null;bubble.content=localAnswer(q)}else if(e&&e.code==="cancelled"){bubble.content=e.text||"Arrêté."}else if(e&&e.code==="rate_limited"){bubble.content="Beaucoup de demandes en ce moment : réessayez dans une minute."}else{bubble.content=(e&&e.text)||localAnswer(q)}}
+    finally{chatBusy=null;bubble.pending=false}
+  }else bubble.content=localAnswer(q);
+  bubble.cards=chatCards.slice();bubble.pending=false;renderAssistant();
+}
+function paintBubble(){const el=document.querySelector(".msg.bot.live");if(el){el.textContent=chat[chat.length-1].content;const m=document.getElementById("msgs");if(m)m.scrollTop=m.scrollHeight}}
+function renderAssistant(){
+  const el=document.getElementById("assistant");
+  if(S.mode==="pro"){el.innerHTML="";return}
+  const sugg=["Un barbier ouvert ce soir près de moi","Massage à domicile moins de 70 €","Le garage le mieux noté","Prochain créneau chez Salon Élégance"];
+  el.innerHTML=`${chatOpen?`<div class="chat" role="dialog" aria-label="Compagnon Rendez-vous">
+    <div class="chat-head"><span class="ico" style="width:32px;height:32px">${icon("chat",'width="16" height="16"')}</span><div style="flex:1"><b>Compagnon Rendez-vous</b><div class="xs muted">${sampleFn?"Répond avec Claude et met à jour la carte":"Recherche guidée"}</div></div><button class="btn btn-ghost btn-sm" data-chat aria-label="Fermer">×</button></div>
+    <div class="msgs" id="msgs">${chat.length?"":`<div class="msg bot">Bonjour. Dites-moi ce que vous cherchez, où et quand : je trouve les professionnels, je compare les prix et les créneaux, et j'affiche tout sur la carte.</div><div class="row" style="gap:6px">${sugg.map(s=>`<button class="chip" data-ask="${esc(s)}">${esc(s)}</button>`).join("")}</div>`}
+      ${chat.map((m,i)=>m.role==="user"?`<div class="msg me">${esc(m.content)}</div>`:`<div class="msg bot${i===chat.length-1&&chatBusy?" live":""}">${m.pending?'<span class="dots" aria-label="En train d\'écrire"><i></i><i></i><i></i></span>':esc(m.content)}</div>${(m.cards||[]).map(id=>{const b=BY[id];const s=nextSlots(b,1)[0];return `<button class="opt chatcard" data-biz="${b.id}"><span class="avatar" style="width:34px;height:34px;font-size:14px;background:${b.color}">${esc(b.name[0])}</span><span style="flex:1;min-width:0"><b>${esc(b.name)}</b><br><span class="xs muted">${b.rating.toLocaleString("fr-FR")} ★ · ${fmtKm(dist(b))} · dès ${minPrice(b)?eur(minPrice(b)):"gratuit"}</span></span><span class="xs" style="color:var(--brand);font-weight:700">${s?s.label:""}</span></button>`}).join("")}`).join("")}
+    </div>
+    <form id="f-chat" class="chat-form"><input class="input" id="ci" placeholder="Ex. coiffeur samedi matin à la Croix-Rousse" autocomplete="off" aria-label="Votre question">${chatBusy?'<button class="btn btn-secondary" type="button" data-stop>Stop</button>':'<button class="btn btn-primary" type="submit">Envoyer</button>'}</form>
+    <p class="xs muted" style="margin:0;padding:0 14px 12px">Assistant IA : vérifiez les informations avant de réserver.</p></div>`:""}
+    <button class="fab" aria-label="${chatOpen?"Fermer":"Ouvrir"} le compagnon" data-chat>${icon("chat",'width="22" height="22"')}<span class="fab-label">Demander</span></button>`;
+  const m=document.getElementById("msgs");if(m)m.scrollTop=m.scrollHeight;
+}
+(async()=>{try{if(window.claude&&claude.use){const s=await claude.use("sample");if(s){const lim=await s.limits().catch(()=>null);if(!lim||lim.tools){sampleFn=s;renderAssistant()}}}}catch(e){}})();
+
 // ---------- Espace pro ----------
 const PRO="salon-elegance";
 function proChecks(){const b=BY[PRO];return [
@@ -561,20 +1018,6 @@ function proBilling(){
 }
 
 // ---------- Assistant ----------
-let chatOpen=false,chat=[{me:false,t:"Bonjour ! Je peux vous trouver un professionnel et ses prochains créneaux. Que cherchez-vous ?"}];
-function renderAssistant(){
-  const el=document.getElementById("assistant");
-  if(S.mode==="pro"){el.innerHTML="";return}
-  el.innerHTML=`${chatOpen?`<div class="chat" role="dialog" aria-label="Assistant"><div style="padding:12px 14px;border-bottom:1px solid var(--line);font-weight:700">Assistant Rendez-vous</div><div class="msgs" id="msgs">${chat.map(m=>`<div class="msg ${m.me?"me":"bot"}">${m.h||esc(m.t)}</div>`).join("")}</div><form id="f-chat" style="display:flex;gap:6px;padding:10px;border-top:1px solid var(--line)"><input class="input" id="ci" placeholder="Ex. barbier ce soir" autocomplete="off"><button class="btn btn-primary" type="submit">Envoyer</button></form><p class="xs muted" style="margin:0;padding:0 12px 10px">Assistant IA : vérifiez les informations avant de réserver.</p></div>`:""}<button aria-label="${chatOpen?"Fermer":"Ouvrir"} l'assistant" data-chat>${icon(chatOpen?"chat":"chat",'width="24" height="24"')}</button>`;
-  const m=document.getElementById("msgs");if(m)m.scrollTop=m.scrollHeight;
-}
-function answer(q){
-  const n=norm(q);const c=CATS.find(x=>n.includes(norm(x.label).split(" ")[0]));
-  const list=B.filter(b=>(c?b.cat===c.slug:norm(b.name+b.tagline+b.services.map(s=>s.name).join(" ")).split(" ").some(w=>w.length>3&&n.includes(w)))).slice(0,3);
-  if(!list.length)return {t:"Je n'ai rien trouvé avec ces mots. Essayez un métier (coiffeur, garage, massage…) ou ouvrez la recherche."};
-  return {h:`Voici ${list.length} suggestion${list.length>1?"s":""} :`+list.map(b=>{const s=nextSlots(b,1)[0];return `<button class="opt" style="margin:6px 0 0" data-biz="${b.id}"><span><b>${esc(b.name)}</b><br><span class="xs muted">${b.rating.toLocaleString("fr-FR")} ★ · dès ${minPrice(b)?eur(minPrice(b)):"gratuit"}</span></span><span class="xs" style="color:var(--brand);font-weight:700">${s?s.label:""}</span></button>`}).join("")};
-}
-
 // ---------- Rendu + événements ----------
 function render(){
   const mob=document.querySelector("#nav-compte .mob");if(mob&&!mob.innerHTML)mob.innerHTML=icon("cal",'width="20" height="20" style="vertical-align:-4px"');
@@ -582,22 +1025,49 @@ function render(){
   document.getElementById("mode-pro").setAttribute("aria-pressed",S.mode==="pro");
   document.getElementById("nav-compte").hidden=S.mode==="pro";
   document.getElementById("nav-compte").setAttribute("aria-current",V.page==="compte"?"page":"false");
+  const keepScroll=V.page==="recherche"&&document.querySelector(".results")?window.scrollY:null;
   app.innerHTML=S.mode==="pro"?pagePro():V.page==="recherche"?pageSearch():V.page==="fiche"?pageBiz():V.page==="compte"?pageAccount():pageHome();
+  if(S.mode==="client"&&V.page==="recherche"){const m=document.getElementById("map");if(m){MAP.el=null;mountMap(m,filtered())}}
+  if(keepScroll!==null)window.scrollTo({top:keepScroll});
   renderAssistant();
 }
+let popEl=null;function closePop(){popEl?.remove();popEl=null}
+function openPop(anchor){closePop();const r=anchor.getBoundingClientRect();popEl=document.createElement("div");popEl.innerHTML=locPopover();popEl=popEl.firstElementChild;document.body.appendChild(popEl);
+  const w=Math.min(380,innerWidth-24);popEl.style.width=w+"px";popEl.style.left=Math.max(12,Math.min(r.left,innerWidth-w-12))+"px";popEl.style.top=(r.bottom+window.scrollY+8)+"px";popEl.querySelector("button")?.focus()}
+function refine(fn){fn();MAP.keepView=V.page==="recherche"&&MAP.moved;render()}
 function rerenderBooking(){const el=document.getElementById("booking");if(el)el.innerHTML=bookingPanel(BY[V.biz])}
 function modal(html){const bg=document.createElement("div");bg.className="modal-bg";bg.innerHTML=`<div class="modal" role="dialog" aria-modal="true">${html}</div>`;bg.addEventListener("click",e=>{if(e.target===bg||e.target.closest("[data-close]"))bg.remove()});document.body.appendChild(bg);return bg}
 
 document.addEventListener("click",e=>{
+  if(popEl&&!e.target.closest("#locpop,[data-locbtn]"))closePop();
   const t=e.target.closest("button,[data-biz],.pin");if(!t)return;
   const d=t.dataset;
+  if(d.locbtn!==undefined){popEl?closePop():openPop(t);return}
+  if(d.gps!==undefined){closePop();gps();return}
+  if(d.pickmap!==undefined){closePop();if(V.page!=="recherche"){go("recherche")}MAP.pick=true;redraw();toast("Touchez la carte à l'endroit voulu.");return}
+  if(d.quartier){closePop();setLoc({label:d.quartier,lat:Number(d.lat),lng:Number(d.lng),src:"quartier"});return}
+  if(d.mpin){MAP.active=MAP.active===d.mpin?null:d.mpin;document.querySelectorAll(".result").forEach(x=>x.classList.toggle("on",x.dataset.hover===MAP.active));redraw();if(MAP.active)document.querySelector(`.result[data-hover="${d.mpin}"]`)?.scrollIntoView({behavior:"smooth",block:"nearest"});return}
+  if(d.cluster){const ids=d.cluster.split(",");const bs=ids.map(i=>BY[i]);const la=bs.reduce((a,b)=>a+b.lat,0)/bs.length,ln=bs.reduce((a,b)=>a+b.lng,0)/bs.length;flyTo(la,ln,MAP.z+1.6);MAP.moved=true;return}
+  if(d.mclose!==undefined){MAP.active=null;redraw();return}
+  if(d.zoom){zoomAt(Number(d.zoom),MAP.w/2,MAP.h/2);return}
+  if(d.locate!==undefined){flyTo(loc().lat,loc().lng,Math.max(MAP.z,15));return}
+  if(d.here!==undefined){const a=fromScreen(0,0),b=fromScreen(MAP.w,MAP.h);V.area={n:a.lat,w:a.lng,s:b.lat,e:b.lng};MAP.keepView=true;MAP.moved=false;render();toast(`${filtered().length} résultat${filtered().length>1?"s":""} dans cette zone`);return}
+  if(d.quick){const [k,v]=d.quick.split(":");refine(()=>{if(k==="openNow")V.openNow=!V.openNow;else{const val=["radius","minRating"].includes(k)?Number(v):v;V[k]=V[k]===val?F0[k]:val}});return}
+  if(d.set){const [k,v]=d.set.split(":");V[k]=k==="minRating"?Number(v):v;MAP.keepView=true;render();document.querySelector(".modal")&&(document.querySelector(".modal").innerHTML=drawer());return}
+  if(d.tag){const i=V.tags.indexOf(d.tag);i>=0?V.tags.splice(i,1):V.tags.push(d.tag);MAP.keepView=true;render();document.querySelector(".modal")&&(document.querySelector(".modal").innerHTML=drawer());return}
+  if(d.unset){refine(()=>{if(d.unset.startsWith("tag:"))V.tags=V.tags.filter(x=>x!==d.unset.slice(4));else V[d.unset]=Array.isArray(F0[d.unset])?[]:F0[d.unset]});return}
+  if(d.drawer!==undefined){const m=modal(drawer());m.classList.add("sheet");return}
+  if(d.view!==undefined){V.view=V.view==="map"?"list":"map";render();return}
+  if(d.ask){if(S.mode==="pro")S.mode="client";chatOpen=true;ask(d.ask);return}
+  if(d.preset){Object.assign(V,F0,{tags:[],avail:d.preset});go("recherche");return}
+  if(d.stop!==undefined){chatBusy?.abort();return}
   if(d.mode){S.mode=d.mode;save();if(d.mode==="client"&&V.page==="pro")V.page="accueil";go(S.mode==="pro"?"pro":V.page==="pro"?"accueil":V.page);return}
   if(d.go){S.mode="client";save();go(d.go);return}
-  if(d.cat!==undefined&&!d.biz){V.cat=d.cat||null;go("recherche");return}
+  if(d.cat!==undefined&&!d.biz){Object.assign(V,F0,{tags:[]});V.cat=d.cat||null;go("recherche");return}
   if(d.slot&&d.biz){V.biz=d.biz;const b=BY[d.biz];resetBK(b,d.slot);BK.svc=b.services[0].id;BK.variant=b.services[0].variants?0:null;go("fiche");return}
-  if(d.biz&&!d.slot){S.mode="client";V.biz=d.biz;BK=null;chatOpen=false;go("fiche");return}
+  if(d.biz&&!d.slot){S.mode="client";V.biz=d.biz;BK=null;if(innerWidth<760)chatOpen=false;go("fiche");return}
   if(d.rating!==undefined){V.minRating=Number(d.rating);render();return}
-  if(d.reset!==undefined){Object.assign(V,{q:"",cat:null,maxPrice:200,minRating:0,home:false,today:false});render();return}
+  if(d.reset!==undefined){Object.assign(V,F0,{tags:[]});render();const md=document.querySelector(".modal");if(md)md.innerHTML=drawer();return}
   if(d.pick||d.svc){BK.svc=d.pick||d.svc;BK.variant=null;BK.slot=null;rerenderBooking();if(d.pick)document.getElementById("booking").scrollIntoView({behavior:"smooth",block:"start"});return}
   if(d.var!==undefined){BK.variant=Number(d.var);BK.slot=null;rerenderBooking();return}
   if(d.day!==undefined){BK.day=Number(d.day);BK.slot=null;rerenderBooking();return}
@@ -627,20 +1097,22 @@ document.addEventListener("click",e=>{
     m.addEventListener("click",ev=>{if(ev.target.closest("[data-keep]"))toast("Offre appliquée : -50 % sur vos 3 prochaines factures.");if(ev.target.closest("[data-quit]")){S.plan="free";save();render();toast("Résiliation prise en compte à la fin de la période.")}});return}
   if(d.upgrade!==undefined){S.plan="pro";save();render();toast("Essai Pro activé pour 14 jours. Aucun débit avant la fin de l'essai.");return}
 });
-document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.matches("article.result,.pin")){e.target.click()}if(e.key==="Escape")document.querySelector(".modal-bg")?.remove()});
+document.addEventListener("pointerover",e=>{const r=e.target.closest?.(".result[data-hover]");if(!r||r.dataset.hover===MAP.hover)return;MAP.hover=r.dataset.hover;document.querySelectorAll(".mpin").forEach(p=>p.classList.toggle("hot",p.dataset.mpin===MAP.hover))});
+document.addEventListener("keydown",e=>{if(e.key==="/"&&!e.target.closest("input,textarea,select")){e.preventDefault();chatOpen=true;renderAssistant();document.getElementById("ci")?.focus()}if(e.key==="Escape")closePop();if(e.key==="Enter"&&e.target.matches("article.result,.pin")){e.target.click()}if(e.key==="Escape")document.querySelector(".modal-bg")?.remove()});
 document.addEventListener("input",e=>{
-  if(e.target.id==="fp"){V.maxPrice=Number(e.target.value);const p=document.activeElement.id;render();document.getElementById(p)?.focus()}
-  if(e.target.id==="sq"){V.q=e.target.value;clearTimeout(window.__sq);window.__sq=setTimeout(()=>{render();const el=document.getElementById("sq");el.focus();el.setSelectionRange(el.value.length,el.value.length)},250)}
+  if(e.target.id==="d-radius"){V.radius=Number(e.target.value);document.getElementById("d-radius-v").textContent=V.radius?fmtKm(V.radius):"illimitée";clearTimeout(window.__dr);window.__dr=setTimeout(()=>{MAP.keepView=true;render();const b=document.querySelector(".modal .btn-primary[data-close]");if(b)b.textContent=`Voir ${filtered().length} résultat${filtered().length>1?"s":""}`},120)}
+  if(e.target.id==="d-price"){V.maxPrice=Number(e.target.value);document.getElementById("d-price-v").textContent=V.maxPrice>=400?"illimité":V.maxPrice+" €";clearTimeout(window.__dp);window.__dp=setTimeout(()=>{MAP.keepView=true;render();const b=document.querySelector(".modal .btn-primary[data-close]");if(b)b.textContent=`Voir ${filtered().length} résultat${filtered().length>1?"s":""}`},120)}
+  if(e.target.id==="sq"){V.q=e.target.value;clearTimeout(window.__sq);window.__sq=setTimeout(()=>{const c=CATS.find(x=>norm(x.label)===norm(V.q.trim()));if(c){V.cat=c.slug;V.q=""}render();const el=document.getElementById("sq");el.focus();el.setSelectionRange(el.value.length,el.value.length)},220)}
 });
 document.addEventListener("change",e=>{
   if(e.target.id==="sort"){V.sort=e.target.value;render()}
-  if(e.target.id==="fh"){V.home=e.target.checked;render()}
-  if(e.target.id==="ft"){V.today=e.target.checked;render()}
+  if(e.target.id==="d-cat"){V.cat=e.target.value||null;MAP.keepView=false;render();const md=document.querySelector(".modal");if(md)md.innerHTML=drawer()}
   if(e.target.id==="staff"){BK.staff=e.target.value}
 });
 document.addEventListener("submit",e=>{
   e.preventDefault();const f=e.target;
-  if(f.id==="f-search"){V.q=document.getElementById("q").value;V.where=document.getElementById("where").value||"Lyon";const c=CATS.find(x=>norm(x.label)===norm(V.q.trim()));if(c){V.cat=c.slug;V.q=""}else V.cat=null;go("recherche")}
+  if(f.id==="f-search"||f.id==="f-search2"){const raw=(document.getElementById(f.id==="f-search"?"q":"sq").value||"").trim();const c=CATS.find(x=>norm(x.label)===norm(raw)||norm(x.label)+"s"===norm(raw));Object.assign(V,F0,{tags:[]});if(c)V.cat=c.slug;else V.q=raw;
+    const exact=B.find(b=>norm(b.name)===norm(raw));if(exact){V.biz=exact.id;BK=null;go("fiche");return}go("recherche")}
   if(f.id==="f-book"){const b=BY[V.biz];const q=quote(b);const name=document.getElementById("bn").value.trim(),email=document.getElementById("be").value.trim();
     if(!name||!/^\S+@\S+\.\S+$/.test(email)){toast("Indiquez votre nom et un email valide.");return}
     S.profile={name,email,phone:document.getElementById("bp").value.trim()};
@@ -654,7 +1126,7 @@ document.addEventListener("submit",e=>{
       m.addEventListener("click",ev=>{if(ev.target.closest("[data-pay]")){m.remove();finish()}})}
     else finish();
   }
-  if(f.id==="f-chat"){const i=document.getElementById("ci");const q=i.value.trim();if(!q)return;chat.push({me:true,t:q});chat.push(answer(q));renderAssistant();document.getElementById("ci")?.focus()}
+  if(f.id==="f-chat"){const i=document.getElementById("ci");const q=i.value.trim();if(!q)return;ask(q).then(()=>document.getElementById("ci")?.focus())}
   if(f.id==="f-redeem"){const raw=document.getElementById("rc").value.toUpperCase().replace(/[^A-Z0-9]/g,"");const c=(raw.match(/.{1,4}/g)||[]).join("-");const g=S.gifts.find(x=>x.code===c&&x.biz===PRO);const msg=document.getElementById("rc-msg");
     if(!g){msg.style.color="var(--bad)";msg.textContent="Code inconnu pour votre établissement.";return}
     if(g.status!=="active"){msg.style.color="var(--bad)";msg.textContent="Cette carte a déjà été utilisée.";return}

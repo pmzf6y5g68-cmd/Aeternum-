@@ -1,7 +1,8 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ArrowUpDown, SlidersHorizontal, X } from "lucide-react";
+import { useState } from "react";
+import { ArrowUpDown, LocateFixed, SlidersHorizontal, X } from "lucide-react";
 import { CATEGORIES, GROUPS } from "@/config/categories";
 import { fr } from "@/i18n/fr";
 
@@ -33,6 +34,28 @@ export function FiltersBar({ showCategory }: { showCategory: boolean }) {
     router.push(`${pathname}?${next.toString()}`);
   }
 
+  const [locating, setLocating] = useState(false);
+  function aroundMe() {
+    if (!("geolocation" in navigator)) return;
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocating(false);
+        const next = new URLSearchParams(params.toString());
+        next.set("lat", pos.coords.latitude.toFixed(5));
+        next.set("lng", pos.coords.longitude.toFixed(5));
+        next.set("ou", "Ma position");
+        if (!next.get("rayon")) next.set("rayon", "5");
+        next.set("tri", "distance");
+        next.delete("page");
+        router.push(`${pathname}?${next.toString()}`);
+      },
+      () => setLocating(false),
+      { enableHighAccuracy: true, timeout: 10_000, maximumAge: 60_000 },
+    );
+  }
+  const aroundActive = params.get("ou") === "Ma position";
+
   const activeCount = ["dispo", "mode", "prix_max", "rayon", "note"].filter((k) => params.get(k)).length + (showCategory && params.get("categorie") ? 1 : 0);
 
   return (
@@ -40,6 +63,9 @@ export function FiltersBar({ showCategory }: { showCategory: boolean }) {
       <span className="inline-flex shrink-0 items-center gap-1.5 pr-1 text-sm font-semibold text-ink">
         <SlidersHorizontal className="size-4" aria-hidden /> {t.filters}
       </span>
+      <button type="button" onClick={aroundMe} aria-pressed={aroundActive} className={`${aroundActive ? "chip-active" : "chip"} shrink-0`}>
+        <LocateFixed className={`size-3.5 ${locating ? "animate-pulse" : ""}`} aria-hidden /> Autour de moi
+      </button>
       {showCategory && (
         <Select name="categorie" value={get("categorie")} onChange={update} label={t.allCategories} active={Boolean(get("categorie"))}>
           <option value="">{t.allCategories}</option>

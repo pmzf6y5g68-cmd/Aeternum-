@@ -181,3 +181,15 @@ créneaux visibles dès les résultats, carte, fiche avec réservation pas à pa
   réservation en 5 étapes avec empreinte bancaire, cartes cadeaux, mes rendez-vous, assistant, espace pro (agenda
   venu/absent avec frais et remboursement, visibilité et score, rédaction de fiche, cartes cadeaux, partage, abonnement
   avec passage à l'annuel et offre de fidélité), thème clair/sombre, mobile.
+
+## M — Carte, « autour de moi » et compagnon IA ✅
+- **App** : carte des résultats (fond CARTO/OSM) avec zoom molette, « Autour de moi » (géolocalisation, rayon 5 km, tri distance),
+  « Rechercher dans cette zone » après déplacement (centre + rayon déduit de l'emprise), aperçu au clic (note, distance, lien
+  créneaux), point « vous êtes ici » + cercle de rayon, puce « Autour de moi » dans la barre de filtres.
+- **Démo v2** : carte vectorielle de Lyon (Web Mercator, Rhône/Saône à l'échelle, quais et ponts générés, parcs, grands axes,
+  quartiers), déplacement souris/doigt, zoom molette/pincement/double-clic/clavier, regroupement des pastilles, fiche flottante
+  avec créneaux, échelle, rayon, choix de position (GPS, quartier, point sur la carte), 26 établissements géolocalisés,
+  filtres détaillés (disponibilité, lieu, distance, prix, note, ouvert maintenant, équipements), tri (pertinence, distance,
+  disponibilité, prix, note, avis), synchronisation liste ↔ carte, vue carte plein écran sur mobile.
+- **Compagnon IA** (démo) : Claude via la capacité `sample` avec 3 outils de la page (chercher → applique les filtres et met la
+  carte à jour, détails, position), réponses en direct, bouton Stop, repli sur une recherche guidée sans IA.

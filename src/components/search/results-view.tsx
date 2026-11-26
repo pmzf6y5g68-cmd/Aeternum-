@@ -8,7 +8,7 @@ import { ResultCard } from "./result-card";
 import { ResultsMap, type MapPoint } from "./results-map";
 import type { SerializedResult } from "./types";
 
-export function ResultsView({ results, center }: { results: SerializedResult[]; center: { lat: number; lng: number } | null }) {
+export function ResultsView({ results, center, radiusKm = null }: { results: SerializedResult[]; center: { lat: number; lng: number } | null; radiusKm?: number | null }) {
   const [active, setActive] = useState<string | null>(null);
   const [showMap, setShowMap] = useState(false);
   const onHover = useCallback((id: string | null) => setActive(id), []);
@@ -23,6 +23,7 @@ export function ResultsView({ results, center }: { results: SerializedResult[]; 
           lng: r.lng as number,
           title: r.name,
           href: r.path,
+          subtitle: [r.rating_count > 0 ? `★ ${r.rating_avg.toFixed(1).replace(".", ",")} (${r.rating_count})` : null, r.distance_km !== null ? `${r.distance_km.toFixed(1).replace(".", ",")} km` : null, r.city].filter(Boolean).join(" · "),
           label: r.min_price_eur === null ? "•" : Number(r.min_price_eur) === 0 ? fr.common.free : formatEur(eurToCents(r.min_price_eur)),
         })),
     [results],
@@ -37,7 +38,7 @@ export function ResultsView({ results, center }: { results: SerializedResult[]; 
       </div>
       <div className={`${showMap ? "block" : "hidden"} lg:block`}>
         <div className="sticky top-36 h-[calc(100dvh-11rem)] overflow-hidden rounded-xl border border-line bg-white lg:top-24 lg:h-[calc(100dvh-7.5rem)]">
-          <ResultsMap points={points} center={center} activeId={active} onHover={onHover} />
+          <ResultsMap points={points} center={center} radiusKm={radiusKm} activeId={active} onHover={onHover} />
         </div>
       </div>
       <button

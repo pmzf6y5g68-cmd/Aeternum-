@@ -153,7 +153,7 @@ export async function SearchPage({ params, fixedCategory, fixedCity, title, intr
             </Link>
           </div>
         ) : (
-          <ResultsView results={results} center={lat !== null && lng !== null ? { lat, lng } : null} />
+          <ResultsView results={results} center={lat !== null && lng !== null ? { lat, lng } : null} radiusKm={num(params, "rayon")} />
         )}
 
         {response.pageCount > 1 && (

@@ -77,6 +77,38 @@ body {
   transform: translate(-50%, -50%);
   display: inline-block;
 }
+.price-pin:hover {
+  border-color: var(--color-brand);
+}
+.me-dot {
+  display: block;
+  width: 16px;
+  height: 16px;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  background: var(--color-brand);
+  border: 3px solid white;
+  box-shadow: 0 0 0 6px rgb(23 88 230 / 0.2);
+}
+.map-popup .leaflet-popup-content-wrapper {
+  border-radius: 12px;
+  box-shadow: var(--shadow-pop);
+}
+.map-popup .leaflet-popup-content {
+  margin: 10px 12px;
+}
+.map-card {
+  display: grid;
+  gap: 2px;
+  color: var(--color-ink) !important;
+  text-decoration: none;
+  font-size: 13px;
+}
+.map-card em {
+  font-style: normal;
+  font-weight: 700;
+  color: var(--color-brand);
+}
 .price-pin.active {
   background: var(--color-brand);
   color: white;
