@@ -18,7 +18,11 @@ interface Msg {
 }
 
 const STORAGE_KEY = "rdv-assistant";
-const SUGGESTIONS = ["Un coiffeur dispo demain soir près de moi", "Mes prochains rendez-vous", "Un garage pour une vidange cette semaine", "Comment annuler un rendez-vous ?"];
+const SUGGESTIONS = ["Qu'y a-t-il autour de chez moi ?", "Un coiffeur dispo demain soir près de moi", "Combien coûte une vidange ?", "Mes prochains rendez-vous"];
+/** Sur une fiche établissement (/metier/ville/slug), les questions qu'on se pose vraiment. */
+const BUSINESS_SUGGESTIONS = ["C'est ouvert maintenant ?", "Le prochain créneau libre ?", "Que disent les avis ?", "Quelles sont les conditions d'annulation ?"];
+const isBusinessPage = (p: string) => /^\/[a-z0-9-]+\/[a-z0-9-]+\/[a-z0-9-]{3,60}$/.test(p);
+const POSITION_KEY = "rdv_position";
 const WELCOME: Msg = { role: "assistant", content: "Bonjour ! Je trouve un professionnel et un créneau pour vous en quelques secondes. Que cherchez-vous ?" };
 
 const fmtDay = (d: string) => new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${d}T12:00:00Z`));
@@ -109,6 +113,13 @@ export function AssistantWidget() {
 
   useEffect(() => {
     try {
+      // Position déjà partagée sur l'accueil (« À côté de chez vous ») : réutilisée sans redemander.
+      const pos = JSON.parse(localStorage.getItem(POSITION_KEY) ?? "null") as { lat: number; lng: number } | null;
+      if (pos && Number.isFinite(pos.lat) && Number.isFinite(pos.lng)) setLocation({ lat: pos.lat, lng: pos.lng });
+    } catch {
+      // Stockage indisponible : position non mémorisée.
+    }
+    try {
       const saved = sessionStorage.getItem(STORAGE_KEY);
       if (saved) setMessages(JSON.parse(saved) as Msg[]);
     } catch {
@@ -158,7 +169,15 @@ export function AssistantWidget() {
 
   function shareLocation() {
     navigator.geolocation?.getCurrentPosition(
-      (p) => setLocation({ lat: p.coords.latitude, lng: p.coords.longitude }),
+      (p) => {
+        const pos = { lat: p.coords.latitude, lng: p.coords.longitude };
+        setLocation(pos);
+        try {
+          localStorage.setItem(POSITION_KEY, JSON.stringify(pos));
+        } catch {
+          // Stockage indisponible.
+        }
+      },
       () => undefined,
       { timeout: 8000, maximumAge: 300_000 },
     );
@@ -208,7 +227,7 @@ export function AssistantWidget() {
             )}
             {messages.length === 1 && (
               <div className="flex flex-wrap gap-2 pt-1">
-                {SUGGESTIONS.map((s) => (
+                {(isBusinessPage(pathname) ? BUSINESS_SUGGESTIONS : SUGGESTIONS).map((s) => (
                   <button key={s} type="button" onClick={() => send(s)} className="chip text-left text-xs">
                     {s}
                   </button>

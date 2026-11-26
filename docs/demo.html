@@ -905,7 +905,7 @@ function drawer(){
   <div class="fgroup"><span class="lbl">Métier</span><select class="input" id="d-cat"><option value="">Tous les métiers</option>${CATS.map(c=>`<option value="${c.slug}" ${V.cat===c.slug?"selected":""}>${c.label}</option>`).join("")}</select></div>
   <div class="fgroup"><span class="lbl">Disponibilité</span>${seg("avail",[["","Peu importe"],["today","Aujourd'hui"],["tomorrow","Demain"],["evening","En soirée (après 18 h)"],["weekend","Ce week-end"]])}</div>
   <div class="fgroup"><span class="lbl">Lieu du rendez-vous</span>${seg("mode",[["","Tous"],["on_site","Sur place"],["at_home","À domicile"],["online","En visio"]])}</div>
-  <div class="fgroup"><label class="lbl" for="d-radius">Distance maximum : <span class="tab" id="d-radius-v">${V.radius?fmtKm(V.radius):"illimitée"}</span></label><input type="range" id="d-radius" min="0" max="12" step="0.5" value="${V.radius}" style="width:100%"><span class="xs muted">Autour de ${esc(loc().label)}</span></div>
+  <div class="fgroup"><label class="lbl" for="d-radius">Distance maximum : <span class="tab" id="d-radius-v">${V.radius?fmtKm(V.radius):"illimitée"}</span></label><input type="range" id="d-radius" min="0" max="12" step="0.5" value="${V.radius}" style="width:100%"><span class="xs muted">Autour ${deLieu(esc(loc().label))}</span></div>
   <div class="fgroup"><label class="lbl" for="d-price">Prix maximum : <span class="tab" id="d-price-v">${V.maxPrice>=400?"illimité":V.maxPrice+" €"}</span></label><input type="range" id="d-price" min="10" max="400" step="5" value="${V.maxPrice}" style="width:100%"></div>
   <div class="fgroup"><span class="lbl">Note minimum</span>${seg("minRating",[[0,"Toutes"],[4,"4 ★"],[4.5,"4,5 ★"],[4.7,"4,7 ★"],[4.8,"4,8 ★"]])}</div>
   <div class="fgroup"><span class="lbl">Équipements et services</span><div class="row" style="gap:6px">${Object.entries(TAGS).filter(([k])=>k!=="new").map(([k,l])=>`<button class="chip" data-tag="${k}" aria-pressed="${V.tags.includes(k)}">${l}</button>`).join("")}<button class="chip" data-quick="openNow" aria-pressed="${V.openNow}">Ouvert maintenant</button></div></div>
@@ -914,9 +914,10 @@ function drawer(){
 
 // ---------- Compagnon IA (Claude via la page, outils de recherche réels) ----------
 let chatOpen=false,chat=[],chatBusy=null,sampleFn,sampleReady=false;
-const RULES=`Tu es le compagnon de Rendez-vous, une application de prise de rendez-vous à Lyon et Villeurbanne (coiffeurs, barbiers, instituts, massages, coachs, garages, detailing, plombiers, toilettage, cours, conseil, restaurants).
+const RULES=`Tu es le compagnon de Rendez-vous, l'application qui réunit tous les professionnels sur rendez-vous près de chez l'utilisateur, où qu'il habite en France, Belgique, Suisse, Luxembourg ou Monaco (coiffeurs, barbiers, instituts, massages, coachs, garages, detailing, plombiers, toilettage, cours, conseil, restaurants).
 Règles :
-- Utilise l'outil "chercher" pour toute demande de professionnel : il applique aussi les filtres à l'écran et met la carte à jour. Utilise "details" pour les prix, prestations, horaires et prochains créneaux d'un établissement précis, et "position" quand l'utilisateur indique un quartier.
+- Utilise l'outil "chercher" pour toute demande de professionnel : il applique aussi les filtres à l'écran et met la carte à jour. Utilise "details" pour les prix, prestations, horaires et prochains créneaux d'un établissement précis, "position" quand l'utilisateur indique sa ville ou son quartier, "autour" pour « qu'y a-t-il près de chez moi » (le plus proche dans chaque domaine) et "prix" pour « combien ça coûte en général ». Tu peux enchaîner plusieurs outils.
+- Quand l'utilisateur hésite, compare (prix, distance, note, prochain créneau) puis recommande clairement.
 - Réponds en français, vouvoiement, 1 à 4 phrases courtes, ton naturel. Pas d'emoji, pas de liste à puces sauf pour comparer 2 ou 3 établissements.
 - N'invente jamais un établissement, un prix, un horaire ou un avis : uniquement ce que renvoient les outils.
 - Tu ne réserves, ne paies et n'annules jamais à la place de l'utilisateur : indique le créneau et dis qu'il peut toucher la carte ou le créneau affiché pour réserver.
@@ -938,19 +939,34 @@ const TOOLS=()=>[
  {name:"details",description:"Détails d'un établissement par id : adresse, prestations avec prix et durée, horaires de la semaine, équipements, 6 prochains créneaux libres.",
   inputSchema:{type:"object",properties:{id:{type:"string"}},required:["id"]},
   execute(i){const b=BY[String(i.id)];if(!b)throw new Error("id inconnu");chatCards=[b.id];return {nom:b.name,adresse:b.addr,distance_km:dist(b),note:b.rating,nb_avis:b.reviews,etat:openState(b).label,lieux:b.modes,equipements:b.tags.map(t=>TAGS[t]),prestations:b.services.map(s=>({nom:s.name,prix_des:startPrice(s)/100,duree_min:s.dur,options:(s.variants||[]).map(v=>v[0])})),horaires:Object.fromEntries(Object.entries(hoursOf(b)).map(([d,h])=>[["dim","lun","mar","mer","jeu","ven","sam"][d],h.join("-")])),creneaux:nextSlots(b,6).map(s=>s.label),empreinte_bancaire_pct:b.guarantee||0,carte_cadeau:b.gift}}},
- {name:"position",description:"Place la position de l'utilisateur sur un quartier de Lyon (pour les distances). Renvoie le quartier retenu.",
-  inputSchema:{type:"object",properties:{quartier:{type:"string",enum:QUARTIERS.map(q=>q[0])}},required:["quartier"]},
-  execute(i){const q=QUARTIERS.find(x=>x[0]===i.quartier)||QUARTIERS.find(x=>norm(x[0]).includes(norm(String(i.quartier||"")).split(" ")[0]));if(!q)throw new Error("quartier inconnu");S.loc={label:q[0],lat:q[1],lng:q[2],src:"quartier"};save();return {position:q[0]}}}
+ {name:"position",description:"Place la position de l'utilisateur sur une ville (France, Belgique, Suisse, Luxembourg, Monaco) ou un quartier de Lyon. Recharge les établissements autour. Renvoie le lieu retenu.",
+  inputSchema:{type:"object",properties:{lieu:{type:"string",description:"Nom de ville ou de quartier"}},required:["lieu"]},
+  execute(i){const t=String(i.lieu||i.quartier||"");const q=QUARTIERS.find(x=>norm(x[0])===norm(t))||QUARTIERS.find(x=>norm(x[0]).includes(norm(t).split(" ")[0]));
+   if(q&&haversine({lat:q[1],lng:q[2]},LYON_C)<18&&/lyon|croix|part|confl|brott|guill|bell|vaise|ainay|terreaux|gerl|monplaisir|villeur/.test(norm(t))){setLoc({label:q[0],lat:q[1],lng:q[2],src:"quartier"});return {position:q[0]}}
+   const v=citySuggest(t)[0];if(!v)throw new Error("lieu inconnu");setLoc({label:vname(v),lat:v[1],lng:v[2],src:"ville"});return {position:vname(v),etablissements_autour:B.length}}},
+ {name:"autour",description:"Le plus proche de l'utilisateur dans chaque domaine (12 métiers), du plus près au plus loin : id, nom, métier, distance_km, note, prix_des, ouvert.",
+  inputSchema:{type:"object",properties:{}},
+  execute(){const near=CATS.map(c=>B.filter(b=>b.cat===c.slug).sort((a,b)=>dist(a)-dist(b))[0]).filter(Boolean).sort((a,b)=>dist(a)-dist(b));chatCards=near.slice(0,4).map(b=>b.id);go("accueil");
+   return {position:loc().label,domaines:near.map(b=>({id:b.id,nom:b.name,metier:catOf(b.cat).label,distance_km:dist(b),note:b.rating,prix_des:minPrice(b)/100,ouvert:openState(b).label}))}}},
+ {name:"prix",description:"Repères de prix d'un métier autour de l'utilisateur : nombre d'établissements, prix minimum, moyen et maximum (prix de départ), note moyenne.",
+  inputSchema:{type:"object",properties:{metier:{type:"string",enum:CATS.map(c=>c.slug)}},required:["metier"]},
+  execute(i){const l=B.filter(b=>b.cat===i.metier);if(!l.length)return {metier:i.metier,etablissements:0};const p=l.map(b=>minPrice(b)/100).sort((a,b)=>a-b);
+   return {metier:catOf(i.metier).label,position:loc().label,etablissements:l.length,prix_min:p[0],prix_moyen:Math.round(p.reduce((a,b)=>a+b,0)/p.length),prix_max:p[p.length-1],note_moyenne:Math.round(l.reduce((a,b)=>a+b.rating,0)/l.length*10)/10}}}
 ];
 let chatCards=[];
+function deLieu(l){l=String(l||"");return (/^[aeiouyàâéèêîôûh]/i.test(l)?"d'":"de ")+l}
 function localAnswer(q){
-  const n=norm(q);const c=CATS.find(x=>n.includes(norm(x.label).split(" ")[0].slice(0,6)));
+  const n=norm(q);
+  const cm=n.match(/(?:je suis|j'?habite|habite|je vis|j'?suis)\s+(?:a|au|en|sur|pres de)\s+([a-z' -]{2,40})/);
+  if(cm&&VILLES.length){const v=citySuggest(cm[1].trim())[0];if(v){setLoc({label:vname(v),lat:v[1],lng:v[2],src:"ville"});return `C'est noté : je cherche maintenant autour ${deLieu(vname(v))}. Dites-moi ce dont vous avez besoin (coiffeur, garage, cours…) ou demandez « qu'y a-t-il autour de moi ».`}}
+  if(/autour de (chez )?moi|pres de chez moi|a cote de chez moi/.test(n)&&!CATS.some(x=>n.includes(norm(x.label).split(" ")[0].slice(0,6)))){const r=TOOLS().find(t=>t.name==="autour").execute({});const f=r.domaines[0];return f?`Autour ${deLieu(r.position)}, j'ai trouvé un établissement dans ${r.domaines.length} domaines. Le plus proche : ${f.nom} (${f.metier}), à ${fmtKm(f.distance_km)}. Tout est affiché sur l'accueil, du plus près au plus loin.`:"Aucun établissement autour de cette position pour l'instant."}
+  if(/combien|prix moyen|ca coute|cher/.test(n)){const c0=CATS.find(x=>n.includes(norm(x.label).split(" ")[0].slice(0,6)));if(c0){const r=TOOLS().find(t=>t.name==="prix").execute({metier:c0.slug});if(r.etablissements)return `${r.metier} autour ${deLieu(r.position)} : ${r.etablissements} établissements, à partir de ${r.prix_min} € (prix de départ moyen ${r.prix_moyen} €, jusqu'à ${r.prix_max} €). Note moyenne ${String(r.note_moyenne).replace(".",",")} ★.`}}const c=CATS.find(x=>n.includes(norm(x.label).split(" ")[0].slice(0,6)));
   const qt=QUARTIERS.find(x=>n.includes(norm(x[0]).split(" ")[0]));if(qt)S.loc={label:qt[0],lat:qt[1],lng:qt[2],src:"quartier"};
   const pm=n.match(/(?:moins de|max(?:imum)?|<)\s*(\d+)/);
   Object.assign(V,F0,{cat:c?c.slug:null,q:c?"":q.replace(/[?!.]/g,"").split(" ").filter(w=>w.length>4).slice(0,1).join(""),avail:/ce soir|soiree/.test(n)?"evening":/aujourd|maintenant/.test(n)?"today":/demain/.test(n)?"tomorrow":/week/.test(n)?"weekend":"",mode:/domicile|chez moi/.test(n)?"at_home":/visio|en ligne/.test(n)?"online":"",maxPrice:pm?Number(pm[1]):400,sort:/mieux note|meilleur/.test(n)?"note":/pres|proche|autour/.test(n)?"distance":"pertinence"});
   let list=filtered();if(!list.length&&V.q){V.q="";list=filtered()}
   go("recherche",{view:"list"});chatCards=list.slice(0,3).map(b=>b.id);
-  return list.length?`J'ai trouvé ${list.length} résultat${list.length>1?"s":""} autour de ${loc().label}, affiché${list.length>1?"s":""} sur la carte. Le plus adapté : ${list[0].name}, ${fmtKm(dist(list[0]))}, ${list[0].rating.toLocaleString("fr-FR")} ★, prochain créneau ${nextSlots(list[0],1)[0]?.label||"la semaine prochaine"}.`:"Je n'ai rien trouvé avec ces critères. Essayez sans limite de prix ou un autre quartier.";
+  return list.length?`J'ai trouvé ${list.length} résultat${list.length>1?"s":""} autour ${deLieu(loc().label)}, affiché${list.length>1?"s":""} sur la carte. Le plus adapté : ${list[0].name}, ${fmtKm(dist(list[0]))}, ${list[0].rating.toLocaleString("fr-FR")} ★, prochain créneau ${nextSlots(list[0],1)[0]?.label||"la semaine prochaine"}.`:"Je n'ai rien trouvé avec ces critères. Essayez sans limite de prix ou un autre quartier.";
 }
 async function ask(q){
   q=q.trim();if(!q||chatBusy)return;chatOpen=true;chat.push({role:"user",content:q});chatCards=[];chat.push({role:"assistant",content:"",pending:true});renderAssistant();
@@ -968,7 +984,7 @@ function paintBubble(){const el=document.querySelector(".msg.bot.live");if(el){e
 function renderAssistant(){
   const el=document.getElementById("assistant");
   if(S.mode==="pro"){el.innerHTML="";return}
-  const sugg=["Un barbier ouvert ce soir près de moi","Massage à domicile moins de 70 €","Le garage le mieux noté","Prochain créneau chez Salon Élégance"];
+  const sugg=["Qu'y a-t-il autour de chez moi ?","Un barbier ouvert ce soir près de moi","Combien coûte un coiffeur ici ?","Massage à domicile moins de 70 €"];
   el.innerHTML=`${chatOpen?`<div class="chat" role="dialog" aria-label="Compagnon Rendez-vous">
     <div class="chat-head"><span class="ico" style="width:32px;height:32px">${icon("chat",'width="16" height="16"')}</span><div style="flex:1"><b>Compagnon Rendez-vous</b><div class="xs muted">${sampleFn?"Répond avec Claude et met à jour la carte":"Recherche guidée"}</div></div><button class="btn btn-ghost btn-sm" data-chat aria-label="Fermer">×</button></div>
     <div class="msgs" id="msgs">${chat.length?"":`<div class="msg bot">Bonjour. Dites-moi ce que vous cherchez, où et quand : je trouve les professionnels, je compare les prix et les créneaux, et j'affiche tout sur la carte.</div><div class="row" style="gap:6px">${sugg.map(s=>`<button class="chip" data-ask="${esc(s)}">${esc(s)}</button>`).join("")}</div>`}

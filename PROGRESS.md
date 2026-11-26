@@ -199,3 +199,10 @@ créneaux visibles dès les résultats, carte, fiche avec réservation pas à pa
 - `GET /api/nearby` (rayon 1–200 km, 1–10 par métier) et composant d'accueil `NearbyAllCategories` : partage de position en 1 geste (mémorisée sur l'appareil), rayon réglable, carte des plus proches, liens vers la recherche triée par distance.
 - Projet Supabase de production créé (UE, Paris) : schéma complet installé ; advisors sécurité traités (fonctions internes retirées de l'API, `search_path` figé). Les RPC publiques restantes (recherche, stats, à proximité) sont volontairement exposées et ne renvoient que des colonnes publiques.
 - Démo v3 (`docs/demo.html` + `docs/villes.json`) : fonctionne pour n'importe quelle commune de France, Belgique, Suisse, Luxembourg et Monaco (5 850 communes ≥ 2 000 hab., GeoNames CC BY). Hors Lyon, les établissements affichés sont des exemples générés.
+
+## C — Compagnon IA branché sur toute la base ✅
+- 4 nouveaux outils en lecture directe de la base (toujours à jour, aucune donnée figée) : `nearby_everything` (le plus proche dans chaque domaine, partout), `get_business_details` (ouvert maintenant, horaires, prestations, équipe, avis récents, conditions, carte cadeau), `price_overview` (repères de prix en direct), `get_my_favorites`.
+- Outils exécutés en parallèle ; prompt système stable mis en cache, contexte (heure, connexion, position, page consultée) en message système de fin.
+- Sur une fiche, « ici / ce salon » désigne l'établissement affiché ; suggestions adaptées à la page ; position partagée sur l'accueil réutilisée.
+- `openState` (ouvert maintenant, pause de midi) testé ; pages publiques rendues dynamiquement (données en direct).
+- Démo : outils `autour`, `prix`, `position` (n'importe quelle ville), repli sans IA qui comprend « j'habite à … ».
