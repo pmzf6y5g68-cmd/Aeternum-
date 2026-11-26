@@ -59,6 +59,8 @@ export interface Business {
   offpeak_end: string | null;
   lastminute_percent: number;
   lastminute_hours: number;
+  loyalty_every: number;
+  loyalty_percent: number;
   referral_code: string;
   referred_by: string | null;
   referral_rewarded_at: string | null;
@@ -69,7 +71,7 @@ export interface Business {
 
 /** Colonnes exposables publiquement (marketplace). Jamais de Stripe, d'email ou d'owner. */
 export const PUBLIC_BUSINESS_COLUMNS =
-  "id, slug, name, category, tagline, description, phone, website, address, postal_code, city, city_slug, lat, lng, modes, cover_url, highlights, payment_methods, free_radius_km, max_radius_km, price_per_extra_km, travel_buffer_minutes, slot_step_minutes, min_lead_minutes, max_days_ahead, cancellation_hours, deposit_enabled, deposit_percent, plan, stripe_connect_onboarded, min_price_eur, rating_avg, rating_count, published, locale, card_guarantee_enabled, no_show_fee_percent, gift_cards_enabled, offpeak_percent, offpeak_days, offpeak_start, offpeak_end, lastminute_percent, lastminute_hours" as const;
+  "id, slug, name, category, tagline, description, phone, website, address, postal_code, city, city_slug, lat, lng, modes, cover_url, highlights, payment_methods, free_radius_km, max_radius_km, price_per_extra_km, travel_buffer_minutes, slot_step_minutes, min_lead_minutes, max_days_ahead, cancellation_hours, deposit_enabled, deposit_percent, plan, stripe_connect_onboarded, min_price_eur, rating_avg, rating_count, published, locale, card_guarantee_enabled, no_show_fee_percent, gift_cards_enabled, offpeak_percent, offpeak_days, offpeak_start, offpeak_end, lastminute_percent, lastminute_hours, loyalty_every, loyalty_percent" as const;
 
 export type PublicBusiness = Omit<
   Business,
@@ -159,6 +161,7 @@ export interface Booking {
   reminder_sent: boolean;
   reschedule_count: number;
   discount_percent: number;
+  client_pack_id: string | null;
   beneficiary_name: string | null;
   risk_alert_sent: boolean;
   rebooking_sent: boolean;
@@ -178,6 +181,7 @@ export interface Review {
   rating: number;
   comment: string | null;
   reply: string | null;
+  photos: string[];
   created_at: string;
 }
 

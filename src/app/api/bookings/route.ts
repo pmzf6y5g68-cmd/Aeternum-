@@ -5,7 +5,8 @@ import { siteConfig } from "@/config/site";
 import { BookingInputError, locationSchema, resolveSelection } from "@/lib/booking-request";
 import { rankStaffByLoad } from "@/lib/domain/availability";
 import { commissionCents } from "@/lib/domain/commission";
-import { slotDiscountPercent } from "@/lib/domain/offers";
+import { loyaltyDiscountPercent, slotDiscountPercent } from "@/lib/domain/offers";
+import { PACK_ERRORS } from "@/lib/packs";
 import { centsToEur, computeQuote, formatEur } from "@/lib/domain/pricing";
 import { zonedDateString } from "@/lib/domain/time";
 import { BUSINESS_CONTACT_COLUMNS, sendBookingConfirmation, type BusinessContact } from "@/lib/email/booking-emails";
@@ -34,6 +35,7 @@ const schema = z
     client_phone: z.string().trim().min(6).max(30),
     client_notes: z.string().trim().max(500).optional().default(""),
     beneficiary_name: z.string().trim().max(80).optional().default(""),
+    pack_code: z.union([z.string().trim().toUpperCase().regex(/^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/), z.literal("")]).optional().default(""),
     source: z.enum(["marketplace", "direct", "assistant"]).default("marketplace"),
   })
   .refine((v) => v.location_type !== "at_home" || v.client_address.length >= 5, { path: ["client_address"] });
@@ -120,10 +122,26 @@ export async function POST(request: Request) {
   });
   const slot = window.days[0]?.slots.find((s) => new Date(s.startAt).getTime() === startAt.getTime());
   if (!slot) return jsonError("slot_taken", 409);
-  // Remise du créneau recalculée côté serveur (heures creuses / dernière minute).
-  const discount = slotDiscountPercent(new Date(slot.startAt), new Date(), offerRulesOf(business), siteConfig.booking.timeZone);
-  if (discount > 0) {
-    quote = computeQuote({ service: sel.service, variantKey: input.variant_key, addons: sel.addons, seats: sel.seats, locationType: input.location_type, distanceKm, business: pricingOf(business), discountPercent: discount });
+  const quoteInput = { service: sel.service, variantKey: input.variant_key, addons: sel.addons, seats: sel.seats, locationType: input.location_type, distanceKm, business: pricingOf(business) };
+  // Carnet : une séance débitée atomiquement (rendue si la création échoue ou si le RDV est annulé).
+  let clientPackId: string | null = null;
+  if (input.pack_code) {
+    if (sel.seats !== 1) return jsonError("pack_single_seat", 422);
+    const { data: packId, error: packError } = await createAdminClient().rpc("consume_pack_session", { p_code: input.pack_code, p_business_id: business.id, p_service_id: sel.service.id });
+    if (packError || !packId) {
+      const known = Object.entries(PACK_ERRORS).find(([key]) => packError?.message.includes(key));
+      return known ? jsonError(known[1].code, known[1].status) : jsonError("pack_invalid", 422);
+    }
+    clientPackId = String(packId);
+    quote = computeQuote({ ...quoteInput, coveredByPack: true });
+  } else {
+    // Remise du créneau (heures creuses / dernière minute) ou fidélité, la plus forte des deux, recalculée côté serveur.
+    let discount = slotDiscountPercent(new Date(slot.startAt), new Date(), offerRulesOf(business), siteConfig.booking.timeZone);
+    if (business.loyalty_every >= 2 && business.loyalty_percent > 0) {
+      const { count: completed } = await createAdminClient().from("bookings").select("id", { count: "exact", head: true }).eq("business_id", business.id).eq("client_email", input.client_email).eq("status", "completed");
+      discount = Math.max(discount, loyaltyDiscountPercent(completed ?? 0, business.loyalty_every, business.loyalty_percent));
+    }
+    if (discount > 0) quote = computeQuote({ ...quoteInput, discountPercent: discount });
   }
   const freeStaff = slot.staffIds.filter((s): s is string => s !== null);
   const candidates = sel.requestedStaffId ? [] : rankStaffByLoad(freeStaff, window.bookings, date, new Date(), siteConfig.booking.timeZone);
@@ -169,6 +187,7 @@ export async function POST(request: Request) {
     .single<Booking>();
 
   if (error || !booking) {
+    if (clientPackId) await admin.rpc("release_pack_session", { p_client_pack_id: clientPackId });
     const known = Object.entries(RPC_ERRORS).find(([key]) => error?.message.includes(key));
     if (known?.[0] === "QUOTA_EXCEEDED") {
       await alertQuotaBlocked(business.id, siteConfig.pricing.freeMonthlyBookings).catch((err) => logEvent("api.bookings.quotaAlert", errorMessage(err), {}, "warning"));
@@ -198,7 +217,7 @@ export async function POST(request: Request) {
   });
   await admin
     .from("bookings")
-    .update({ source: input.source, commission_eur: centsToEur(commission), discount_percent: quote.discountPercent, beneficiary_name: input.beneficiary_name || null })
+    .update({ source: input.source, commission_eur: centsToEur(commission), discount_percent: quote.discountPercent, beneficiary_name: input.beneficiary_name || null, client_pack_id: clientPackId })
     .eq("id", booking.id);
 
   // Profil usager mémorisé pour pré-remplir les prochaines réservations.

@@ -7,6 +7,7 @@ import { json, jsonError } from "@/lib/http";
 import { rewardReferralOnFirstPayment } from "@/lib/referral";
 import { confirmGuarantee } from "@/lib/guarantee";
 import { activateGiftCard } from "@/lib/gift-cards";
+import { activateClientPack } from "@/lib/packs";
 import { getStripe } from "@/lib/stripe";
 import { notifyPaymentFailed, notifyTrialEnding } from "@/lib/email/pro-emails";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -144,6 +145,7 @@ export async function POST(request: Request) {
         if (session.mode === "subscription") await handleSubscriptionCheckout(session);
         else if (session.mode === "setup") await confirmGuarantee(session, event.account);
         else if (session.mode === "payment" && session.metadata?.gift_card_id) await activateGiftCard(session, event.account);
+        else if (session.mode === "payment" && session.metadata?.client_pack_id) await activateClientPack(session, event.account);
         else if (session.mode === "payment") await confirmDeposit(session, event.account);
         break;
       }

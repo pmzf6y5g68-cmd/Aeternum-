@@ -3,7 +3,8 @@ import { SubmitButton } from "@/components/submit-button";
 import { fr } from "@/i18n/fr";
 import { requireBusiness } from "@/lib/pro";
 import type { Review } from "@/lib/supabase/types";
-import { replyReview } from "../actions";
+import { reviewPhotoUrl } from "@/lib/review-photos";
+import { removeReviewPhotos, replyReview } from "../actions";
 
 export default async function ReviewsPage() {
   const { supabase, business } = await requireBusiness();
@@ -25,6 +26,18 @@ export default async function ReviewsPage() {
             </div>
             <StarRow value={r.rating} />
             {r.comment && <p className="text-sm text-ink-soft">{r.comment}</p>}
+            {r.photos?.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
+                {r.photos.map((ph) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img key={ph} src={reviewPhotoUrl(ph)} alt="Photo du client" className="size-16 rounded-lg border border-line object-cover" />
+                ))}
+                <form action={removeReviewPhotos}>
+                  <input type="hidden" name="id" value={r.id} />
+                  <SubmitButton className="btn-ghost px-2 py-1 text-xs text-danger">Signaler et retirer les photos</SubmitButton>
+                </form>
+              </div>
+            )}
             <form action={replyReview} className="flex flex-col gap-2 sm:flex-row">
               <input type="hidden" name="id" value={r.id} />
               <input name="reply" defaultValue={r.reply ?? ""} maxLength={1500} placeholder="Répondre publiquement…" className="input" />

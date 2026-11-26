@@ -40,6 +40,18 @@ export function maxOfferPercent(rules: OfferRules): number {
 /** Prix remisé en centimes, arrondi à l'euro inférieur pour un prix lisible (jamais en dessous de 0). */
 export function discountedCents(cents: number, percent: number): number {
   if (percent <= 0) return cents;
-  const raw = Math.round((cents * (100 - clamp(percent))) / 100);
+  const raw = Math.round((cents * (100 - Math.max(0, Math.min(100, Math.round(percent))))) / 100);
   return Math.max(0, raw >= 100 ? Math.floor(raw / 100) * 100 : raw);
+}
+
+/** Fidélité : la N-ième visite honorée (N = every) reçoit `percent` %. `completed` = visites déjà honorées. */
+export function loyaltyDiscountPercent(completed: number, every: number, percent: number): number {
+  if (every < 2 || percent <= 0) return 0;
+  return (completed + 1) % every === 0 ? Math.min(100, Math.round(percent)) : 0;
+}
+
+/** Visites restantes avant la prochaine remise fidélité (0 = la prochaine est remisée). */
+export function visitsUntilReward(completed: number, every: number): number {
+  if (every < 2) return -1;
+  return (every - ((completed + 1) % every)) % every;
 }

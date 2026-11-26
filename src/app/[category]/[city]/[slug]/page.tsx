@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
-import { Clock, CreditCard, Gift, House, Info, MapPin, Monitor, Navigation, Phone, ShieldCheck, Store, UserRound } from "lucide-react";
+import { Clock, CreditCard, Gift, House, Info, MapPin, Monitor, Navigation, Phone, ShieldCheck, Store, Ticket, UserRound } from "lucide-react";
 import { Attribution } from "@/components/attribution";
 import { BusinessAvatar } from "@/components/business-avatar";
 import { FavoriteButton, ShareButton } from "@/components/favorite-button";
@@ -16,6 +16,8 @@ import { fr } from "@/i18n/fr";
 import { formatDuration, formatEur, startingPriceCents } from "@/lib/domain/pricing";
 import { isValidDateString, zonedDateString } from "@/lib/domain/time";
 import { loadCatalog, loadPublicBusiness, pricingOf } from "@/lib/marketplace";
+import { reviewPhotoUrl } from "@/lib/review-photos";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { businessPath } from "@/lib/slug";
 import { breadcrumbJsonLd, businessFaq, businessJsonLd, faqJsonLd, jsonLdScript } from "@/lib/seo";
 import { trackBusinessView } from "@/lib/stats";
@@ -58,7 +60,13 @@ export default async function BusinessPage({ params, searchParams }: { params: P
   if (biz.category !== category || (biz.city_slug || "france") !== city) permanentRedirect(canonical);
 
   const cat = getCategory(biz.category);
-  const [catalog, session] = await Promise.all([loadCatalog(biz), getCurrentUser().catch(() => ({ user: null, supabase: null })), trackBusinessView(biz.id)]);
+  const [catalog, session, , packsRes] = await Promise.all([
+    loadCatalog(biz),
+    getCurrentUser().catch(() => ({ user: null, supabase: null })),
+    trackBusinessView(biz.id),
+    biz.stripe_connect_onboarded ? createAdminClient().from("packs").select("service_id").eq("business_id", biz.id).eq("active", true).returns<{ service_id: string }[]>() : Promise.resolve({ data: [] as { service_id: string }[] }),
+  ]);
+  const packServiceIds = [...new Set((packsRes.data ?? []).map((p) => p.service_id))];
   const user = session.user;
   let isFavorite = false;
   let profile: CustomerProfile | null = null;
@@ -124,6 +132,11 @@ export default async function BusinessPage({ params, searchParams }: { params: P
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
+            {packServiceIds.length > 0 && (
+              <Link href={`/carnet/${biz.slug}`} className="inline-flex items-center gap-2 rounded-lg bg-white/15 px-3.5 py-2 text-sm font-semibold text-white hover:bg-white/25">
+                <Ticket className="size-4" aria-hidden /> Carnets
+              </Link>
+            )}
             {biz.gift_cards_enabled && biz.stripe_connect_onboarded && (
               <Link href={`/carte-cadeau/${biz.slug}`} className="inline-flex items-center gap-2 rounded-lg bg-white/15 px-3.5 py-2 text-sm font-semibold text-white hover:bg-white/25">
                 <Gift className="size-4" aria-hidden /> Offrir
@@ -149,7 +162,7 @@ export default async function BusinessPage({ params, searchParams }: { params: P
             {catalog.services.length ? (
               <BookingWidget
                 key={sp.service ?? "default"}
-                business={{ slug: biz.slug, path: canonical, name: biz.name, modes: biz.modes, address: biz.address, pricing: pricingOf(biz) }}
+                business={{ slug: biz.slug, path: canonical, name: biz.name, modes: biz.modes, address: biz.address, pricing: pricingOf(biz), packServiceIds }}
                 services={catalog.services}
                 addons={catalog.addons}
                 staff={catalog.staff}
@@ -328,6 +341,16 @@ export default async function BusinessPage({ params, searchParams }: { params: P
                     </div>
                     <StarRow value={r.rating} />
                     {r.comment && <p className="mt-1 text-sm text-ink-soft">{r.comment}</p>}
+                    {r.photos?.length > 0 && (
+                      <div className="mt-2 flex gap-2">
+                        {r.photos.map((ph) => (
+                          <a key={ph} href={reviewPhotoUrl(ph)} target="_blank" rel="noopener noreferrer" className="block size-20 overflow-hidden rounded-lg border border-line">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={reviewPhotoUrl(ph)} alt={`Photo de ${r.author_name}`} loading="lazy" className="size-full object-cover" />
+                          </a>
+                        ))}
+                      </div>
+                    )}
                     {r.reply && (
                       <p className="mt-2 rounded-lg bg-canvas p-3 text-sm">
                         <span className="font-semibold">{b.reply} : </span>
@@ -361,12 +384,13 @@ export default async function BusinessPage({ params, searchParams }: { params: P
 const DAY_SHORT = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
 
 /** « −20 % mar., mer. 14h–16h · −30 % dernière minute » : les offres en clair, sans astérisque. */
-function offerText(b: { offpeak_percent: number; offpeak_days: number[]; offpeak_start: string | null; offpeak_end: string | null; lastminute_percent: number; lastminute_hours: number }): string | null {
+function offerText(b: { offpeak_percent: number; offpeak_days: number[]; offpeak_start: string | null; offpeak_end: string | null; lastminute_percent: number; lastminute_hours: number; loyalty_every: number; loyalty_percent: number }): string | null {
   const parts: string[] = [];
   if (b.offpeak_percent > 0 && b.offpeak_start && b.offpeak_end && b.offpeak_days.length) {
     const days = [1, 2, 3, 4, 5, 6, 0].filter((d) => b.offpeak_days.includes(d)).map((d) => DAY_SHORT[d]).join(" ");
     parts.push(`−${b.offpeak_percent} % ${days} ${b.offpeak_start.slice(0, 5).replace(":", "h")}–${b.offpeak_end.slice(0, 5).replace(":", "h")}`);
   }
   if (b.lastminute_percent > 0) parts.push(`−${b.lastminute_percent} % à moins de ${b.lastminute_hours} h`);
+  if (b.loyalty_every >= 2 && b.loyalty_percent > 0) parts.push(b.loyalty_percent >= 100 ? `${b.loyalty_every}e visite offerte` : `${b.loyalty_every}e visite −${b.loyalty_percent} %`);
   return parts.length ? parts.join(" · ") : null;
 }

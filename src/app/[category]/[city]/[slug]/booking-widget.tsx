@@ -18,6 +18,8 @@ export interface WidgetBusiness {
   modes: LocationMode[];
   address: string | null;
   pricing: BusinessForPricing;
+  /** Prestations vendues en carnet : on propose la saisie du code. */
+  packServiceIds?: string[];
 }
 
 interface Slot {
@@ -43,6 +45,11 @@ const ERRORS: Record<string, string> = {
   address_not_found: t.addressNotFound,
   blocked_no_show: t.blocked,
   rate_limited: "Trop de tentatives en peu de temps. Patientez quelques minutes puis réessayez.",
+  pack_invalid: "Ce code de carnet n'est pas valable chez cet établissement.",
+  pack_wrong_service: "Ce carnet est valable pour une autre prestation : choisissez-la en étape 1.",
+  pack_expired: "Ce carnet a expiré.",
+  pack_empty: "Toutes les séances de ce carnet ont été utilisées.",
+  pack_single_seat: "Un carnet couvre une seule place par réservation.",
 };
 
 function Waitlist({ businessSlug, serviceId, from, prefill }: { businessSlug: string; serviceId: string | null; from: string; prefill: { name: string; email: string } }) {
@@ -189,7 +196,8 @@ export function BookingWidget({
   const [nextAvailable, setNextAvailable] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [slot, setSlot] = useState<Slot | null>(null);
-  const [contact, setContact] = useState({ name: prefill.name, email: prefill.email, phone: prefill.phone, notes: "", forName: "" });
+  const [contact, setContact] = useState({ name: prefill.name, email: prefill.email, phone: prefill.phone, notes: "", forName: "", packCode: "" });
+  const [usePack, setUsePack] = useState(false);
   const [forSomeone, setForSomeone] = useState(false);
   const [editing, setEditing] = useState<StepKey | null>(null);
   const [busy, setBusy] = useState(false);
@@ -244,6 +252,8 @@ export function BookingWidget({
   const openStep: StepKey = editing && steps.includes(editing) ? editing : firstOpen;
   const slotReady = steps.slice(0, steps.indexOf("slot")).every(isDone);
 
+  const packAvailable = Boolean(service && business.packServiceIds?.includes(service.id));
+  const packActive = packAvailable && usePack && /^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(contact.packCode.trim());
   const quote = useMemo(() => {
     if (!service || !effectiveLocation) return null;
     if (hasVariants && !variantKey) return null;
@@ -257,12 +267,13 @@ export function BookingWidget({
         locationType: effectiveLocation,
         distanceKm: effectiveLocation === "at_home" ? (distance?.distance_km ?? null) : null,
         business: business.pricing,
-        discountPercent: slot?.discount ?? 0,
+        discountPercent: packActive ? 0 : (slot?.discount ?? 0),
+        coveredByPack: packActive,
       });
     } catch {
       return null;
     }
-  }, [service, variantKey, chosenAddons, seats, groupService, effectiveLocation, distance, hasVariants, business.pricing, slot]);
+  }, [service, variantKey, chosenAddons, seats, groupService, effectiveLocation, distance, hasVariants, business.pricing, slot, packActive]);
 
   const visibleDays = 5;
   useEffect(() => {
@@ -338,6 +349,7 @@ export function BookingWidget({
           client_phone: contact.phone,
           client_notes: contact.notes,
           beneficiary_name: forSomeone ? contact.forName.trim() : "",
+          pack_code: packActive ? contact.packCode.trim().toUpperCase() : "",
           source: readSource(business.slug),
         }),
       });
@@ -719,6 +731,24 @@ export function BookingWidget({
           <input required minLength={2} maxLength={80} placeholder={t.name} autoComplete="name" value={contact.name} onChange={(e) => setContact({ ...contact, name: e.target.value })} className="input" />
           <input required type="email" placeholder={t.email} autoComplete="email" value={contact.email} onChange={(e) => setContact({ ...contact, email: e.target.value })} className="input" />
           <input required type="tel" minLength={6} placeholder={t.phone} autoComplete="tel" value={contact.phone} onChange={(e) => setContact({ ...contact, phone: e.target.value })} className="input" />
+          {packAvailable && (
+            <>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={usePack} onChange={(e) => setUsePack(e.target.checked)} className="size-4 accent-[#1758E6]" />
+                J&apos;ai un carnet de séances
+              </label>
+              {usePack && (
+                <input
+                  required
+                  placeholder="Code du carnet (XXXX-XXXX-XXXX)"
+                  pattern="[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}"
+                  value={contact.packCode}
+                  onChange={(e) => setContact({ ...contact, packCode: e.target.value.toUpperCase().slice(0, 14) })}
+                  className="input font-mono tracking-wider"
+                />
+              )}
+            </>
+          )}
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={forSomeone} onChange={(e) => setForSomeone(e.target.checked)} className="size-4 accent-[#1758E6]" />
             Je réserve pour quelqu&apos;un d&apos;autre (enfant, proche…)
@@ -754,6 +784,12 @@ export function BookingWidget({
                 <div className="flex justify-between text-ink-soft">
                   <span>{t.travelFee}</span>
                   <span>{quote.travelFeeCents > 0 ? formatEur(quote.travelFeeCents) : t.travelFree}</span>
+                </div>
+              )}
+              {packActive && (
+                <div className="flex justify-between font-semibold text-success">
+                  <span>Séance du carnet</span>
+                  <span>incluse</span>
                 </div>
               )}
               {quote.discountPercent > 0 && (

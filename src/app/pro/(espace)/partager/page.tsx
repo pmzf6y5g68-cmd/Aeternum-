@@ -13,6 +13,7 @@ export default async function SharePage() {
   const { count: referrals } = await createAdminClient().from("businesses").select("id", { count: "exact", head: true }).eq("referred_by", business.id);
   const refLink = referralUrl(business.referral_code);
   const url = shareBusinessUrl(business);
+  const googleLink = `${url}&utm_source=google&utm_medium=business_profile`;
   const qr = await QRCode.toDataURL(url, { width: 640, margin: 2, color: { dark: "#0B1F3A", light: "#FFFFFF" } });
   const short = url.replace(/^https?:\/\//, "").replace("?via=pro", "");
   const voicemail = `Bonjour, vous êtes bien chez ${business.name}. Je ne peux pas vous répondre pour le moment. Le plus rapide pour prendre rendez-vous, c'est en ligne sur ${short} : vous verrez le prix et mes disponibilités en temps réel. À très vite !`;
@@ -90,11 +91,27 @@ export default async function SharePage() {
         </div>
       </section>
       <div className="grid gap-5 sm:grid-cols-2">
-        <section className="card">
+        <section className="card md:col-span-2">
           <h2 className="flex items-center gap-2 font-bold">
-            <MapPinned className="size-4 text-brand" aria-hidden /> Google Maps
+            <MapPinned className="size-4 text-brand" aria-hidden /> Bouton « Réserver » sur Google Maps et Google Recherche
           </h2>
-          <p className="mt-2 text-sm text-ink-soft">Fiche Google Business › Modifier le profil › Liens de réservation : collez votre lien.</p>
+          <p className="mt-1 text-sm text-ink-soft">Les clients qui vous trouvent sur Google réservent en 1 clic, sans appeler. 2 minutes, gratuit.</p>
+          <ol className="mt-3 list-decimal space-y-1.5 pl-5 text-sm">
+            <li>
+              Ouvrez{" "}
+              <a href="https://business.google.com/" target="_blank" rel="noopener noreferrer" className="font-semibold text-brand underline">
+                business.google.com
+              </a>{" "}
+              (ou cherchez le nom de votre établissement sur Google en étant connecté).
+            </li>
+            <li>Cliquez sur « Modifier le profil », puis sur « Réservations » (ou « Liens de réservation »).</li>
+            <li>Collez votre lien ci-dessous et enregistrez. Le bouton apparaît sous quelques jours.</li>
+          </ol>
+          <div className="mt-3 flex items-center gap-2 rounded-lg bg-canvas p-2.5">
+            <code className="min-w-0 flex-1 truncate text-sm">{googleLink}</code>
+            <CopyButton value={googleLink} />
+          </div>
+          <p className="mt-2 text-xs text-ink-soft">Les réservations venues de ce lien sont comptées comme vos propres clients : jamais de commission.</p>
         </section>
         <section className="card">
           <h2 className="flex items-center gap-2 font-bold">

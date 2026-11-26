@@ -450,6 +450,13 @@ export async function redeemGiftCard(_prev: RedeemState, formData: FormData): Pr
 
 const timeOrNull = z.preprocess((v) => (v === "" || v === null ? null : v), z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable());
 
+/** Fidélité : 0 = désactivée ; sinon la N-ième visite honorée reçoit la remise (100 % = offerte). */
+function loyaltyFrom(formData: FormData): { loyalty_every: number; loyalty_percent: number } {
+  const every = Math.round(num(0, 20).parse(formData.get("loyalty_every") || 0));
+  const percent = Math.round(num(0, 100).parse(formData.get("loyalty_percent") || 0));
+  return every >= 3 && percent > 0 ? { loyalty_every: every, loyalty_percent: percent } : { loyalty_every: 0, loyalty_percent: 0 };
+}
+
 /** Offres heures creuses / dernière minute : remplissent les trous de l'agenda (remise appliquée côté serveur). */
 export async function updateOffers(formData: FormData): Promise<void> {
   const { supabase, business } = await requireBusiness();
@@ -466,8 +473,49 @@ export async function updateOffers(formData: FormData): Promise<void> {
       offpeak_end: valid ? end : null,
       lastminute_percent: Math.round(num(0, 50).parse(formData.get("lastminute_percent") || 0)),
       lastminute_hours: Math.round(num(1, 72).parse(formData.get("lastminute_hours") || 24)),
+      ...loyaltyFrom(formData),
     })
     .eq("id", business.id);
   if (error) await logEvent("pro.updateOffers", error.message);
   revalidatePath("/pro/visibilite");
+}
+
+const packSchema = z.object({
+  service_id: z.uuid(),
+  name: z.string().trim().min(2).max(80),
+  sessions: z.coerce.number().int().min(2).max(50),
+  price_eur: z.coerce.number().min(5).max(5000),
+  validity_days: z.coerce.number().int().min(30).max(730),
+});
+
+/** Nouveau carnet de séances (vendu en ligne, séances déduites automatiquement). */
+export async function createPack(formData: FormData): Promise<void> {
+  const { business } = await requireBusiness();
+  const input = packSchema.parse(Object.fromEntries(formData));
+  const admin = createAdminClient();
+  const { data: service } = await admin.from("services").select("id").eq("id", input.service_id).eq("business_id", business.id).maybeSingle();
+  if (!service) return;
+  const { error } = await admin.from("packs").insert({ business_id: business.id, ...input, price_eur: Math.round(input.price_eur * 100) / 100 });
+  if (error) await logEvent("pro.createPack", error.message);
+  revalidatePath("/pro/carnets");
+}
+
+export async function togglePack(formData: FormData): Promise<void> {
+  const { business } = await requireBusiness();
+  const id = z.uuid().parse(formData.get("id"));
+  await createAdminClient().from("packs").update({ active: formData.get("active") === "1" }).eq("id", id).eq("business_id", business.id);
+  revalidatePath("/pro/carnets");
+}
+
+/** Modération : le pro retire les photos d'un avis (contenu inapproprié) ; l'avis et la note restent. */
+export async function removeReviewPhotos(formData: FormData): Promise<void> {
+  const { business } = await requireBusiness();
+  const id = z.uuid().parse(formData.get("id"));
+  const admin = createAdminClient();
+  const { data: review } = await admin.from("reviews").select("photos").eq("id", id).eq("business_id", business.id).maybeSingle<{ photos: string[] }>();
+  if (!review?.photos.length) return;
+  await admin.storage.from("review-photos").remove(review.photos);
+  await admin.from("reviews").update({ photos: [] }).eq("id", id);
+  await logEvent("pro.removeReviewPhotos", "photos retirées", { review_id: id, business_id: business.id }, "info");
+  revalidatePath("/pro/avis");
 }

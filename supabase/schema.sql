@@ -1064,3 +1064,117 @@ alter table public.businesses add column if not exists lastminute_percent smalli
 alter table public.businesses add column if not exists lastminute_hours smallint not null default 24 check (lastminute_hours between 1 and 72);
 alter table public.bookings add column if not exists discount_percent smallint not null default 0 check (discount_percent between 0 and 50);
 grant update (offpeak_percent, offpeak_days, offpeak_start, offpeak_end, lastminute_percent, lastminute_hours) on public.businesses to authenticated;
+
+-- ---------------------------------------------------------------------
+-- Carnets de séances (« 10 cours ») : vendus par le pro via Stripe Connect
+-- ---------------------------------------------------------------------
+create table if not exists public.packs (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid not null references public.businesses(id) on delete cascade,
+  service_id uuid not null references public.services(id) on delete cascade,
+  name text not null check (char_length(name) between 2 and 80),
+  sessions smallint not null check (sessions between 2 and 50),
+  price_eur numeric(10,2) not null check (price_eur between 5 and 5000),
+  validity_days smallint not null default 365 check (validity_days between 30 and 730),
+  active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+create index if not exists packs_business_idx on public.packs (business_id) where active;
+create index if not exists packs_service_idx on public.packs (service_id);
+alter table public.packs enable row level security;
+drop policy if exists packs_public_read on public.packs;
+create policy packs_public_read on public.packs for select using (active or public.owns_business(business_id));
+revoke insert, update, delete on public.packs from anon, authenticated;
+
+create table if not exists public.client_packs (
+  id uuid primary key default gen_random_uuid(),
+  pack_id uuid references public.packs(id) on delete set null,
+  business_id uuid not null references public.businesses(id) on delete cascade,
+  service_id uuid not null references public.services(id) on delete cascade,
+  code text not null unique check (code ~ '^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$'),
+  name text not null,
+  buyer_name text not null,
+  buyer_email text not null,
+  user_id uuid references auth.users(id) on delete set null,
+  sessions_total smallint not null check (sessions_total between 2 and 50),
+  sessions_left smallint not null check (sessions_left between 0 and 50),
+  price_eur numeric(10,2) not null,
+  status text not null default 'pending' check (status in ('pending', 'active', 'cancelled')),
+  stripe_checkout_session_id text unique,
+  expires_at timestamptz,
+  created_at timestamptz not null default now(),
+  check (sessions_left <= sessions_total)
+);
+create index if not exists client_packs_business_idx on public.client_packs (business_id, created_at desc);
+create index if not exists client_packs_service_idx on public.client_packs (service_id);
+create index if not exists client_packs_pack_idx on public.client_packs (pack_id);
+create index if not exists client_packs_user_idx on public.client_packs (user_id);
+alter table public.client_packs enable row level security;
+drop policy if exists client_packs_owner_select on public.client_packs;
+create policy client_packs_owner_select on public.client_packs for select using (public.owns_business(business_id) or (select auth.uid()) = user_id);
+revoke insert, update, delete on public.client_packs from anon, authenticated;
+
+alter table public.bookings add column if not exists client_pack_id uuid references public.client_packs(id) on delete set null;
+create index if not exists bookings_client_pack_idx on public.bookings (client_pack_id) where client_pack_id is not null;
+
+-- Débit atomique d'une séance (verrou sur la ligne) : renvoie l'id du carnet, ou une erreur explicite.
+create or replace function public.consume_pack_session(p_code text, p_business_id uuid, p_service_id uuid)
+returns uuid
+language plpgsql security definer set search_path = public
+as $$
+declare v public.client_packs;
+begin
+  select * into v from public.client_packs where code = upper(trim(p_code)) for update;
+  if not found or v.business_id <> p_business_id or v.status <> 'active' then raise exception 'PACK_INVALID' using errcode = 'P0001'; end if;
+  if v.service_id <> p_service_id then raise exception 'PACK_WRONG_SERVICE' using errcode = 'P0001'; end if;
+  if v.expires_at is not null and v.expires_at < now() then raise exception 'PACK_EXPIRED' using errcode = 'P0001'; end if;
+  if v.sessions_left <= 0 then raise exception 'PACK_EMPTY' using errcode = 'P0001'; end if;
+  update public.client_packs set sessions_left = sessions_left - 1 where id = v.id;
+  return v.id;
+end;
+$$;
+create or replace function public.release_pack_session(p_client_pack_id uuid)
+returns void
+language sql security definer set search_path = public
+as $$ update public.client_packs set sessions_left = least(sessions_total, sessions_left + 1) where id = p_client_pack_id; $$;
+revoke all on function public.consume_pack_session(text, uuid, uuid) from public, anon, authenticated;
+revoke all on function public.release_pack_session(uuid) from public, anon, authenticated;
+grant execute on function public.consume_pack_session(text, uuid, uuid) to service_role;
+grant execute on function public.release_pack_session(uuid) to service_role;
+
+-- Toute annulation (client, pro, système) rend la séance au carnet ; une absence la consomme.
+create or replace function public.trg_bookings_pack_release() returns trigger
+language plpgsql security definer set search_path = public
+as $$
+begin
+  if new.client_pack_id is not null and new.status = 'cancelled' and old.status <> 'cancelled' then
+    perform public.release_pack_session(new.client_pack_id);
+  end if;
+  return new;
+end;
+$$;
+revoke all on function public.trg_bookings_pack_release() from public, anon, authenticated;
+drop trigger if exists bookings_pack_release on public.bookings;
+create trigger bookings_pack_release after update of status on public.bookings
+  for each row execute function public.trg_bookings_pack_release();
+
+-- ---------------------------------------------------------------------
+-- Fidélité : la N-ième visite honorée donne droit à une remise (ex. 10e visite −50 %)
+-- ---------------------------------------------------------------------
+alter table public.businesses add column if not exists loyalty_every smallint not null default 0 check (loyalty_every = 0 or loyalty_every between 3 and 20);
+alter table public.businesses add column if not exists loyalty_percent smallint not null default 0 check (loyalty_percent between 0 and 100);
+grant update (loyalty_every, loyalty_percent) on public.businesses to authenticated;
+alter table public.bookings drop constraint if exists bookings_discount_percent_check;
+alter table public.bookings add constraint bookings_discount_percent_check check (discount_percent between 0 and 100);
+
+-- ---------------------------------------------------------------------
+-- Photos dans les avis (stockage public, 3 maximum, chemins validés côté serveur)
+-- ---------------------------------------------------------------------
+alter table public.reviews add column if not exists photos text[] not null default '{}' check (cardinality(photos) <= 3);
+do $$ begin
+  if exists (select 1 from information_schema.tables where table_schema = 'storage' and table_name = 'buckets') then
+    insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+    values ('review-photos', 'review-photos', true, 5242880, array['image/jpeg', 'image/png', 'image/webp'])
+    on conflict (id) do update set public = true, file_size_limit = 5242880, allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp'];
+  end if;
+end $$;

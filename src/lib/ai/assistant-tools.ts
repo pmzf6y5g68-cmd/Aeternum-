@@ -229,7 +229,11 @@ async function businessDetails(raw: unknown): Promise<ToolOutcome> {
   const { business_slug } = detailsInput.parse(raw);
   const b = await loadPublicBusiness(business_slug);
   if (!b) return { content: JSON.stringify({ error: "Établissement introuvable." }) };
-  const catalog = await loadCatalog(b);
+  const [catalog, { data: packRows }] = await Promise.all([
+    loadCatalog(b),
+    createAdminClient().from("packs").select("name, sessions, price_eur").eq("business_id", b.id).eq("active", true).returns<{ name: string; sessions: number; price_eur: number }[]>(),
+  ]);
+  const packs = b.stripe_connect_onboarded ? (packRows ?? []) : [];
   const now = openState(catalog.hours, new Date(), siteConfig.booking.timeZone);
   const path = businessPath(b);
   return {
@@ -258,8 +262,10 @@ async function businessDetails(raw: unknown): Promise<ToolOutcome> {
       offers: {
         off_peak: b.offpeak_percent > 0 && b.offpeak_start && b.offpeak_end && b.offpeak_days.length ? { percent: b.offpeak_percent, weekdays_0_sunday: b.offpeak_days, from: b.offpeak_start.slice(0, 5), to: b.offpeak_end.slice(0, 5) } : null,
         last_minute: b.lastminute_percent > 0 ? { percent: b.lastminute_percent, within_hours: b.lastminute_hours } : null,
+        loyalty: b.loyalty_every >= 2 && b.loyalty_percent > 0 ? { every_n_visits: b.loyalty_every, percent: b.loyalty_percent } : null,
         note: "Remises fixées par l'établissement, appliquées automatiquement au créneau concerné (les créneaux remisés portent un badge).",
       },
+      packs: packs.map((p) => ({ name: p.name, sessions: p.sessions, price_eur: p.price_eur, buy: `/carnet/${b.slug}` })),
       gift_cards: b.gift_cards_enabled && b.stripe_connect_onboarded ? `/carte-cadeau/${b.slug}` : null,
       page: path,
     }),

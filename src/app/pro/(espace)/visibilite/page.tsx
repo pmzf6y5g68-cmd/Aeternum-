@@ -105,7 +105,7 @@ export default async function VisibilityPage() {
       <section id="offres" className="card scroll-mt-24 space-y-4">
         <div>
           <h2 className="flex items-center gap-2 font-bold">
-            <Percent className="size-4 text-brand" aria-hidden /> Remplir les heures creuses
+            <Percent className="size-4 text-brand" aria-hidden /> Remplir les heures creuses et fidéliser
           </h2>
           <p className="mt-1 text-sm text-ink-soft">
             Une remise sur vos créneaux calmes ou de dernière minute : ils s&apos;affichent avec un badge « −20 % » et passent en tête quand un client cherche une promo. La remise est calculée automatiquement à la réservation, jamais sur les frais de déplacement.
@@ -158,6 +158,33 @@ export default async function VisibilityPage() {
                 <input id="lastminute_percent" name="lastminute_percent" type="number" min={0} max={50} step={5} defaultValue={business.lastminute_percent} className="input pr-8" />
                 <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-ink-soft">%</span>
               </div>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-end gap-3 rounded-xl border border-line p-4">
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold">Fidélité</p>
+              <p className="mt-1 text-xs text-ink-soft">Récompensez les habitués automatiquement : la remise s&apos;applique d&apos;elle-même à la bonne visite, et le client voit sa progression dans son compte.</p>
+            </div>
+            <div>
+              <label className="label" htmlFor="loyalty_every">Toutes les</label>
+              <select id="loyalty_every" name="loyalty_every" defaultValue={business.loyalty_every} className="input w-36">
+                <option value={0}>Désactivée</option>
+                {[5, 6, 8, 10, 12].map((v) => (
+                  <option key={v} value={v}>
+                    {v} visites
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="label" htmlFor="loyalty_percent">Remise</label>
+              <select id="loyalty_percent" name="loyalty_percent" defaultValue={business.loyalty_percent || 50} className="input w-36">
+                {[20, 30, 50, 100].map((v) => (
+                  <option key={v} value={v}>
+                    {v === 100 ? "Offerte" : `−${v} %`}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
           <div className="flex items-center justify-between gap-3">

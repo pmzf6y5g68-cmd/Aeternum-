@@ -212,3 +212,9 @@ créneaux visibles dès les résultats, carte, fiche avec réservation pas à pa
 - **Alerte « un créneau plus tôt s'est libéré »** (Doctolib) depuis un rendez-vous existant.
 - **Offres heures creuses et dernière minute** (Treatwell, Fresha, TheFork) : réglées par le pro dans Visibilité, badge « −20 % » sur les créneaux, bandeau sur la fiche, remise recalculée côté serveur (jamais sur le déplacement, jamais cumulée, 50 % max), connue du compagnon IA.
 - **Réserver pour un proche** (Doctolib) : nom du bénéficiaire sur le RDV et dans les emails.
+
+## E — Carnets, fidélité, photos d'avis, bouton Google ✅
+- **Carnets de séances** (Fresha, Booksy) : le pro crée « 10 × cours » dans Carnets ; vente en ligne `/carnet/[slug]` via Stripe Connect (argent direct au pro), code envoyé par email, séance débitée atomiquement à la réservation (`consume_pack_session`), rendue à toute annulation (déclencheur), consommée en cas d'absence ; suivi « 7 séances sur 10 » dans le compte client.
+- **Fidélité** : « toutes les N visites, −X % ou offerte », appliquée automatiquement côté serveur à la bonne visite (jamais cumulée avec une offre), progression visible dans le compte, bandeau sur la fiche.
+- **Photos dans les avis** : 3 photos max (5 Mo, type vérifié par les octets), bucket public `review-photos`, affichées sur la fiche ; le pro peut retirer une photo inappropriée.
+- **Bouton « Réserver » Google** : guide pas à pas + lien prêt à coller dans Google Business Profile (immédiat), et flux Actions Center (entity / action, téléphone E.164) sur `/api/google/actions-center/{entity|action}` pour le partenariat Google.

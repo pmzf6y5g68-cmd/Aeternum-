@@ -36,6 +36,13 @@ export default async function ReviewPage({ params, searchParams }: { params: Pro
           </label>
           <textarea id="comment" name="comment" rows={4} maxLength={1500} className="input" />
         </div>
+        <div>
+          <label htmlFor="photos" className="label">
+            Photos (facultatif, 3 maximum)
+          </label>
+          <input id="photos" name="photos" type="file" accept="image/jpeg,image/png,image/webp" multiple className="block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-brand-soft file:px-3 file:py-2 file:font-semibold file:text-brand" />
+          <p className="mt-1 text-xs text-ink-soft">Le résultat, l&apos;ambiance… Les photos sont publiées avec votre avis.</p>
+        </div>
         <SubmitButton className="btn-primary w-full">{t.submit}</SubmitButton>
       </form>
     </StatusCard>

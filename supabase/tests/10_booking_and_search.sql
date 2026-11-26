@@ -88,6 +88,38 @@ do $$ declare a bookings; b bookings; m bookings; begin
   delete from bookings where id in (a.id, b.id);
 end $$;
 
+-- Carnets : débit atomique, refus explicites, séance rendue à l'annulation
+do $$ declare cp uuid; got uuid; bk bookings; begin
+  insert into client_packs (business_id, service_id, code, name, buyer_name, buyer_email, sessions_total, sessions_left, price_eur, status, expires_at)
+  values ('b0000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000001', 'AAAA-BBBB-CCCC', 'Carnet 2', 'P', 'p@x.fr', 2, 2, 80, 'active', now() + interval '1 year')
+  returning id into cp;
+  got := consume_pack_session('aaaa-bbbb-cccc', 'b0000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000001');
+  assert got = cp and (select sessions_left from client_packs where id = cp) = 1, 'séance débitée';
+  begin
+    perform consume_pack_session('AAAA-BBBB-CCCC', 'b0000000-0000-0000-0000-000000000002', '50000000-0000-0000-0000-000000000001');
+    raise exception 'autre établissement';
+  exception when others then assert sqlerrm = 'PACK_INVALID', 'carnet d''un autre pro : ' || sqlerrm; end;
+  begin
+    perform consume_pack_session('AAAA-BBBB-CCCC', 'b0000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000002');
+    raise exception 'autre prestation';
+  exception when others then assert sqlerrm = 'PACK_WRONG_SERVICE', 'mauvaise prestation : ' || sqlerrm; end;
+  select * into bk from create_booking_atomic('b0000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000001', 'Coupe', null, null, '{}', 1,
+    '5a000000-0000-0000-0000-000000000001', null, 1, 'on_site', null, null, 0, 0, 0, null, 'P', 'p@x.fr', null, null, '2027-04-02 09:00+02', '2027-04-02 10:00+02', 'scheduled');
+  update bookings set client_pack_id = cp where id = bk.id;
+  perform consume_pack_session('AAAA-BBBB-CCCC', 'b0000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000001');
+  begin
+    perform consume_pack_session('AAAA-BBBB-CCCC', 'b0000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000001');
+    raise exception 'vide';
+  exception when others then assert sqlerrm = 'PACK_EMPTY', 'carnet vide : ' || sqlerrm; end;
+  update bookings set status = 'cancelled' where id = bk.id;
+  assert (select sessions_left from client_packs where id = cp) = 1, 'annulation : séance rendue';
+  update bookings set status = 'scheduled' where id = bk.id;
+  update bookings set status = 'cancelled' where id = bk.id;
+  assert (select sessions_left from client_packs where id = cp) = 2, 'jamais au-delà du total';
+  delete from bookings where id = bk.id;
+  delete from client_packs where id = cp;
+end $$;
+
 -- Congé d'un membre
 insert into time_off (business_id, staff_id, start_at, end_at) values ('b0000000-0000-0000-0000-000000000001', '5a000000-0000-0000-0000-000000000002', '2026-12-02 00:00+01', '2026-12-03 00:00+01');
 do $$ declare b bookings; begin

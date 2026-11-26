@@ -161,11 +161,12 @@ export interface Quote {
   discountPercent: number;
 }
 
-export function computeQuote(input: QuoteInput & { discountPercent?: number }): Quote {
+export function computeQuote(input: QuoteInput & { discountPercent?: number; coveredByPack?: boolean }): Quote {
   const variant = resolveVariant(input.service, input.variantKey);
   const base = servicePrice(input.service, input.variantKey);
   const seats = Math.max(1, Math.round(input.seats ?? 1));
-  const unitPriceCents = eurToCents(base.price_eur);
+  // Séance réglée par un carnet : la prestation est déjà payée, seules options et déplacement restent dus.
+  const unitPriceCents = input.coveredByPack ? 0 : eurToCents(base.price_eur);
   const addonsCents = input.addons.reduce((sum, a) => sum + eurToCents(a.price_eur), 0);
   const addonsMinutes = input.addons.reduce((sum, a) => sum + Math.max(0, Math.round(Number(a.duration_minutes))), 0);
   const workMinutes = base.duration_minutes + addonsMinutes;

@@ -5,6 +5,8 @@ const baseCsp = "base-uri 'self'; object-src 'none'; upgrade-insecure-requests";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Avis avec photos : jusqu'à 3 images de 5 Mo envoyées par l'action serveur.
+  experimental: { serverActions: { bodySizeLimit: "16mb" } },
   async headers() {
     return [
       {

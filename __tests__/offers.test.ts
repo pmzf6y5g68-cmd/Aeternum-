@@ -28,3 +28,23 @@ describe("offres heures creuses / dernière minute", () => {
     expect(discountedCents(4500, 0)).toBe(4500);
   });
 });
+
+import { loyaltyDiscountPercent, visitsUntilReward } from "@/lib/domain/offers";
+import { computeQuote } from "@/lib/domain/pricing";
+
+describe("fidélité et carnets", () => {
+  it("10e visite remisée, pas avant, et de nouveau à la 20e", () => {
+    expect(loyaltyDiscountPercent(8, 10, 50)).toBe(0);
+    expect(loyaltyDiscountPercent(9, 10, 50)).toBe(50);
+    expect(loyaltyDiscountPercent(19, 10, 50)).toBe(50);
+    expect(loyaltyDiscountPercent(9, 0, 50)).toBe(0);
+    expect(visitsUntilReward(9, 10)).toBe(0);
+    expect(visitsUntilReward(3, 10)).toBe(6);
+  });
+  it("séance couverte par un carnet : la prestation ne coûte plus rien, les options restent dues", () => {
+    const service = { price_eur: 40, duration_minutes: 60, variants: [] };
+    const business = { deposit_enabled: false, deposit_percent: 30, stripe_connect_onboarded: false, free_radius_km: 0, max_radius_km: 0, price_per_extra_km: 0, travel_buffer_minutes: 0, card_guarantee_enabled: false, no_show_fee_percent: 50 };
+    const q = computeQuote({ service, variantKey: null, addons: [{ price_eur: 5, duration_minutes: 10 }], seats: 1, locationType: "on_site", distanceKm: null, business, coveredByPack: true } as never);
+    expect(q.totalCents).toBe(500);
+  });
+});
