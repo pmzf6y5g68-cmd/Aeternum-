@@ -3,7 +3,9 @@ import { z } from "zod";
 import { BookingInputError, locationSchema, resolveSelection } from "@/lib/booking-request";
 import { isValidDateString } from "@/lib/domain/time";
 import { json, jsonError } from "@/lib/http";
-import { computeSlotWindow, loadPublicBusiness } from "@/lib/marketplace";
+import { siteConfig } from "@/config/site";
+import { slotDiscountPercent } from "@/lib/domain/offers";
+import { computeSlotWindow, loadPublicBusiness, offerRulesOf } from "@/lib/marketplace";
 
 const schema = z.object({
   business: z.string().min(3).max(60),
@@ -50,10 +52,12 @@ export async function GET(request: NextRequest) {
       startDate: q.start,
       days: q.days,
     });
+    const rules = offerRulesOf(business);
+    const now = new Date();
     return json({
       duration_minutes: sel.baseQuote.blockedMinutes,
       next_available: window.nextAvailable,
-      days: window.days.map((d) => ({ date: d.date, slots: d.slots.map((s) => ({ time: s.time, startAt: s.startAt, remaining: s.remaining })) })),
+      days: window.days.map((d) => ({ date: d.date, slots: d.slots.map((s) => ({ time: s.time, startAt: s.startAt, remaining: s.remaining, discount: slotDiscountPercent(new Date(s.startAt), now, rules, siteConfig.booking.timeZone) })) })),
     });
   } catch (err) {
     if (err instanceof BookingInputError) return jsonError(err.message);

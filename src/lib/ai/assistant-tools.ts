@@ -255,6 +255,11 @@ async function businessDetails(raw: unknown): Promise<ToolOutcome> {
         card_guarantee: b.card_guarantee_enabled && b.stripe_connect_onboarded ? `empreinte bancaire, frais d'absence ${b.no_show_fee_percent} %` : "non",
         at_home_travel: b.modes.includes("at_home") ? { free_radius_km: b.free_radius_km, max_radius_km: b.max_radius_km, price_per_extra_km_eur: b.price_per_extra_km } : null,
       },
+      offers: {
+        off_peak: b.offpeak_percent > 0 && b.offpeak_start && b.offpeak_end && b.offpeak_days.length ? { percent: b.offpeak_percent, weekdays_0_sunday: b.offpeak_days, from: b.offpeak_start.slice(0, 5), to: b.offpeak_end.slice(0, 5) } : null,
+        last_minute: b.lastminute_percent > 0 ? { percent: b.lastminute_percent, within_hours: b.lastminute_hours } : null,
+        note: "Remises fixées par l'établissement, appliquées automatiquement au créneau concerné (les créneaux remisés portent un badge).",
+      },
       gift_cards: b.gift_cards_enabled && b.stripe_connect_onboarded ? `/carte-cadeau/${b.slug}` : null,
       page: path,
     }),

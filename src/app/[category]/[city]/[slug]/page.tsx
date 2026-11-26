@@ -118,6 +118,9 @@ export default async function BusinessPage({ params, searchParams }: { params: P
                   <Stars rating={Number(biz.rating_avg)} count={biz.rating_count} />
                 </p>
               )}
+              {offerText(biz) && (
+                <p className="mt-1.5 ml-1.5 inline-flex rounded-md bg-amber-300 px-2 py-0.5 text-sm font-bold text-ink">{offerText(biz)}</p>
+              )}
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -353,4 +356,17 @@ export default async function BusinessPage({ params, searchParams }: { params: P
       <SiteFooter />
     </>
   );
+}
+
+const DAY_SHORT = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
+
+/** « −20 % mar., mer. 14h–16h · −30 % dernière minute » : les offres en clair, sans astérisque. */
+function offerText(b: { offpeak_percent: number; offpeak_days: number[]; offpeak_start: string | null; offpeak_end: string | null; lastminute_percent: number; lastminute_hours: number }): string | null {
+  const parts: string[] = [];
+  if (b.offpeak_percent > 0 && b.offpeak_start && b.offpeak_end && b.offpeak_days.length) {
+    const days = [1, 2, 3, 4, 5, 6, 0].filter((d) => b.offpeak_days.includes(d)).map((d) => DAY_SHORT[d]).join(" ");
+    parts.push(`−${b.offpeak_percent} % ${days} ${b.offpeak_start.slice(0, 5).replace(":", "h")}–${b.offpeak_end.slice(0, 5).replace(":", "h")}`);
+  }
+  if (b.lastminute_percent > 0) parts.push(`−${b.lastminute_percent} % à moins de ${b.lastminute_hours} h`);
+  return parts.length ? parts.join(" · ") : null;
 }

@@ -24,7 +24,7 @@ export const PRODUCT_FACTS = `
 - Synchronisation : l'agenda pro peut être affiché dans Google Agenda, Apple Calendrier ou Outlook via un lien d'abonnement privé (lecture seule, mis à jour automatiquement).
 - Application installable sur iPhone, Android, Windows et Mac depuis le navigateur (web app), sans passer par un store.
 - Outils de partage : lien unique, QR code, bouton pour site web, message de répondeur, guide Google Maps et réseaux sociaux.
-- Il n'existe AUCUNE remise ni code promo que tu pourrais accorder, aucuns frais d'installation, ni application native dans les stores, synchronisation bidirectionnelle d'agenda (les RDV ajoutés dans Google Agenda ne bloquent pas les créneaux), SMS, paiement intégral en ligne, caisse ou facturation, gestion de stock, multi-établissements sur un même compte, ni intégration comptable. Ne les promets jamais.
+- Tu ne peux accorder AUCUNE remise ni code promo toi-même (seules existent les offres heures creuses / dernière minute fixées par chaque établissement, visibles dans sa fiche), aucuns frais d'installation, ni application native dans les stores, synchronisation bidirectionnelle d'agenda (les RDV ajoutés dans Google Agenda ne bloquent pas les créneaux), SMS, paiement intégral en ligne, caisse ou facturation, gestion de stock, multi-établissements sur un même compte, ni intégration comptable. Ne les promets jamais.
 - Rendez-vous ne traite pas les professions de santé (médecins, dentistes, kinés, etc.).
 - Support : ${siteConfig.supportEmail}.
 `.trim();

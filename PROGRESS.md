@@ -206,3 +206,9 @@ créneaux visibles dès les résultats, carte, fiche avec réservation pas à pa
 - Sur une fiche, « ici / ce salon » désigne l'établissement affiché ; suggestions adaptées à la page ; position partagée sur l'accueil réutilisée.
 - `openState` (ouvert maintenant, pause de midi) testé ; pages publiques rendues dynamiquement (données en direct).
 - Démo : outils `autour`, `prix`, `position` (n'importe quelle ville), repli sans IA qui comprend « j'habite à … ».
+
+## D — Le meilleur des leaders (Doctolib, Treatwell, Fresha, TheFork) ✅
+- **Déplacer un rendez-vous en 1 geste** (Doctolib) : page « Gérer mon rendez-vous » + `/cancel/[token]/deplacer`, RPC atomique `reschedule_booking_atomic` (verrou, même membre, même durée, congés, capacité, 3 déplacements max, délai d'annulation respecté), nouvelle invitation agenda, pro prévenu, ancien créneau proposé à la liste d'attente. Bouton « Déplacer » dans Mes rendez-vous et dans tous les emails.
+- **Alerte « un créneau plus tôt s'est libéré »** (Doctolib) depuis un rendez-vous existant.
+- **Offres heures creuses et dernière minute** (Treatwell, Fresha, TheFork) : réglées par le pro dans Visibilité, badge « −20 % » sur les créneaux, bandeau sur la fiche, remise recalculée côté serveur (jamais sur le déplacement, jamais cumulée, 50 % max), connue du compagnon IA.
+- **Réserver pour un proche** (Doctolib) : nom du bénéficiaire sur le RDV et dans les emails.

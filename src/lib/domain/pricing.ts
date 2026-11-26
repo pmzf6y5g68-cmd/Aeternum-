@@ -1,3 +1,4 @@
+import { discountedCents } from "./offers";
 /**
  * Moteur de tarification pur et universel : prestation + variante (gabarit, longueur, taille,
  * nombre de personnes…) + options + places + frais kilométriques + acompte.
@@ -156,9 +157,11 @@ export interface Quote {
   distanceKm: number | null;
   outOfZone: boolean;
   variant: Variant | null;
+  /** Remise appliquée au créneau (0 = aucune). */
+  discountPercent: number;
 }
 
-export function computeQuote(input: QuoteInput): Quote {
+export function computeQuote(input: QuoteInput & { discountPercent?: number }): Quote {
   const variant = resolveVariant(input.service, input.variantKey);
   const base = servicePrice(input.service, input.variantKey);
   const seats = Math.max(1, Math.round(input.seats ?? 1));
@@ -181,7 +184,9 @@ export function computeQuote(input: QuoteInput): Quote {
     blockedMinutes = workMinutes + Math.max(0, Math.round(Number(input.business.travel_buffer_minutes)));
   }
 
-  const totalCents = (unitPriceCents + addonsCents) * seats + travelFeeCents;
+  // Remise heures creuses / dernière minute : sur la prestation et les options, jamais sur le déplacement.
+  const discount = input.discountPercent ?? 0;
+  const totalCents = discountedCents((unitPriceCents + addonsCents) * seats, discount) + travelFeeCents;
   return {
     unitPriceCents,
     addonsCents,
@@ -195,5 +200,6 @@ export function computeQuote(input: QuoteInput): Quote {
     distanceKm,
     outOfZone,
     variant,
+    discountPercent: discount,
   };
 }

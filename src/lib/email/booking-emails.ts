@@ -39,7 +39,9 @@ function where(booking: Booking, business: BusinessContact): string {
 
 function summaryLines(booking: Booking, addonNames: string[], staffName: string | null): string[] {
   const lines = [`Prestation : ${booking.service_name}${booking.variant_label ? ` (${booking.variant_label})` : ""}${addonNames.length ? ` + ${addonNames.join(", ")}` : ""}`];
+  if (booking.beneficiary_name) lines.push(`Pour : ${booking.beneficiary_name}`);
   if (booking.seats > 1) lines.push(`Places : ${booking.seats}`);
+  if (booking.discount_percent > 0) lines.push(`Offre du créneau : −${booking.discount_percent} % (déjà déduite)`);
   if (staffName) lines.push(`Avec : ${staffName}`);
   if (booking.total_price_eur > 0) {
     lines.push(`Total : ${formatEur(eurToCents(booking.total_price_eur))}${booking.travel_fee_eur > 0 ? ` dont ${formatEur(eurToCents(booking.travel_fee_eur))} de déplacement` : ""}`);
@@ -60,7 +62,7 @@ export async function sendBookingConfirmation(booking: Booking, business: Busine
     start: new Date(booking.start_at),
     end: new Date(booking.end_at),
     summary: `${booking.service_name} — ${business.name}`,
-    description: `${details.join("\n")}\nGérer : ${l.account}\nAnnuler : ${l.cancel}`,
+    description: `${details.join("\n")}\nGérer : ${l.account}\nDéplacer ou annuler : ${l.cancel}`,
     location,
     organizerName: business.name,
     organizerEmail: env.emailReplyTo(),
@@ -75,10 +77,10 @@ export async function sendBookingConfirmation(booking: Booking, business: Busine
     to: booking.client_email,
     replyTo: business.email,
     subject: `Rendez-vous confirmé — ${business.name}, ${when}`,
-    text: [`Bonjour ${booking.client_name},`, intro, place, ...details, contact, policy, `Mes rendez-vous : ${l.account}`, `Annuler : ${l.cancel}`].join("\n\n"),
+    text: [`Bonjour ${booking.client_name},`, intro, place, ...details, contact, policy, `Mes rendez-vous : ${l.account}`, `Déplacer ou annuler : ${l.cancel}`].join("\n\n"),
     html: layoutHtml("Votre rendez-vous est confirmé", [`Bonjour ${booking.client_name},`, intro, place, ...details, contact, policy], [
       { label: "Voir mes rendez-vous", url: l.account },
-      { label: "Annuler", url: l.cancel },
+      { label: "Déplacer ou annuler", url: l.cancel },
     ]),
     attachments: [{ filename: "rendez-vous.ics", content: ics, contentType: "text/calendar; method=REQUEST" }],
   });
@@ -108,10 +110,10 @@ export async function sendReminder(booking: Booking, business: BusinessContact):
     to: booking.client_email,
     replyTo: business.email,
     subject: `Rappel : votre rendez-vous ${business.name} — merci de confirmer`,
-    text: [...p, `Je confirme : ${l.confirm}`, `Je dois annuler : ${l.cancel}`].join("\n\n"),
+    text: [...p, `Je confirme : ${l.confirm}`, `Je dois déplacer ou annuler : ${l.cancel}`].join("\n\n"),
     html: layoutHtml("Confirmez votre rendez-vous", p, [
       { label: "Je confirme ma venue", url: l.confirm },
-      { label: "Je dois annuler", url: l.cancel },
+      { label: "Déplacer ou annuler", url: l.cancel },
     ]),
   });
 }
@@ -198,5 +200,37 @@ export async function notifyClientLatePaymentRefunded(booking: Booking, business
       "Votre paiement est arrivé après l'expiration de la réservation et le créneau a été repris entre-temps. Votre acompte a été intégralement remboursé.",
       `Choisissez un nouveau créneau : ${env.appUrl()}${businessPath(business)}`,
     ].join("\n\n"),
+  });
+}
+
+/** Déplacement par l'usager : nouvelle invitation agenda pour lui, information pour l'établissement. */
+export async function notifyRescheduled(booking: Booking, previousStartAt: string, business: BusinessContact): Promise<void> {
+  const when = formatDateTime(booking.start_at);
+  const before = formatDateTime(previousStartAt);
+  const l = links(booking);
+  const p = [`Bonjour ${booking.client_name},`, `Votre rendez-vous chez ${business.name} (${booking.service_name}) est déplacé au ${when}, au lieu du ${before}.`, `Adresse : ${where(booking, business)}`];
+  const ics = buildIcs({
+    uid: `${booking.id}@rendez-vous`,
+    start: new Date(booking.start_at),
+    end: new Date(booking.end_at),
+    summary: `${booking.service_name} — ${business.name}`,
+    location: where(booking, business),
+    description: `Gérer : ${l.cancel}`,
+    organizerName: business.name,
+    organizerEmail: env.emailReplyTo(),
+  });
+  await sendEmail({
+    to: booking.client_email,
+    replyTo: business.email,
+    subject: `Rendez-vous déplacé au ${when} — ${business.name}`,
+    text: [...p, `Gérer : ${l.cancel}`].join("\n\n"),
+    html: layoutHtml("Rendez-vous déplacé", p, [{ label: "Gérer mon rendez-vous", url: l.cancel }]),
+    attachments: [{ filename: "rendez-vous.ics", content: ics, contentType: "text/calendar; method=REQUEST" }],
+  });
+  await sendEmail({
+    to: business.email,
+    replyTo: booking.client_email,
+    subject: `Déplacé : ${booking.client_name} — ${when}`,
+    text: `${booking.client_name} a déplacé son rendez-vous (${booking.service_name}) du ${before} au ${when}. L'ancien créneau est de nouveau disponible.`,
   });
 }

@@ -447,3 +447,27 @@ export async function redeemGiftCard(_prev: RedeemState, formData: FormData): Pr
   revalidatePath("/pro/cartes-cadeaux");
   return { status: "ok", message: `Carte de ${Number(card.amount_eur)} € validée pour ${card.recipient_name}.` };
 }
+
+const timeOrNull = z.preprocess((v) => (v === "" || v === null ? null : v), z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable());
+
+/** Offres heures creuses / dernière minute : remplissent les trous de l'agenda (remise appliquée côté serveur). */
+export async function updateOffers(formData: FormData): Promise<void> {
+  const { supabase, business } = await requireBusiness();
+  const days = formData.getAll("offpeak_days").map(Number).filter((d) => Number.isInteger(d) && d >= 0 && d <= 6);
+  const start = timeOrNull.parse(formData.get("offpeak_start"));
+  const end = timeOrNull.parse(formData.get("offpeak_end"));
+  const valid = start !== null && end !== null && start < end;
+  const { error } = await supabase
+    .from("businesses")
+    .update({
+      offpeak_percent: valid && days.length ? Math.round(num(0, 50).parse(formData.get("offpeak_percent") || 0)) : 0,
+      offpeak_days: days,
+      offpeak_start: valid ? start : null,
+      offpeak_end: valid ? end : null,
+      lastminute_percent: Math.round(num(0, 50).parse(formData.get("lastminute_percent") || 0)),
+      lastminute_hours: Math.round(num(1, 72).parse(formData.get("lastminute_hours") || 24)),
+    })
+    .eq("id", business.id);
+  if (error) await logEvent("pro.updateOffers", error.message);
+  revalidatePath("/pro/visibilite");
+}

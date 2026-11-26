@@ -5,13 +5,14 @@ import { siteConfig } from "@/config/site";
 import { BookingInputError, locationSchema, resolveSelection } from "@/lib/booking-request";
 import { rankStaffByLoad } from "@/lib/domain/availability";
 import { commissionCents } from "@/lib/domain/commission";
+import { slotDiscountPercent } from "@/lib/domain/offers";
 import { centsToEur, computeQuote, formatEur } from "@/lib/domain/pricing";
 import { zonedDateString } from "@/lib/domain/time";
 import { BUSINESS_CONTACT_COLUMNS, sendBookingConfirmation, type BusinessContact } from "@/lib/email/booking-emails";
 import { env } from "@/lib/env";
 import { errorMessage, logEvent } from "@/lib/events";
 import { json, jsonError } from "@/lib/http";
-import { computeSlotWindow, loadPublicBusiness, pricingOf, resolveDistance } from "@/lib/marketplace";
+import { computeSlotWindow, loadPublicBusiness, offerRulesOf, pricingOf, resolveDistance } from "@/lib/marketplace";
 import { getStripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createSessionClient } from "@/lib/supabase/server";
@@ -32,6 +33,7 @@ const schema = z
     client_email: z.email().trim().toLowerCase(),
     client_phone: z.string().trim().min(6).max(30),
     client_notes: z.string().trim().max(500).optional().default(""),
+    beneficiary_name: z.string().trim().max(80).optional().default(""),
     source: z.enum(["marketplace", "direct", "assistant"]).default("marketplace"),
   })
   .refine((v) => v.location_type !== "at_home" || v.client_address.length >= 5, { path: ["client_address"] });
@@ -92,7 +94,7 @@ export async function POST(request: Request) {
     distanceKm = distance.distanceKm;
     clientAddress = distance.label;
   }
-  const quote = computeQuote({
+  let quote = computeQuote({
     service: sel.service,
     variantKey: input.variant_key,
     addons: sel.addons,
@@ -118,6 +120,11 @@ export async function POST(request: Request) {
   });
   const slot = window.days[0]?.slots.find((s) => new Date(s.startAt).getTime() === startAt.getTime());
   if (!slot) return jsonError("slot_taken", 409);
+  // Remise du créneau recalculée côté serveur (heures creuses / dernière minute).
+  const discount = slotDiscountPercent(new Date(slot.startAt), new Date(), offerRulesOf(business), siteConfig.booking.timeZone);
+  if (discount > 0) {
+    quote = computeQuote({ service: sel.service, variantKey: input.variant_key, addons: sel.addons, seats: sel.seats, locationType: input.location_type, distanceKm, business: pricingOf(business), discountPercent: discount });
+  }
   const freeStaff = slot.staffIds.filter((s): s is string => s !== null);
   const candidates = sel.requestedStaffId ? [] : rankStaffByLoad(freeStaff, window.bookings, date, new Date(), siteConfig.booking.timeZone);
 
@@ -189,7 +196,10 @@ export async function POST(request: Request) {
     percent: siteConfig.pricing.newClientCommissionPercent,
     capEur: siteConfig.pricing.newClientCommissionCapEur,
   });
-  await admin.from("bookings").update({ source: input.source, commission_eur: centsToEur(commission) }).eq("id", booking.id);
+  await admin
+    .from("bookings")
+    .update({ source: input.source, commission_eur: centsToEur(commission), discount_percent: quote.discountPercent, beneficiary_name: input.beneficiary_name || null })
+    .eq("id", booking.id);
 
   // Profil usager mémorisé pour pré-remplir les prochaines réservations.
   if (auth.user) {

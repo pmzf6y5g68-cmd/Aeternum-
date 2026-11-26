@@ -4,7 +4,11 @@ import { formatEur } from "@/lib/domain/pricing";
 import { requireBusiness, shareBusinessUrl } from "@/lib/pro";
 import { conversionRate, visibilityChecks, visibilityScore } from "@/lib/visibility";
 import type { OpeningHoursRow, Service } from "@/lib/supabase/types";
+
+const DAYS: [number, string][] = [[1, "Lun"], [2, "Mar"], [3, "Mer"], [4, "Jeu"], [5, "Ven"], [6, "Sam"], [0, "Dim"]];
 import { AiWriter } from "./ai-writer";
+import { SubmitButton } from "@/components/submit-button";
+import { updateOffers } from "../actions";
 
 export const metadata = { title: "Visibilité" };
 
@@ -98,6 +102,70 @@ export default async function VisibilityPage() {
         </ul>
       </section>
 
+      <section id="offres" className="card scroll-mt-24 space-y-4">
+        <div>
+          <h2 className="flex items-center gap-2 font-bold">
+            <Percent className="size-4 text-brand" aria-hidden /> Remplir les heures creuses
+          </h2>
+          <p className="mt-1 text-sm text-ink-soft">
+            Une remise sur vos créneaux calmes ou de dernière minute : ils s&apos;affichent avec un badge « −20 % » et passent en tête quand un client cherche une promo. La remise est calculée automatiquement à la réservation, jamais sur les frais de déplacement.
+          </p>
+        </div>
+        <form action={updateOffers} className="space-y-4">
+          <div className="rounded-xl border border-line p-4">
+            <p className="text-sm font-semibold">Heures creuses</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {DAYS.map(([d, label]) => (
+                <label key={d} className="chip cursor-pointer has-[:checked]:border-brand has-[:checked]:bg-brand-soft has-[:checked]:text-brand">
+                  <input type="checkbox" name="offpeak_days" value={d} defaultChecked={business.offpeak_days.includes(d)} className="sr-only" />
+                  {label}
+                </label>
+              ))}
+            </div>
+            <div className="mt-3 flex flex-wrap items-end gap-3">
+              <div>
+                <label className="label" htmlFor="offpeak_start">De</label>
+                <input id="offpeak_start" name="offpeak_start" type="time" defaultValue={business.offpeak_start?.slice(0, 5) ?? "14:00"} className="input w-32" />
+              </div>
+              <div>
+                <label className="label" htmlFor="offpeak_end">À</label>
+                <input id="offpeak_end" name="offpeak_end" type="time" defaultValue={business.offpeak_end?.slice(0, 5) ?? "16:00"} className="input w-32" />
+              </div>
+              <div>
+                <label className="label" htmlFor="offpeak_percent">Remise</label>
+                <div className="relative w-28">
+                  <input id="offpeak_percent" name="offpeak_percent" type="number" min={0} max={50} step={5} defaultValue={business.offpeak_percent} className="input pr-8" />
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-ink-soft">%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-end gap-3 rounded-xl border border-line p-4">
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold">Dernière minute</p>
+              <p className="mt-1 text-xs text-ink-soft">Pour les créneaux encore libres peu avant l&apos;heure : mieux vaut un client à −20 % qu&apos;un fauteuil vide.</p>
+            </div>
+            <div>
+              <label className="label" htmlFor="lastminute_hours">Moins de</label>
+              <div className="relative w-28">
+                <input id="lastminute_hours" name="lastminute_hours" type="number" min={1} max={72} defaultValue={business.lastminute_hours} className="input pr-8" />
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-ink-soft">h</span>
+              </div>
+            </div>
+            <div>
+              <label className="label" htmlFor="lastminute_percent">Remise</label>
+              <div className="relative w-28">
+                <input id="lastminute_percent" name="lastminute_percent" type="number" min={0} max={50} step={5} defaultValue={business.lastminute_percent} className="input pr-8" />
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-ink-soft">%</span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs text-ink-soft">0 % = offre désactivée. Maximum 50 %. Les deux remises ne se cumulent jamais.</p>
+            <SubmitButton className="btn-primary">Enregistrer</SubmitButton>
+          </div>
+        </form>
+      </section>
       <section id="ia" className="card scroll-mt-24">
         <h2 className="text-lg font-bold">Rédaction de votre fiche</h2>
         <p className="mb-4 text-sm text-ink-soft">Un texte complet, construit à partir de vos prestations, prix, horaires et lieux, écrit pour être trouvé sur Google et repris par les assistants de recherche. Vous relisez avant de publier.</p>

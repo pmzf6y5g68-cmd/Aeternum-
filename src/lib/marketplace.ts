@@ -367,3 +367,15 @@ export async function loadCategoryStats(category: string, citySlug: string | nul
     return null;
   }
 }
+
+/** Règles d'offres de l'établissement (heures creuses, dernière minute). */
+export function offerRulesOf(b: Pick<PublicBusiness, "offpeak_percent" | "offpeak_days" | "offpeak_start" | "offpeak_end" | "lastminute_percent" | "lastminute_hours">): import("@/lib/domain/offers").OfferRules {
+  return {
+    offpeak_percent: Number(b.offpeak_percent ?? 0),
+    offpeak_days: b.offpeak_days ?? [],
+    offpeak_start: b.offpeak_start,
+    offpeak_end: b.offpeak_end,
+    lastminute_percent: Number(b.lastminute_percent ?? 0),
+    lastminute_hours: Number(b.lastminute_hours ?? 24),
+  };
+}

@@ -10,7 +10,7 @@ const biz = {
   modes: ["on_site", "at_home"], cover_url: null, highlights: [], payment_methods: ["Carte bancaire"], free_radius_km: 10, max_radius_km: 30,
   price_per_extra_km: 1, travel_buffer_minutes: 30, slot_step_minutes: 30, min_lead_minutes: 120, max_days_ahead: 60, cancellation_hours: 24,
   deposit_enabled: false, deposit_percent: 30, plan: "pro", stripe_connect_onboarded: false, min_price_eur: 40, rating_avg: 4.6, rating_count: 12,
-  published: true, locale: "fr", card_guarantee_enabled: false, no_show_fee_percent: 50, gift_cards_enabled: false,
+  published: true, locale: "fr", card_guarantee_enabled: false, no_show_fee_percent: 50, gift_cards_enabled: false, offpeak_percent: 0, offpeak_days: [], offpeak_start: null, offpeak_end: null, lastminute_percent: 0, lastminute_hours: 24,
 } as PublicBusiness;
 const service = { id: "s1", business_id: "b1", name: "Coupe", description: null, price_eur: 45, duration_minutes: 60, variants: [{ key: "l", label: "Longs", price_eur: 63, duration_minutes: 80 }], capacity: 1, modes: [], active: true, sort: 0 } as Service;
 

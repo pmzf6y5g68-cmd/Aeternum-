@@ -974,3 +974,93 @@ create index if not exists reviews_author_idx on public.reviews (author_user_id)
 create index if not exists time_off_staff_idx on public.time_off (staff_id);
 create index if not exists waitlist_service_idx on public.waitlist_entries (service_id);
 create index if not exists waitlist_user_idx on public.waitlist_entries (user_id);
+
+-- ---------------------------------------------------------------------
+-- Déplacer un rendez-vous (usager, en libre-service) + réservation pour un proche
+-- ---------------------------------------------------------------------
+alter table public.bookings add column if not exists reschedule_count smallint not null default 0;
+alter table public.bookings add column if not exists beneficiary_name text check (char_length(beneficiary_name) <= 80);
+
+-- Même garantie que create_booking_atomic : verrou sur l'établissement, même membre, même durée,
+-- aucun chevauchement (le RDV déplacé est exclu de sa propre vérification), congés respectés.
+create or replace function public.reschedule_booking_atomic(
+  p_booking_id uuid,
+  p_start_at timestamptz,
+  p_max_reschedules integer default 3,
+  p_pending_ttl_minutes integer default 20
+)
+returns public.bookings
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_booking public.bookings;
+  v_end timestamptz;
+  v_capacity integer := 1;
+  v_count integer;
+begin
+  select * into v_booking from public.bookings where id = p_booking_id;
+  if not found then raise exception 'BOOKING_NOT_FOUND' using errcode = 'P0001'; end if;
+  perform 1 from public.businesses where id = v_booking.business_id for update;
+  select * into v_booking from public.bookings where id = p_booking_id for update;
+
+  if v_booking.status not in ('scheduled', 'confirmed', 'at_risk') then raise exception 'NOT_RESCHEDULABLE' using errcode = 'P0001'; end if;
+  if v_booking.reschedule_count >= p_max_reschedules then raise exception 'TOO_MANY_RESCHEDULES' using errcode = 'P0001'; end if;
+  if p_start_at <= now() then raise exception 'SLOT_TAKEN' using errcode = 'P0001'; end if;
+  v_end := p_start_at + (v_booking.end_at - v_booking.start_at);
+
+  if v_booking.service_id is not null then
+    select greatest(coalesce(capacity, 1), 1) into v_capacity from public.services where id = v_booking.service_id;
+    v_capacity := coalesce(v_capacity, 1);
+  end if;
+
+  if exists (select 1 from public.time_off t where t.business_id = v_booking.business_id
+              and (t.staff_id is null or t.staff_id is not distinct from v_booking.staff_id)
+              and tstzrange(t.start_at, t.end_at, '[)') && tstzrange(p_start_at, v_end, '[)')) then
+    raise exception 'SLOT_TAKEN' using errcode = 'P0001';
+  end if;
+
+  if exists (
+    select 1 from public.bookings b
+     where b.business_id = v_booking.business_id and b.id <> v_booking.id
+       and b.staff_id is not distinct from v_booking.staff_id
+       and b.status not in ('cancelled', 'no_show')
+       and not (b.status = 'pending_deposit' and b.created_at < now() - make_interval(mins => p_pending_ttl_minutes))
+       and tstzrange(b.start_at, b.end_at, '[)') && tstzrange(p_start_at, v_end, '[)')
+       and not (v_capacity > 1 and b.service_id = v_booking.service_id and b.start_at = p_start_at)
+  ) then
+    raise exception 'SLOT_TAKEN' using errcode = 'P0001';
+  end if;
+
+  if v_capacity > 1 then
+    select coalesce(sum(b.seats), 0) into v_count from public.bookings b
+     where b.business_id = v_booking.business_id and b.id <> v_booking.id
+       and b.staff_id is not distinct from v_booking.staff_id
+       and b.service_id = v_booking.service_id and b.start_at = p_start_at
+       and b.status not in ('cancelled', 'no_show');
+    if v_count + v_booking.seats > v_capacity then raise exception 'SLOT_TAKEN' using errcode = 'P0001'; end if;
+  end if;
+
+  update public.bookings
+     set start_at = p_start_at, end_at = v_end, reschedule_count = reschedule_count + 1,
+         reminder_sent = false, status = case when status = 'at_risk' then 'scheduled'::booking_status else status end
+   where id = v_booking.id
+   returning * into v_booking;
+  return v_booking;
+end;
+$$;
+revoke all on function public.reschedule_booking_atomic(uuid, timestamptz, integer, integer) from public, anon, authenticated;
+grant execute on function public.reschedule_booking_atomic(uuid, timestamptz, integer, integer) to service_role;
+
+-- ---------------------------------------------------------------------
+-- Offres heures creuses et dernière minute (remplir les trous de l'agenda)
+-- ---------------------------------------------------------------------
+alter table public.businesses add column if not exists offpeak_percent smallint not null default 0 check (offpeak_percent between 0 and 50);
+alter table public.businesses add column if not exists offpeak_days smallint[] not null default '{}';
+alter table public.businesses add column if not exists offpeak_start time;
+alter table public.businesses add column if not exists offpeak_end time;
+alter table public.businesses add column if not exists lastminute_percent smallint not null default 0 check (lastminute_percent between 0 and 50);
+alter table public.businesses add column if not exists lastminute_hours smallint not null default 24 check (lastminute_hours between 1 and 72);
+alter table public.bookings add column if not exists discount_percent smallint not null default 0 check (discount_percent between 0 and 50);
+grant update (offpeak_percent, offpeak_days, offpeak_start, offpeak_end, lastminute_percent, lastminute_hours) on public.businesses to authenticated;

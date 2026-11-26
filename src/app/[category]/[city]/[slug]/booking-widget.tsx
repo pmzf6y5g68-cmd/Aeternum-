@@ -24,6 +24,8 @@ interface Slot {
   time: string;
   startAt: string;
   remaining: number | null;
+  /** Remise heures creuses / dernière minute (%), recalculée par le serveur à la réservation. */
+  discount?: number;
 }
 
 interface DayData {
@@ -187,7 +189,8 @@ export function BookingWidget({
   const [nextAvailable, setNextAvailable] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [slot, setSlot] = useState<Slot | null>(null);
-  const [contact, setContact] = useState({ name: prefill.name, email: prefill.email, phone: prefill.phone, notes: "" });
+  const [contact, setContact] = useState({ name: prefill.name, email: prefill.email, phone: prefill.phone, notes: "", forName: "" });
+  const [forSomeone, setForSomeone] = useState(false);
   const [editing, setEditing] = useState<StepKey | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -254,11 +257,12 @@ export function BookingWidget({
         locationType: effectiveLocation,
         distanceKm: effectiveLocation === "at_home" ? (distance?.distance_km ?? null) : null,
         business: business.pricing,
+        discountPercent: slot?.discount ?? 0,
       });
     } catch {
       return null;
     }
-  }, [service, variantKey, chosenAddons, seats, groupService, effectiveLocation, distance, hasVariants, business.pricing]);
+  }, [service, variantKey, chosenAddons, seats, groupService, effectiveLocation, distance, hasVariants, business.pricing, slot]);
 
   const visibleDays = 5;
   useEffect(() => {
@@ -333,6 +337,7 @@ export function BookingWidget({
           client_email: contact.email,
           client_phone: contact.phone,
           client_notes: contact.notes,
+          beneficiary_name: forSomeone ? contact.forName.trim() : "",
           source: readSource(business.slug),
         }),
       });
@@ -690,6 +695,7 @@ export function BookingWidget({
                         className={`${slot?.startAt === s.startAt ? "slot bg-brand text-white" : "slot"} flex-col px-0.5 py-1.5 text-xs`}
                       >
                         {s.time}
+                        {(s.discount ?? 0) > 0 && <span className={`block text-[10px] font-bold ${slot?.startAt === s.startAt ? "text-white" : "text-success"}`}>−{s.discount} %</span>}
                         {s.remaining !== null && <span className="block text-[10px] font-medium opacity-75">{format(t.placesLeft, { n: s.remaining })}</span>}
                       </button>
                     ))}
@@ -713,6 +719,11 @@ export function BookingWidget({
           <input required minLength={2} maxLength={80} placeholder={t.name} autoComplete="name" value={contact.name} onChange={(e) => setContact({ ...contact, name: e.target.value })} className="input" />
           <input required type="email" placeholder={t.email} autoComplete="email" value={contact.email} onChange={(e) => setContact({ ...contact, email: e.target.value })} className="input" />
           <input required type="tel" minLength={6} placeholder={t.phone} autoComplete="tel" value={contact.phone} onChange={(e) => setContact({ ...contact, phone: e.target.value })} className="input" />
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={forSomeone} onChange={(e) => setForSomeone(e.target.checked)} className="size-4 accent-[#1758E6]" />
+            Je réserve pour quelqu&apos;un d&apos;autre (enfant, proche…)
+          </label>
+          {forSomeone && <input required minLength={2} maxLength={80} placeholder="Prénom et nom de la personne" value={contact.forName} onChange={(e) => setContact({ ...contact, forName: e.target.value })} className="input" />}
           <textarea maxLength={500} rows={2} placeholder={t.notes} value={contact.notes} onChange={(e) => setContact({ ...contact, notes: e.target.value })} className="input resize-none" />
           {!loggedIn && (
             <p className="text-xs text-ink-soft">
@@ -743,6 +754,12 @@ export function BookingWidget({
                 <div className="flex justify-between text-ink-soft">
                   <span>{t.travelFee}</span>
                   <span>{quote.travelFeeCents > 0 ? formatEur(quote.travelFeeCents) : t.travelFree}</span>
+                </div>
+              )}
+              {quote.discountPercent > 0 && (
+                <div className="flex justify-between font-semibold text-success">
+                  <span>Offre du créneau</span>
+                  <span>−{quote.discountPercent} %</span>
                 </div>
               )}
               <div className="flex justify-between border-t border-line pt-2 text-base font-bold">

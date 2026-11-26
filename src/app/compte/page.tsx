@@ -117,6 +117,11 @@ export default async function MyAppointmentsPage() {
                   <Star className="size-4" aria-hidden /> {t.review}
                 </Link>
               ))}
+            {isUpcoming && cancel === "ok" && b.status !== "pending_deposit" && (
+              <Link href={`/cancel/${b.confirm_token}/deplacer`} className="btn-secondary px-3 py-1.5 text-sm">
+                Déplacer
+              </Link>
+            )}
             {isUpcoming && cancel === "ok" && (
               <details className="group">
                 <summary className="btn-ghost cursor-pointer list-none px-3 py-1.5 text-sm text-danger">{t.cancel}</summary>

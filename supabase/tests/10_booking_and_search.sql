@@ -62,6 +62,32 @@ do $$ declare b1 bookings; b2 bookings; begin
   exception when others then assert sqlerrm = 'SLOT_TAKEN', 'complet : ' || sqlerrm; end;
 end $$;
 
+-- Déplacement en libre-service : même membre, même durée, jamais sur un créneau pris
+do $$ declare a bookings; b bookings; m bookings; begin
+  select * into a from create_booking_atomic('b0000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000001', 'Coupe', null, null, '{}', 1,
+    '5a000000-0000-0000-0000-000000000001', null, 1, 'on_site', null, null, 0, 45, 0, null, 'R1', 'r1@x.fr', null, null, '2027-03-02 09:00+01', '2027-03-02 10:00+01', 'scheduled');
+  select * into b from create_booking_atomic('b0000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000001', 'Coupe', null, null, '{}', 1,
+    '5a000000-0000-0000-0000-000000000001', null, 1, 'on_site', null, null, 0, 45, 0, null, 'R2', 'r2@x.fr', null, null, '2027-03-02 11:00+01', '2027-03-02 12:00+01', 'scheduled');
+  begin
+    perform reschedule_booking_atomic(a.id, '2027-03-02 11:30+01');
+    raise exception 'chevauche R2';
+  exception when others then assert sqlerrm = 'SLOT_TAKEN', 'déplacement sur créneau pris : ' || sqlerrm; end;
+  select * into m from reschedule_booking_atomic(a.id, '2027-03-02 09:30+01');
+  assert m.start_at = '2027-03-02 09:30+01' and m.end_at = '2027-03-02 10:30+01', 'durée conservée, chevauchement avec soi-même autorisé';
+  assert m.staff_id = a.staff_id and m.reschedule_count = 1, 'même membre, compteur';
+  update bookings set reschedule_count = 3 where id = a.id;
+  begin
+    perform reschedule_booking_atomic(a.id, '2027-03-03 09:00+01');
+    raise exception 'limite';
+  exception when others then assert sqlerrm = 'TOO_MANY_RESCHEDULES', 'limite de déplacements : ' || sqlerrm; end;
+  update bookings set status = 'cancelled' where id = b.id;
+  begin
+    perform reschedule_booking_atomic(b.id, '2027-03-04 09:00+01');
+    raise exception 'annulé';
+  exception when others then assert sqlerrm = 'NOT_RESCHEDULABLE', 'RDV annulé non déplaçable : ' || sqlerrm; end;
+  delete from bookings where id in (a.id, b.id);
+end $$;
+
 -- Congé d'un membre
 insert into time_off (business_id, staff_id, start_at, end_at) values ('b0000000-0000-0000-0000-000000000001', '5a000000-0000-0000-0000-000000000002', '2026-12-02 00:00+01', '2026-12-03 00:00+01');
 do $$ declare b bookings; begin

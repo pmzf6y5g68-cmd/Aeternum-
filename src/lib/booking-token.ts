@@ -1,6 +1,6 @@
 import "server-only";
 import { z } from "zod";
-import { BUSINESS_CONTACT_COLUMNS, notifyBusinessCancelledByClient, type BusinessContact } from "@/lib/email/booking-emails";
+import { BUSINESS_CONTACT_COLUMNS, notifyBusinessCancelledByClient, notifyRescheduled, type BusinessContact } from "@/lib/email/booking-emails";
 import { errorMessage, logEvent } from "@/lib/events";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notifyWaitlistForSlot } from "@/lib/waitlist";
@@ -46,4 +46,37 @@ export async function cancelByClient(booking: Booking, business: BusinessContact
     }
   }
   return "cancelled";
+}
+
+export const MAX_RESCHEDULES = 3;
+export type RescheduleOutcome = "moved" | "slot_taken" | "too_many" | CancelOutcome;
+
+/** Déplacer = même règle de délai que l'annulation (on ne déplace pas un RDV qu'on ne pourrait plus annuler). */
+export function canClientReschedule(booking: Booking, business: Pick<BusinessContact, "cancellation_hours">, now: Date = new Date()): RescheduleOutcome | "ok" {
+  if (booking.status === "pending_deposit") return "past";
+  const check = canClientCancel(booking, business, now);
+  if (check !== "ok") return check;
+  return booking.reschedule_count >= MAX_RESCHEDULES ? "too_many" : "ok";
+}
+
+/** Déplacement atomique (verrou + revérification serveur), libère l'ancien créneau pour la liste d'attente. */
+export async function rescheduleByClient(booking: Booking, business: BusinessContact, startAt: string): Promise<RescheduleOutcome> {
+  const check = canClientReschedule(booking, business);
+  if (check !== "ok") return check;
+  const { data, error } = await createAdminClient()
+    .rpc("reschedule_booking_atomic", { p_booking_id: booking.id, p_start_at: startAt, p_max_reschedules: MAX_RESCHEDULES })
+    .single<Booking>();
+  if (error) {
+    if (error.message.includes("SLOT_TAKEN")) return "slot_taken";
+    if (error.message.includes("TOO_MANY_RESCHEDULES")) return "too_many";
+    if (error.message.includes("NOT_RESCHEDULABLE")) return "past";
+    throw error;
+  }
+  await notifyWaitlistForSlot(booking);
+  try {
+    await notifyRescheduled(data, booking.start_at, business);
+  } catch (err) {
+    await logEvent("reschedule.notify", errorMessage(err), { booking_id: booking.id }, "warning");
+  }
+  return "moved";
 }
