@@ -55,7 +55,7 @@ Ajouter un métier : une entrée dans `src/config/categories.ts` (+ la ligne cor
 ## Mise en production en 7 étapes
 
 ### 1. Supabase
-1. Créez un projet (région UE). **SQL Editor** → exécutez `supabase/schema.sql` (idempotent, rejouable).
+1. Créez un projet (région UE) — un projet `rendez-vous` (Paris) est déjà provisionné avec le schéma installé. Sinon, **SQL Editor** → exécutez `supabase/schema.sql` (idempotent, rejouable).
 2. **Authentication → URL Configuration** : *Site URL* = `https://votre-domaine`, *Redirect URLs* = `https://votre-domaine/auth/callback`.
 3. **Authentication → Emails** : branchez le SMTP de Resend (étape 3) pour que les liens de connexion partent de votre domaine.
 4. **Authentication → Emails → Magic Link** : ajoutez `{{ .Token }}` au modèle pour que l'email contienne aussi le code à 6 chiffres.

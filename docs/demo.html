@@ -488,6 +488,7 @@ function seed(){
   favorites:["salon-elegance"],plan:"pro",profile:{name:"",email:"",phone:""},listing:{desc:BY["salon-elegance"].desc,photo:false,hoursSet:true},seen:{}};
 }
 let S=load()||seed();
+for(const [id,b] of Object.entries(S.extraBiz||{}))BY[id]=b;
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 
 // ---------- Normalisation des établissements ----------
@@ -500,6 +501,28 @@ for(const b of B){
   if(!b.highlights.length)b.highlights=b.tags.map(t=>TAGS[t]).filter(Boolean);
 }
 for(const b of B)BY[b.id]=b;
+// ---------- Partout : villes réelles (GeoNames) et établissements d'exemple autour de la position ----------
+let VILLES=[];const LYON=B.slice();const LYON_C={lat:45.7600,lng:4.8420};
+const ALIAS={Brussels:"Bruxelles",Antwerpen:"Anvers",Antwerp:"Anvers",Gent:"Gand",Ghent:"Gand",Geneva:"Genève",Brugge:"Bruges",Leuven:"Louvain",Mechelen:"Malines",Bern:"Berne",Basel:"Bâle",Luzern:"Lucerne"};
+const vname=v=>ALIAS[v[0]]||v[0];
+fetch("villes.json").then(r=>r.ok?r.json():[]).then(d=>{VILLES=Array.isArray(d)?d:[];redraw();const pop=document.getElementById("locpop");if(pop){const i=pop.querySelector("#city-q");if(i&&i.value)i.dispatchEvent(new Event("input",{bubbles:true}))}}).catch(()=>{});
+function nearestTowns(p,n,minPop=0){return VILLES.filter(v=>v[3]>=minPop).map(v=>({v,d:haversine(p,{lat:v[1],lng:v[2]})})).sort((a,b)=>a.d-b.d).slice(0,n)}
+function townName(p){const t=nearestTowns(p,1)[0];return t&&t.d<12?vname(t.v):"votre secteur"}
+function rng(seed){let h=2166136261;for(const c of seed)h=Math.imul(h^c.charCodeAt(0),16777619);return()=>{h+=0x6D2B79F5;let t=h;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
+const NAMES={coiffeur:["Atelier Coiffure","Studio Hair","L'Instant Coiffure","Salon Mademoiselle"],barbier:["Barber Shop","Le Comptoir du Barbier","Gentleman Barber"],institut:["Institut Belle Peau","Studio Ongles","Beauté & Sens"],massage:["Atelier Zen","Spa du Centre","Bulle de Détente"],coach:["Studio Fit","Coach & Moi","Yoga Studio"],garage:["Garage du Centre","Auto Service","Garage de la Gare"],detailing:["Auto Spa","Shine Detailing","Clean Car"],plombier:["Plomberie Express","Artisan Dépannage","Serrurerie Rapide"],toilettage:["Toutou Chic","Les Pattes Douces","Salon Canin"],cours:["Atelier Musique","Cours Plus","École de Langues"],avocat:["Cabinet Martin","Conseil & Droit","Cabinet Durand"],restaurant:["La Table du Marché","Le Bistrot","Escape Room"]};
+const STREETS=["rue de la République","avenue Jean Jaurès","rue Victor Hugo","place de la Mairie","rue du Commerce","boulevard Gambetta","rue Pasteur","avenue de la Gare","rue Nationale","place du Marché","rue des Écoles","avenue Foch"];
+const GEN=new Map();
+function genAround(p){
+  const town=townName(p);const key=`${p.lat.toFixed(2)},${p.lng.toFixed(2)}`;if(GEN.has(key))return GEN.get(key);
+  const r=rng(key);const k=Math.cos(p.lat*Math.PI/180);const list=[];
+  for(const c of CATS){const tpl=LYON.filter(b=>b.cat===c.slug);const n=c.slug==="coiffeur"||c.slug==="restaurant"?3:2;
+    for(let i=0;i<n;i++){const t=tpl[i%tpl.length];const d=0.15+r()*(i?3.2:1.4),a=r()*Math.PI*2;const lat=p.lat+Math.cos(a)*d/111,lng=p.lng+Math.sin(a)*d/(111*k);
+      const nm=NAMES[c.slug][Math.floor(r()*NAMES[c.slug].length)]+(r()<.5?" "+town:"");const id=`g-${key.replace(/[^0-9]/g,"")}-${c.slug}-${i}`;
+      const swap=s=>String(s).replace(/Lyon|Villeurbanne|Croix-Rousse|Vieux Lyon|Saône|Presqu'île|Rhône/g,town);
+      list.push(Object.assign({},t,{id,name:nm,lat,lng,q:town,city:town,addr:`${1+Math.floor(r()*120)} ${STREETS[Math.floor(r()*STREETS.length)]}, ${town}`,rating:Math.round((4.2+r()*.75)*10)/10,reviews:12+Math.floor(r()*340),pro:r()<.45,tagline:swap(t.tagline),desc:swap(t.desc),color:t.color,generated:true}))}}
+  GEN.set(key,list);for(const b of list)BY[b.id]=b;return list;
+}
+function applyArea(l){const near=haversine(l,LYON_C)<18;B.length=0;B.push(...(near?LYON:genAround(l)));MAP.keepView=false;}
 
 // ---------- Position, distances, horaires ----------
 const DEFAULT_LOC={label:"Bellecour (2e)",lat:45.7578,lng:4.8320,src:"quartier"};
@@ -608,6 +631,7 @@ function mapFrame(){
   g+=roads.map(rd=>`<path d="${path(rd.pts)}" stroke="${rd.c===1?"var(--map-major)":"var(--map-road)"}" stroke-width="${roadW(rd.c).toFixed(1)}" fill="none" stroke-linecap="round" stroke-linejoin="round"><title>${esc(rd.name)}</title></path>`).join("");
   if(z>=13)g+=GEO.rivers.map(rv=>{const p=rv.pts[Math.floor(rv.pts.length*0.62)];const s=toScreen(p[0],p[1]);return `<text x="${s.x+10}" y="${s.y}" class="map-river">${rv.name}</text>`}).join("");
   if(z>=14.6){const placed=[];for(const rd of GEO.roads){if(rd.c<2&&z<15.5)continue;if(/^(Quais|Pont)/.test(rd.name))continue;const p=rd.pts[Math.floor(rd.pts.length/2)];const s=toScreen(p[0],p[1]);if(s.x<30||s.y<20||s.x>MAP.w-30||s.y>MAP.h-20)continue;if(placed.some(q=>Math.abs(q.x-s.x)<120&&Math.abs(q.y-s.y)<18))continue;placed.push(s);g+=`<text x="${s.x}" y="${s.y-6}" class="map-street">${esc(rd.name)}</text>`}}
+  {const minPop=z<10.5?100000:z<11.5?30000:z<12.5?10000:z<13.5?4000:2000;const placed=[];for(const v of VILLES){if(v[3]<minPop)continue;const s=toScreen(v[1],v[2]);if(s.x<-20||s.y<-20||s.x>MAP.w+20||s.y>MAP.h+20)continue;if(haversine({lat:v[1],lng:v[2]},LYON_C)<6&&z>=12)continue;if(placed.some(q=>Math.abs(q.x-s.x)<90&&Math.abs(q.y-s.y)<22))continue;placed.push(s);const big=v[3]>50000;g+=`<circle cx="${s.x}" cy="${s.y}" r="${big?3.5:2.5}" fill="var(--map-text)" opacity=".55"/><text x="${s.x}" y="${s.y-8}" class="map-place" style="font-size:${big?13:11}px">${esc(vname(v))}</text>`;if(placed.length>60)break}}
   g+=GEO.places.filter(p=>z>=p.z).map(p=>{const s=toScreen(p.lat,p.lng);return `<text x="${s.x}" y="${s.y-10}" class="map-place">${esc(p.n)}</text>`}).join("");
   const L=loc(),me=toScreen(L.lat,L.lng);
   if(V.radius)g+=`<circle cx="${me.x}" cy="${me.y}" r="${(V.radius*1000/m).toFixed(1)}" fill="var(--brand)" fill-opacity=".06" stroke="var(--brand)" stroke-width="1.2" stroke-dasharray="4 4"/>`;
@@ -661,20 +685,25 @@ function mapShell(){return `<div class="map" id="map" tabindex="0" aria-label="C
   <svg class="base" width="100%" height="100%" aria-hidden="true"></svg><div class="pins"></div><div class="mcard" hidden></div>
   <button class="map-here btn btn-secondary btn-sm" data-here hidden>Rechercher dans cette zone</button>
   <div class="map-tools"><button class="mt" data-zoom="1" aria-label="Zoomer">+</button><button class="mt" data-zoom="-1" aria-label="Dézoomer">−</button><button class="mt" data-locate aria-label="Centrer sur ma position">${icon("pin",'width="17" height="17"')}</button></div>
-  <div class="map-scale"></div><div class="map-attr">Tracé simplifié · positions réelles</div></div>`}
+  <div class="map-scale"></div><div class="map-attr">Communes © GeoNames (CC BY) · tracé de Lyon simplifié</div></div>`}
 
 // ---------- Choix de la position ----------
-function setLoc(l){S.loc=l;save();if(!V.radius&&V.page==="recherche")V.radius=0;if(V.sort==="pertinence"&&l.src!=="quartier")V.sort="distance";V.area=null;toast(`Position : ${l.label}`);render();if(MAP.el)flyTo(l.lat,l.lng,Math.max(MAP.z,14))}
+function setLoc(l){S.loc=l;save();applyArea(l);if(!V.radius&&V.page==="recherche")V.radius=0;if(V.sort==="pertinence"&&l.src!=="quartier")V.sort="distance";V.area=null;toast(`Position : ${l.label}`);render();if(MAP.el)flyTo(l.lat,l.lng,Math.max(MAP.z,14))}
 function locPopover(){return `<div class="pop" id="locpop" role="dialog" aria-label="Choisir ma position">
   <button class="opt" data-gps>${icon("pin",'width="18" height="18"')}<span style="flex:1"><b>Ma position actuelle</b><br><span class="xs muted">Par la localisation de votre appareil</span></span></button>
   <button class="opt" data-pickmap>${icon("trend",'width="18" height="18"')}<span style="flex:1"><b>Choisir sur la carte</b><br><span class="xs muted">Touchez l'endroit voulu</span></span></button>
-  <p class="xs muted" style="margin:8px 2px 6px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Quartiers</p>
-  <div class="row" style="gap:6px">${QUARTIERS.map(([n,la,ln])=>`<button class="chip" data-quartier="${esc(n)}" data-lat="${la}" data-lng="${ln}" aria-pressed="${loc().label===n}">${esc(n)}</button>`).join("")}</div></div>`}
+  <label class="lbl" for="city-q" style="margin-top:10px">Ville ou commune</label>
+  <input class="input" id="city-q" placeholder="Ex. Bordeaux, Annecy, Bruxelles…" autocomplete="off">
+  <div id="city-res" class="row" style="gap:6px;margin-top:8px"></div>
+  ${haversine(loc(),LYON_C)<18?`<p class="xs muted" style="margin:10px 2px 6px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Quartiers de Lyon</p>
+  <div class="row" style="gap:6px">${QUARTIERS.map(([n,la,ln])=>`<button class="chip" data-quartier="${esc(n)}" data-lat="${la}" data-lng="${ln}" aria-pressed="${loc().label===n}">${esc(n)}</button>`).join("")}</div>`:VILLES.length?`<p class="xs muted" style="margin:10px 2px 6px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Communes proches</p>
+  <div class="row" style="gap:6px">${nearestTowns(loc(),8,3000).map(({v})=>`<button class="chip" data-quartier="${esc(vname(v))}" data-lat="${v[1]}" data-lng="${v[2]}">${esc(vname(v))}</button>`).join("")}</div>`:""}</div>`}
+function citySuggest(q){const n=norm(q.trim());if(n.length<2)return [];const starts=[],has=[];for(const v of VILLES){const nm=norm(vname(v));if(nm.startsWith(n))starts.push(v);else if(nm.includes(n))has.push(v);if(starts.length>=8)break}return [...starts,...has].slice(0,8)}
 function gps(){
   if(!("geolocation" in navigator)){toast("La localisation n'est pas disponible ici : choisissez un quartier ou un point sur la carte.");return}
   toast("Localisation en cours…");
-  navigator.geolocation.getCurrentPosition(p=>{const l={label:"Ma position",lat:p.coords.latitude,lng:p.coords.longitude,src:"gps"};if(haversine(l,DEFAULT_LOC)>40){toast("Vous êtes loin de Lyon : la démo couvre Lyon et Villeurbanne. Position placée à Bellecour.");setLoc(DEFAULT_LOC)}else setLoc(l)},
-    ()=>toast("Localisation refusée par le navigateur. Choisissez un quartier ou un point sur la carte."),{enableHighAccuracy:true,timeout:8000,maximumAge:60000});
+  navigator.geolocation.getCurrentPosition(p=>{setLoc({label:"Ma position",lat:p.coords.latitude,lng:p.coords.longitude,src:"gps"})},
+    ()=>{toast("La localisation n'est pas disponible dans cette fenêtre : tapez votre ville ci-dessous.");const b=document.querySelector("[data-locbtn]");if(b){openPop(b);setTimeout(()=>document.getElementById("city-q")?.focus(),50)}},{enableHighAccuracy:true,timeout:8000,maximumAge:60000});
 }
 
 // ---------- Vue courante ----------
@@ -1098,8 +1127,9 @@ document.addEventListener("click",e=>{
   if(d.upgrade!==undefined){S.plan="pro";save();render();toast("Essai Pro activé pour 14 jours. Aucun débit avant la fin de l'essai.");return}
 });
 document.addEventListener("pointerover",e=>{const r=e.target.closest?.(".result[data-hover]");if(!r||r.dataset.hover===MAP.hover)return;MAP.hover=r.dataset.hover;document.querySelectorAll(".mpin").forEach(p=>p.classList.toggle("hot",p.dataset.mpin===MAP.hover))});
-document.addEventListener("keydown",e=>{if(e.key==="/"&&!e.target.closest("input,textarea,select")){e.preventDefault();chatOpen=true;renderAssistant();document.getElementById("ci")?.focus()}if(e.key==="Escape")closePop();if(e.key==="Enter"&&e.target.matches("article.result,.pin")){e.target.click()}if(e.key==="Escape")document.querySelector(".modal-bg")?.remove()});
+document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.id==="city-q"){e.preventDefault();document.querySelector("#city-res [data-quartier]")?.click();return}if(e.key==="/"&&!e.target.closest("input,textarea,select")){e.preventDefault();chatOpen=true;renderAssistant();document.getElementById("ci")?.focus()}if(e.key==="Escape")closePop();if(e.key==="Enter"&&e.target.matches("article.result,.pin")){e.target.click()}if(e.key==="Escape")document.querySelector(".modal-bg")?.remove()});
 document.addEventListener("input",e=>{
+  if(e.target.id==="city-q"){const box=document.getElementById("city-res");const res=citySuggest(e.target.value);box.innerHTML=res.length?res.map(v=>`<button class="chip" data-quartier="${esc(vname(v))}" data-lat="${v[1]}" data-lng="${v[2]}">${esc(vname(v))} <span class="xs muted">${v[4]==="FR"?"":v[4]}</span></button>`).join(""):(VILLES.length?'<span class="xs muted">Aucune commune trouvée.</span>':'<span class="xs muted">Chargement des communes…</span>')}
   if(e.target.id==="d-radius"){V.radius=Number(e.target.value);document.getElementById("d-radius-v").textContent=V.radius?fmtKm(V.radius):"illimitée";clearTimeout(window.__dr);window.__dr=setTimeout(()=>{MAP.keepView=true;render();const b=document.querySelector(".modal .btn-primary[data-close]");if(b)b.textContent=`Voir ${filtered().length} résultat${filtered().length>1?"s":""}`},120)}
   if(e.target.id==="d-price"){V.maxPrice=Number(e.target.value);document.getElementById("d-price-v").textContent=V.maxPrice>=400?"illimité":V.maxPrice+" €";clearTimeout(window.__dp);window.__dp=setTimeout(()=>{MAP.keepView=true;render();const b=document.querySelector(".modal .btn-primary[data-close]");if(b)b.textContent=`Voir ${filtered().length} résultat${filtered().length>1?"s":""}`},120)}
   if(e.target.id==="sq"){V.q=e.target.value;clearTimeout(window.__sq);window.__sq=setTimeout(()=>{const c=CATS.find(x=>norm(x.label)===norm(V.q.trim()));if(c){V.cat=c.slug;V.q=""}render();const el=document.getElementById("sq");el.focus();el.setSelectionRange(el.value.length,el.value.length)},220)}
@@ -1117,6 +1147,7 @@ document.addEventListener("submit",e=>{
     if(!name||!/^\S+@\S+\.\S+$/.test(email)){toast("Indiquez votre nom et un email valide.");return}
     S.profile={name,email,phone:document.getElementById("bp").value.trim()};
     const k={id:"k"+Date.now(),biz:b.id,svc:q.s.name,variant:q.v[0],staff:BK.staff||b.staff[0],start:BK.slot,dur:q.dur,total:q.total,client:name,email,status:"scheduled",guarantee:q.fee,source:"marketplace",mine:true};
+    if(b.generated){S.extraBiz=S.extraBiz||{};S.extraBiz[b.id]=b}
     S.bookings.push(k);save();
     const finish=()=>{modal(`<div style="text-align:center"><span style="display:inline-grid;place-items:center;width:56px;height:56px;border-radius:50%;background:var(--ok);color:#fff;font-size:28px">✓</span><h2 style="font-size:22px;margin-top:12px">Rendez-vous confirmé</h2><p style="font-weight:700;color:var(--brand);margin:6px 0">${fmtDate(k.start)}</p><p class="muted small">${esc(b.name)} · ${esc(k.svc)}${k.variant?" · "+esc(k.variant):""}<br>Confirmation et invitation calendrier envoyées à ${esc(email)}. Rappel la veille.</p><div class="row" style="justify-content:center;gap:8px;margin-top:14px"><button class="btn btn-primary" data-close data-go="compte">Mes rendez-vous</button><button class="btn btn-secondary" data-close>Fermer</button></div></div>`);BK=null;render()};
     if(q.fee){const m=modal(`<h2 style="font-size:20px">${icon("shield",'width="20" height="20" style="vertical-align:-3px;color:var(--brand)"')} Garantir mon rendez-vous</h2><p class="small muted">Aucun débit aujourd'hui. En cas d'absence sans annulation au moins 24 h avant, ${eur(q.fee)} pourront être prélevés par ${esc(b.name)}.</p>
@@ -1145,6 +1176,7 @@ function giftModal(b){modal(`<h2 style="font-size:20px">${icon("gift",'width="20
 
 function fromHash(){const h=location.hash.slice(1);if(h.startsWith("fiche-")&&BY[h.slice(6)]){S.mode="client";V.page="fiche";V.biz=h.slice(6)}else if(["accueil","recherche","compte"].includes(h)){S.mode="client";V.page=h}else if(h==="pro"){S.mode="pro"}render()}
 window.addEventListener("hashchange",fromHash);
+if(S.loc)applyArea(S.loc);
 fromHash();
 })();
 </script>

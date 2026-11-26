@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BellRing, CalendarClock, Check, History, Search, Scale, CalendarCheck2 } from "lucide-react";
 import { CategoryIcon } from "@/components/category-icon";
+import { NearbyAllCategories } from "@/components/nearby";
 import { SearchBar } from "@/components/search-bar";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -53,6 +54,10 @@ export default function HomePage() {
               </Link>
             ))}
           </div>
+        </section>
+
+        <section className="mx-auto max-w-6xl px-4 pt-12">
+          <NearbyAllCategories />
         </section>
 
         <section className="mx-auto max-w-6xl px-4 py-16">

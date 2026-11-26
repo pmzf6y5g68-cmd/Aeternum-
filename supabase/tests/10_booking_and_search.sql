@@ -131,6 +131,12 @@ do $$ begin
 end $$;
 
 -- RLS
+-- « Autour de moi » : plus proches par métier, rayon respecté.
+do $$ begin
+  assert (select count(*) from nearby_by_category(45.76, 4.835, 5, 3)) >= 1, 'autour de moi : résultats proches';
+  assert (select count(*) from nearby_by_category(48.85, 2.35, 5, 3) where category = 'coiffeur') = 0, 'autour de moi : rayon respecté (Paris)';
+  assert (select max(rank_in_category) from nearby_by_category(45.76, 4.835, 50, 1)) = 1, 'un par métier';
+end $$;
 -- Cartes cadeaux : code au format, un seul code par carte.
 do $$
 declare v_id uuid := (select id from businesses where slug = 'salon-elegance');

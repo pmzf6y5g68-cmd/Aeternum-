@@ -193,3 +193,9 @@ créneaux visibles dès les résultats, carte, fiche avec réservation pas à pa
   disponibilité, prix, note, avis), synchronisation liste ↔ carte, vue carte plein écran sur mobile.
 - **Compagnon IA** (démo) : Claude via la capacité `sample` avec 3 outils de la page (chercher → applique les filtres et met la
   carte à jour, détails, position), réponses en direct, bouton Stop, repli sur une recherche guidée sans IA.
+
+## N — « À côté de chez vous », partout ✅
+- RPC `nearby_by_category(lat, lng, rayon, par_metier)` : les établissements les plus proches **dans chaque métier**, n'importe où (boîte englobante + Haversine, classement par métier, 300 lignes max).
+- `GET /api/nearby` (rayon 1–200 km, 1–10 par métier) et composant d'accueil `NearbyAllCategories` : partage de position en 1 geste (mémorisée sur l'appareil), rayon réglable, carte des plus proches, liens vers la recherche triée par distance.
+- Projet Supabase de production créé (UE, Paris) : schéma complet installé ; advisors sécurité traités (fonctions internes retirées de l'API, `search_path` figé). Les RPC publiques restantes (recherche, stats, à proximité) sont volontairement exposées et ne renvoient que des colonnes publiques.
+- Démo v3 (`docs/demo.html` + `docs/villes.json`) : fonctionne pour n'importe quelle commune de France, Belgique, Suisse, Luxembourg et Monaco (5 850 communes ≥ 2 000 hab., GeoNames CC BY). Hors Lyon, les établissements affichés sont des exemples générés.

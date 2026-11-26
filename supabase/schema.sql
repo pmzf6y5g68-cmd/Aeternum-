@@ -910,3 +910,56 @@ alter table public.gift_cards enable row level security;
 drop policy if exists gift_cards_owner_select on public.gift_cards;
 create policy gift_cards_owner_select on public.gift_cards for select using (public.owns_business(business_id));
 revoke insert, update, delete on public.gift_cards from anon, authenticated;
+
+-- ---------------------------------------------------------------------
+-- « Autour de moi » : les établissements les plus proches dans chaque métier, n'importe où
+-- ---------------------------------------------------------------------
+create or replace function public.nearby_by_category(
+  p_lat double precision,
+  p_lng double precision,
+  p_radius_km double precision default 25,
+  p_per_category integer default 3
+)
+returns table (
+  id uuid, slug text, name text, category text, city text, city_slug text, address text,
+  lat double precision, lng double precision, modes location_type[], cover_url text, min_price_eur numeric,
+  rating_avg numeric, rating_count integer, plan business_plan, distance_km double precision, rank_in_category bigint
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  with box as (
+    select least(greatest(coalesce(p_radius_km, 25), 0.5), 200) as r
+  ), d as (
+    select b.*,
+      2 * 6371 * asin(sqrt(power(sin(radians(b.lat - p_lat) / 2), 2)
+        + cos(radians(p_lat)) * cos(radians(b.lat)) * power(sin(radians(b.lng - p_lng) / 2), 2))) as dist
+    from public.businesses b, box
+    where b.published and b.min_price_eur is not null and b.lat is not null and b.lng is not null
+      and b.lat between p_lat - box.r / 111.0 and p_lat + box.r / 111.0
+      and b.lng between p_lng - box.r / (111.0 * greatest(cos(radians(p_lat)), 0.05)) and p_lng + box.r / (111.0 * greatest(cos(radians(p_lat)), 0.05))
+  ), ranked as (
+    select d.*, row_number() over (partition by d.category order by d.dist, d.rating_avg desc) as rn
+    from d, box where d.dist <= box.r
+  )
+  select ranked.id, ranked.slug, ranked.name, ranked.category, ranked.city, ranked.city_slug, ranked.address,
+         ranked.lat, ranked.lng, ranked.modes, ranked.cover_url, ranked.min_price_eur, ranked.rating_avg,
+         ranked.rating_count, ranked.plan, ranked.dist, ranked.rn
+    from ranked
+   where ranked.rn <= least(greatest(coalesce(p_per_category, 3), 1), 10)
+   order by ranked.dist
+   limit 300;
+$$;
+grant execute on function public.nearby_by_category(double precision, double precision, double precision, integer) to anon, authenticated, service_role;
+
+-- ---------------------------------------------------------------------
+-- Durcissement (advisors Supabase) : fonctions internes non exposées en RPC
+-- ---------------------------------------------------------------------
+alter function public.norm(text) set search_path = '';
+revoke all on function public.refresh_business_listing(uuid) from public, anon, authenticated;
+revoke all on function public.trg_services_listing() from public, anon, authenticated;
+revoke all on function public.trg_businesses_listing() from public, anon, authenticated;
+revoke all on function public.trg_reviews_rating() from public, anon, authenticated;
+grant execute on function public.refresh_business_listing(uuid) to service_role;
