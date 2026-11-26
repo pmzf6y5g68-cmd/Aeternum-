@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>Rendez-vous</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -818,7 +819,8 @@ function bizTile(b){const st=openState(b);const ns=nextSlots(b,1)[0];return `
     <span class="small" style="color:var(--brand);font-weight:700">${ns?"Prochain créneau : "+ns.label:"Complet cette semaine"}</span>
   </button>`}
 function pageHome(){
-  const near=B.slice().sort((a,b)=>dist(a)-dist(b)).slice(0,8);
+  const near=CATS.map(c=>B.filter(b=>b.cat===c.slug).sort((a,b)=>dist(a)-dist(b))[0]).filter(Boolean).sort((a,b)=>dist(a)-dist(b));
+  const shared=S.loc&&S.loc.src!=="quartier";
   const today=B.filter(b=>freeSlots(b,0).some(s=>s.min>=17*60)).sort((a,b)=>b.rating-a.rating).slice(0,8);
   return `<section class="hero"><div class="wrap">
     <h1>Tous vos rendez-vous, au même endroit</h1>
@@ -828,7 +830,8 @@ function pageHome(){
   </div></section>
   <div class="wrap"><div class="cats">${CATS.map(c=>`<button class="cat" data-cat="${c.slug}"><span class="ico">${icon(c.ic)}</span>${c.label}<span class="xs muted" style="font-weight:500">${B.filter(b=>b.cat===c.slug).length} à proximité</span></button>`).join("")}</div></div>
   <section class="section"><div class="wrap">
-    <div class="row" style="justify-content:space-between;margin-bottom:14px"><h2 style="margin:0">À côté de chez vous</h2><button class="btn btn-ghost btn-sm" data-locbtn>${icon("pin",'width="15" height="15"')} ${esc(loc().label)} · modifier</button></div>
+    <div class="row" style="justify-content:space-between;margin-bottom:6px"><h2 style="margin:0">À côté de chez vous</h2><div class="row" style="gap:6px">${shared?"":`<button class="btn btn-primary btn-sm" data-gps>${icon("pin",'width="15" height="15"')} Partager ma position</button>`}<button class="btn btn-ghost btn-sm" data-locbtn>${esc(loc().label)} · modifier</button></div></div>
+    <p class="small muted" style="margin:0 0 14px">Le plus proche de vous dans chaque domaine, du plus près au plus loin.</p>
     <div class="hscroll">${near.map(bizTile).join("")}</div>
   </div></section>
   <section class="section" style="padding-top:0"><div class="wrap">
