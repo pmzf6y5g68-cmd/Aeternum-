@@ -46,15 +46,15 @@ export default async function GiftCardsPage() {
         <>
           <section className="grid grid-cols-2 gap-3 md:grid-cols-3">
             <div className="card p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">Vendu</p>
+              <p className="text-xs font-semibold text-ink-soft">Vendu</p>
               <p className="mt-1 text-2xl font-bold tabular-nums">{formatEur(total)}</p>
             </div>
             <div className="card p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">Cartes vendues</p>
+              <p className="text-xs font-semibold text-ink-soft">Cartes vendues</p>
               <p className="mt-1 text-2xl font-bold tabular-nums">{sold.length}</p>
             </div>
             <div className="card col-span-2 p-4 md:col-span-1">
-              <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">À honorer</p>
+              <p className="text-xs font-semibold text-ink-soft">À honorer</p>
               <p className="mt-1 text-2xl font-bold tabular-nums">{formatEur(outstanding)}</p>
             </div>
           </section>

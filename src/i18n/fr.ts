@@ -40,7 +40,7 @@ export const fr = {
     no_show: "Absent",
   },
   home: {
-    title: "Tous vos rendez-vous, au même endroit",
+    title: "Tous vos rendez‑vous, au même endroit",
     subtitle: "Coiffeur, garage, coach, avocat, restaurant, plombier… Trouvez un professionnel près de chez vous et réservez en quelques secondes, 24 h/24.",
     whatPlaceholder: "Nom, prestation, métier…",
     wherePlaceholder: "Où ? Ville, adresse…",
@@ -65,7 +65,7 @@ export const fr = {
   },
   search: {
     title: "Résultats",
-    resultsFor: "{count} résultat(s)",
+    resultsFor: "{count} résultats",
     near: "près de {place}",
     sort: "Trier",
     sorts: {

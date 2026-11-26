@@ -51,7 +51,7 @@ export function MagicLinkForm({ next, defaultEmail = "" }: { next: string; defau
         <label htmlFor="email" className="label">
           {t.email}
         </label>
-        <input id="email" name="email" type="email" required autoComplete="email" defaultValue={state.email ?? defaultEmail} className="input" />
+        <input id="email" name="email" type="email" required autoComplete="email" inputMode="email" placeholder="vous@exemple.fr" defaultValue={state.email ?? defaultEmail} className="input" />
       </div>
       {state.status === "error" && (
         <p className="text-sm text-danger">{state.message === "invalid_email" ? t.invalidEmail : state.message === "rate_limited" ? t.rateLimited : fr.common.error}</p>

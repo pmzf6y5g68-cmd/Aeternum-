@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { AssistantWidget } from "@/components/assistant-widget";
 import { Pwa } from "@/components/pwa";
 import { siteConfig } from "@/config/site";
+import "@fontsource-variable/inter";
+import "@fontsource-variable/manrope";
+import { MobileTabBar } from "@/components/mobile-tab-bar";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -38,6 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="fr">
       <body className="min-h-dvh bg-canvas pb-[env(safe-area-inset-bottom)] font-sans text-ink antialiased">
         {children}
+        <MobileTabBar />
         <AssistantWidget />
         <Pwa />
       </body>

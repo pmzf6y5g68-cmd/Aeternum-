@@ -141,7 +141,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
           { label: t.stats.noShow, value: String(noShows) },
         ].map((s) => (
           <div key={s.label} className="card p-4">
-            <dt className="text-xs font-semibold uppercase tracking-wide text-ink-soft">{s.label}</dt>
+            <dt className="text-xs font-semibold text-ink-soft">{s.label}</dt>
             <dd className="mt-1 text-2xl font-bold">{s.value}</dd>
           </div>
         ))}

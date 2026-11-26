@@ -48,7 +48,7 @@ export function OnboardingForm({ defaults }: { defaults: { name: string; city: s
                 if (!cats.length) return null;
                 return (
                   <div key={g.slug} className="mb-2">
-                    <p className="px-2 py-1 text-xs font-semibold uppercase tracking-wide text-ink-soft">{g.label}</p>
+                    <p className="px-2 py-1 text-xs font-semibold text-ink-soft">{g.label}</p>
                     <div className="grid gap-1 sm:grid-cols-2">
                       {cats.map((c) => (
                         <button

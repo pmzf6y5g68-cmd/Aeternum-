@@ -218,3 +218,10 @@ créneaux visibles dès les résultats, carte, fiche avec réservation pas à pa
 - **Fidélité** : « toutes les N visites, −X % ou offerte », appliquée automatiquement côté serveur à la bonne visite (jamais cumulée avec une offre), progression visible dans le compte, bandeau sur la fiche.
 - **Photos dans les avis** : 3 photos max (5 Mo, type vérifié par les octets), bucket public `review-photos`, affichées sur la fiche ; le pro peut retirer une photo inappropriée.
 - **Bouton « Réserver » Google** : guide pas à pas + lien prêt à coller dans Google Business Profile (immédiat), et flux Actions Center (entity / action, téléphone E.164) sur `/api/google/actions-center/{entity|action}` pour le partenariat Google.
+
+## F — Forme, fluidité, ergonomie (Airbnb, Doctolib, Fresha) ✅
+- Typographie : Manrope (titres, serrés, équilibrés) + Inter (texte), auto-hébergées ; chiffres tabulaires sur prix et horaires.
+- Mobile : barre d'onglets (Accueil, Rechercher, Rendez-vous, Favoris) ; sur une fiche, barre fixe « Prendre rendez-vous · dès X € · note » ; assistant décalé au-dessus ; zones sûres iPhone.
+- Squelettes de chargement (recherche, fiche) au lieu d'un écran blanc ; carte de résultat entièrement cliquable ; confirmation de réservation animée.
+- Toucher : boutons ≥ 44 px, léger enfoncement au tap, pas de surbrillance grise ; focus clavier visible partout ; animations coupées si « réduire les animations ».
+- Détails : « rendez‑vous » insécable dans le titre, hero compact sur mobile, recherches populaires défilantes, plus de « résultat(s) », état vide qui propose une action, libellés sans majuscules criardes, champ email avec exemple.

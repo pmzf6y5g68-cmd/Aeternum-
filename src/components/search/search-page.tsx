@@ -136,7 +136,7 @@ export async function SearchPage({ params, fixedCategory, fixedCity, title, intr
         <div className="mb-4 space-y-3">
           <div>
             <h1 className="text-xl font-bold tracking-tight md:text-2xl">{heading}</h1>
-            <p className="text-sm text-ink-soft">{format(fr.search.resultsFor, { count: response.total })}</p>
+            <p className="text-sm text-ink-soft tabular-nums">{response.total === 0 ? "Aucun établissement pour l'instant" : `${response.total.toLocaleString("fr-FR")} établissement${response.total > 1 ? "s" : ""}`}</p>
             {intro && <p className="mt-2 max-w-3xl text-sm text-ink-soft">{intro}</p>}
           </div>
           <Suspense>
@@ -148,9 +148,14 @@ export async function SearchPage({ params, fixedCategory, fixedCity, title, intr
           <div className="card flex flex-col items-center gap-3 py-12 text-center">
             <SearchX className="size-10 text-ink-soft" aria-hidden />
             <p className="max-w-md text-ink-soft">{fr.search.noResults}</p>
-            <Link href="/" className="btn-secondary">
-              {fr.common.back}
-            </Link>
+            <div className="flex flex-wrap justify-center gap-2">
+              <Link href="/recherche" className="btn-primary">
+                Effacer les filtres
+              </Link>
+              <Link href="/" className="btn-secondary">
+                Voir ce qu&apos;il y a autour de moi
+              </Link>
+            </div>
           </div>
         ) : (
           <ResultsView results={results} center={lat !== null && lng !== null ? { lat, lng } : null} radiusKm={num(params, "rayon")} />

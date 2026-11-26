@@ -55,7 +55,7 @@ export function OAuthButtons({ next }: { next: string }) {
           </button>
         </form>
       ))}
-      <div className="flex items-center gap-3 py-2 text-xs font-medium uppercase tracking-wide text-ink-soft">
+      <div className="flex items-center gap-3 py-2 text-sm text-ink-soft">
         <span className="h-px flex-1 bg-line" /> ou par email <span className="h-px flex-1 bg-line" />
       </div>
     </div>

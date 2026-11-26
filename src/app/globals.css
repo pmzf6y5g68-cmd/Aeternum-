@@ -13,31 +13,124 @@
   --color-sun: #ffc93c;
   --color-success: #0f8a5f;
   --color-danger: #d92d3a;
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Manrope Variable", "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --radius-control: 10px;
+  --radius-card: 16px;
+  --radius-sheet: 24px;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --shadow-card: 0 1px 2px rgb(11 31 58 / 0.06), 0 2px 8px rgb(11 31 58 / 0.05);
   --shadow-pop: 0 12px 32px rgb(11 31 58 / 0.14);
 }
 
 html {
   -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  scroll-padding-top: 5rem;
 }
 
 body {
   background: var(--color-canvas);
   color: var(--color-ink);
+  font-feature-settings: "cv11", "ss01";
+  text-rendering: optimizeLegibility;
+}
+
+/* Titres : Manrope, serré et franc ; le corps reste en Inter, très lisible en petit. */
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+p {
+  text-wrap: pretty;
+}
+
+/* Prix, heures, compteurs : chiffres de même largeur, les colonnes ne « dansent » pas. */
+.tabular-nums,
+.slot,
+[data-num] {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Focus clavier visible partout (jamais au clic souris). */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Réponse au toucher : un bouton s'enfonce légèrement, comme une app native. */
+:where(button, .btn, a.btn-primary, a.btn-secondary):active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+::selection {
+  background: rgb(23 88 230 / 0.18);
+}
+
+/* Squelettes de chargement : une lueur lente, désactivée si l'usager réduit les animations. */
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+.skeleton {
+  border-radius: 10px;
+  background: linear-gradient(90deg, #e6ebf2 0%, #f1f4f8 40%, #e6ebf2 80%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(16px);
+    opacity: 0;
+  }
+}
+.sheet-in {
+  animation: sheet-up 0.28s var(--ease-out);
+}
+
+/* Confirmation : la coche « tombe » en place, le moment où l'usager sait que c'est réservé. */
+@keyframes pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+.pop-in {
+  animation: pop 0.42s var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 @utility input {
-  @apply w-full rounded-lg border border-line bg-white px-3.5 py-2.5 text-[15px] text-ink outline-none transition placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20;
+  @apply w-full rounded-[10px] border border-line bg-white px-3.5 py-2.5 text-[15px] text-ink outline-none transition placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20;
 }
 @utility label {
   @apply mb-1.5 block text-sm font-semibold text-ink;
 }
 @utility btn {
-  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-[15px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-50;
+  @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] px-4 py-2.5 text-[15px] font-semibold transition duration-150 select-none disabled:cursor-not-allowed disabled:opacity-50;
 }
 @utility btn-primary {
-  @apply btn bg-brand text-white hover:bg-brand-dark;
+  @apply btn bg-brand text-white shadow-[0_1px_0_rgb(255_255_255/0.15)_inset,0_1px_2px_rgb(11_31_58/0.2)] hover:bg-brand-dark;
 }
 @utility btn-secondary {
   @apply btn border border-line bg-white text-ink hover:border-brand hover:text-brand;
@@ -49,7 +142,7 @@ body {
   @apply btn bg-sun text-ink hover:brightness-95;
 }
 @utility card {
-  @apply rounded-xl border border-line bg-white p-5 shadow-(--shadow-card);
+  @apply rounded-2xl border border-line bg-white p-5 shadow-(--shadow-card);
 }
 @utility chip {
   @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1.5 text-sm font-medium text-ink transition hover:border-brand hover:text-brand;
@@ -58,7 +151,7 @@ body {
   @apply chip border-brand bg-brand-soft text-brand;
 }
 @utility slot {
-  @apply inline-flex w-full items-center justify-center rounded-md bg-brand-soft px-2 py-2 text-sm font-semibold text-brand transition hover:bg-brand hover:text-white;
+  @apply inline-flex min-h-10 w-full items-center justify-center rounded-lg bg-brand-soft px-2 py-2 text-sm font-semibold text-brand transition duration-150 hover:bg-brand hover:text-white;
 }
 
 .leaflet-container {

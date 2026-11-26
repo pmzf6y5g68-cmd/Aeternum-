@@ -23,19 +23,19 @@ export default function HomePage() {
       <SiteHeader />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(siteJsonLd()) }} />
       <main>
-        <section className="relative overflow-hidden bg-brand pb-16 pt-10 md:pb-24 md:pt-16">
+        <section className="relative overflow-hidden bg-brand pb-12 pt-7 md:pb-24 md:pt-16">
           <div className="pointer-events-none absolute -right-32 -top-32 size-[28rem] rounded-full bg-white/5" />
           <div className="pointer-events-none absolute -bottom-40 -left-24 size-[26rem] rounded-full bg-brand-dark/40" />
           <div className="relative mx-auto max-w-5xl px-4">
-            <h1 className="max-w-3xl text-3xl font-bold leading-tight tracking-tight text-white md:text-5xl">{t.title}</h1>
-            <p className="mt-4 max-w-2xl text-base text-white/85 md:text-lg">{t.subtitle}</p>
-            <div className="mt-8">
+            <h1 className="max-w-3xl text-[1.75rem] font-extrabold leading-[1.1] tracking-tight text-white md:text-5xl">{t.title}</h1>
+            <p className="mt-3 max-w-2xl text-[15px] text-white/85 md:mt-4 md:text-lg">{t.subtitle}</p>
+            <div className="mt-6 md:mt-8">
               <SearchBar />
             </div>
-            <div className="mt-5 flex flex-wrap items-center gap-2">
-              <span className="mr-1 text-sm font-medium text-white/80">{t.popular} :</span>
+            <div className="-mx-4 mt-5 flex items-center gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:flex-wrap md:overflow-visible md:px-0">
+              <span className="mr-1 shrink-0 text-sm font-medium text-white/80">{t.popular} :</span>
               {featured.slice(0, 8).map((c) => (
-                <Link key={c.slug} href={`/${c.slug}`} className="rounded-full bg-white/10 px-3 py-1.5 text-sm font-medium text-white hover:bg-white/20">
+                <Link key={c.slug} href={`/${c.slug}`} className="shrink-0 rounded-full bg-white/10 px-3 py-1.5 text-sm font-medium text-white hover:bg-white/20">
                   {c.label}
                 </Link>
               ))}

@@ -1,5 +1,6 @@
 "use client";
 
+import { isBusinessPage, mobileBar } from "@/lib/mobile-chrome";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -21,7 +22,6 @@ const STORAGE_KEY = "rdv-assistant";
 const SUGGESTIONS = ["Qu'y a-t-il autour de chez moi ?", "Un coiffeur dispo demain soir près de moi", "Combien coûte une vidange ?", "Mes prochains rendez-vous"];
 /** Sur une fiche établissement (/metier/ville/slug), les questions qu'on se pose vraiment. */
 const BUSINESS_SUGGESTIONS = ["C'est ouvert maintenant ?", "Le prochain créneau libre ?", "Que disent les avis ?", "Quelles sont les conditions d'annulation ?"];
-const isBusinessPage = (p: string) => /^\/[a-z0-9-]+\/[a-z0-9-]+\/[a-z0-9-]{3,60}$/.test(p);
 const POSITION_KEY = "rdv_position";
 const WELCOME: Msg = { role: "assistant", content: "Bonjour ! Je trouve un professionnel et un créneau pour vous en quelques secondes. Que cherchez-vous ?" };
 
@@ -189,7 +189,7 @@ export function AssistantWidget() {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-4 z-40 inline-flex items-center gap-2 rounded-full bg-brand px-4 py-3 font-semibold text-white shadow-(--shadow-pop) hover:bg-brand-dark"
+          className={`fixed ${mobileBar(pathname) === "none" ? "bottom-[max(1rem,env(safe-area-inset-bottom))]" : "bottom-[calc(5rem+env(safe-area-inset-bottom))]"} right-4 z-40 md:bottom-4 inline-flex items-center gap-2 rounded-full bg-brand px-4 py-3 font-semibold text-white shadow-(--shadow-pop) hover:bg-brand-dark`}
           aria-label="Ouvrir l'assistant"
         >
           <Sparkles className="size-5" aria-hidden />

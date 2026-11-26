@@ -31,18 +31,18 @@ export function ResultCard({ r, active, onHover }: { r: SerializedResult; active
       id={`r-${r.id}`}
       onMouseEnter={() => onHover?.(r.id)}
       onMouseLeave={() => onHover?.(null)}
-      className={`card grid gap-5 p-4 transition md:grid-cols-[1fr_minmax(0,20rem)] md:p-5 ${active ? "border-brand ring-2 ring-brand/20" : ""}`}
+      className={`card relative grid gap-5 p-4 transition duration-150 hover:border-brand/40 hover:shadow-(--shadow-pop) md:grid-cols-[1fr_minmax(0,20rem)] md:p-5 ${active ? "border-brand ring-2 ring-brand/20" : ""}`}
     >
       <div className="flex gap-4">
         <BusinessAvatar name={r.name} category={r.category} coverUrl={r.cover_url} />
         <div className="min-w-0 space-y-1">
-          <Link href={r.path} className="block text-lg font-bold leading-snug text-brand hover:underline">
+          <Link href={r.path} className="block text-lg font-bold leading-snug text-brand after:absolute after:inset-0 after:rounded-2xl after:content-[''] hover:underline">
             {r.name}
           </Link>
           <p className="flex items-center gap-2 text-sm font-medium text-ink">
             {category?.label}
             {r.sponsored && (
-              <span className="rounded bg-sun/30 px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-ink" title="Établissement abonné Pro, mis en avant dans le tri « Pertinence »">
+              <span className="rounded bg-sun/30 px-1.5 py-0.5 text-[11px] font-bold text-ink" title="Établissement abonné Pro, mis en avant dans le tri « Pertinence »">
                 Mis en avant
               </span>
             )}
@@ -74,13 +74,13 @@ export function ResultCard({ r, active, onHover }: { r: SerializedResult; active
               </span>
             )}
           </div>
-          <Link href={`${r.path}#reserver`} className="btn-primary mt-3 w-full py-2 text-sm md:w-auto">
+          <Link href={`${r.path}#reserver`} className="btn-primary relative z-10 mt-3 w-full py-2 text-sm md:w-auto">
             {t.book}
           </Link>
         </div>
       </div>
 
-      <div className="border-t border-line pt-4 md:border-l md:border-t-0 md:pl-5 md:pt-0">
+      <div className="relative z-10 border-t border-line pt-4 md:border-l md:border-t-0 md:pl-5 md:pt-0">
         {hasSlots ? (
           <>
             <div className="grid grid-cols-4 gap-2">

@@ -160,7 +160,7 @@ export function SearchBar({ defaultQuery = "", defaultCategory = null, defaultPl
           <div className="absolute left-0 right-0 top-full z-40 mt-2 overflow-hidden rounded-xl border border-line bg-white shadow-(--shadow-pop)">
             {suggestions.categories.length > 0 && (
               <div className="py-2">
-                <p className="px-4 pb-1 text-xs font-semibold uppercase tracking-wide text-ink-soft">{fr.search.suggestions.categories}</p>
+                <p className="px-4 pb-1 text-xs font-semibold text-ink-soft">{fr.search.suggestions.categories}</p>
                 {suggestions.categories.map((c) => (
                   <button
                     key={c.slug}
@@ -182,7 +182,7 @@ export function SearchBar({ defaultQuery = "", defaultCategory = null, defaultPl
             )}
             {suggestions.businesses.length > 0 && (
               <div className="border-t border-line py-2">
-                <p className="px-4 pb-1 text-xs font-semibold uppercase tracking-wide text-ink-soft">{fr.search.suggestions.businesses}</p>
+                <p className="px-4 pb-1 text-xs font-semibold text-ink-soft">{fr.search.suggestions.businesses}</p>
                 {suggestions.businesses.map((b) => (
                   <button key={b.path} type="button" onClick={() => router.push(b.path)} className="flex w-full items-center gap-3 px-4 py-2 text-left hover:bg-brand-softer">
                     <span className="grid size-8 place-items-center rounded-lg bg-canvas text-ink-soft">

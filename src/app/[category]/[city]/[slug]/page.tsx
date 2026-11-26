@@ -376,6 +376,25 @@ export default async function BusinessPage({ params, searchParams }: { params: P
           </section>
         </div>
       </main>
+      {catalog.services.length > 0 && (
+        <>
+          <div aria-hidden className="h-[calc(5rem+env(safe-area-inset-bottom))] lg:hidden" />
+          <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-white/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur lg:hidden">
+            <div className="mx-auto flex max-w-xl items-center gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-bold">{biz.name}</p>
+                <p className="text-xs text-ink-soft tabular-nums">
+                  {biz.min_price_eur !== null ? `dès ${formatEur(Math.round(Number(biz.min_price_eur) * 100))}` : fr.common.free}
+                  {biz.rating_count > 0 ? ` · ${Number(biz.rating_avg).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} ★ (${biz.rating_count})` : ""}
+                </p>
+              </div>
+              <a href="#reserver" className="btn-primary shrink-0 px-5">
+                Prendre rendez-vous
+              </a>
+            </div>
+          </div>
+        </>
+      )}
       <SiteFooter />
     </>
   );

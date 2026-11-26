@@ -392,8 +392,8 @@ export function BookingWidget({
 
   if (done && slot) {
     return (
-      <div className="p-5 text-center">
-        <span className="mx-auto grid size-14 place-items-center rounded-full bg-success text-white">
+      <div className="sheet-in p-5 text-center" role="status" aria-live="polite">
+        <span className="pop-in mx-auto grid size-14 place-items-center rounded-full bg-success text-white shadow-[0_0_0_8px_rgb(15_138_95/0.12)]">
           <Check className="size-7" aria-hidden />
         </span>
         <h3 className="mt-4 text-xl font-bold">{t.successTitle}</h3>

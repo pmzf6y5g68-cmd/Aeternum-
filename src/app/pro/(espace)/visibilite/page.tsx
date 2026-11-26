@@ -61,7 +61,7 @@ export default async function VisibilityPage() {
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {tiles.map(({ icon: Icon, label, value, sub }) => (
           <div key={label} className="card p-4">
-            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-ink-soft">
+            <p className="flex items-center gap-2 text-xs font-semibold text-ink-soft">
               <Icon className="size-4 text-brand" aria-hidden /> {label}
             </p>
             <p className="mt-2 text-2xl font-bold tabular-nums">{value}</p>
