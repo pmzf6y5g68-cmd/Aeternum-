@@ -1,0 +1,678 @@
+<title>Rendez-vous</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Layout : appli à deux faces (client / pro) — barre haute, vues routées par #, cartes nettes sur fond bleuté. */
+:root{
+  --brand:#1758e6;--brand-dark:#0f43b8;--brand-deep:#0a2f86;--brand-soft:#e8effd;--brand-softer:#f3f7fe;
+  --ink:#0b1f3a;--ink-soft:#4a5b75;--canvas:#f2f5f9;--surface:#ffffff;--line:#dce3ec;
+  --sun:#ffc93c;--head:#1758e6;--ok:#0f8a5f;--ok-soft:#e6f5ee;--bad:#d92d3a;--bad-soft:#fdecee;--warn:#b26a00;--warn-soft:#fff4dc;
+  --shadow:0 1px 2px rgb(11 31 58/.06),0 2px 8px rgb(11 31 58/.05);--pop:0 12px 32px rgb(11 31 58/.16);
+  --f-display:"Manrope",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-body:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --brand:#5b8cff;--brand-dark:#3f74f5;--brand-deep:#0b1c45;--head:#173a8f;--brand-soft:#16264a;--brand-softer:#111d38;
+  --ink:#e8eef8;--ink-soft:#9fb0c8;--canvas:#0a1222;--surface:#111b2e;--line:#22314b;
+  --ok:#3ccf95;--ok-soft:#0f2b22;--bad:#ff6b76;--bad-soft:#36161b;--warn:#ffc35c;--warn-soft:#33270e;
+  --shadow:0 1px 2px rgb(0 0 0/.3);--pop:0 12px 32px rgb(0 0 0/.5);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --brand:#5b8cff;--brand-dark:#3f74f5;--brand-deep:#0b1c45;--brand-soft:#16264a;--brand-softer:#111d38;
+  --ink:#e8eef8;--ink-soft:#9fb0c8;--canvas:#0a1222;--surface:#111b2e;--line:#22314b;
+  --ok:#3ccf95;--ok-soft:#0f2b22;--bad:#ff6b76;--bad-soft:#36161b;--warn:#ffc35c;--warn-soft:#33270e;
+  --shadow:0 1px 2px rgb(0 0 0/.3);--pop:0 12px 32px rgb(0 0 0/.5);color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--canvas);color:var(--ink);font:15px/1.5 var(--f-body);-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--f-display);line-height:1.15;text-wrap:balance;margin:0;letter-spacing:-.01em}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--brand)}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:6px}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--surface)}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;align-items:center;gap:12px;height:60px}
+.logo{display:flex;align-items:center;gap:8px;font:800 18px var(--f-display);color:var(--ink);text-decoration:none;cursor:pointer;background:none;border:0;padding:0}
+.logo i{display:grid;place-items:center;width:30px;height:30px;border-radius:9px;background:var(--brand);color:#fff;font-style:normal}
+.side{display:flex;gap:4px;margin-left:auto;align-items:center}
+.seg{display:inline-flex;background:var(--canvas);border:1px solid var(--line);border-radius:10px;padding:3px}
+.seg button{border:0;background:none;padding:6px 12px;border-radius:7px;font-weight:600;font-size:14px;color:var(--ink-soft);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.navlink{border:0;background:none;padding:8px 10px;border-radius:8px;font-weight:600;color:var(--ink-soft);cursor:pointer;font-size:14px}
+.mob{display:none}
+.navlink:hover,.navlink[aria-current="page"]{color:var(--ink);background:var(--canvas)}
+.demo{background:var(--warn-soft);color:var(--warn);font-size:12.5px;font-weight:600;text-align:center;padding:6px 16px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:10px;padding:10px 16px;font-weight:600;border:1px solid transparent;cursor:pointer;transition:background .15s,transform .05s;text-decoration:none;font-size:15px}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--brand);color:#fff}.btn-primary:hover{background:var(--brand-dark)}
+.btn-secondary{background:var(--surface);color:var(--ink);border-color:var(--line)}.btn-secondary:hover{border-color:var(--brand)}
+.btn-ghost{background:none;color:var(--ink-soft)}.btn-ghost:hover{background:var(--canvas);color:var(--ink)}
+.btn-sun{background:var(--sun);color:#0b1f3a}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn-sm{padding:6px 11px;font-size:13.5px;border-radius:8px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+.input{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;outline:none}
+.input:focus{border-color:var(--brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 20%,transparent)}
+label.lbl{display:block;font-size:13.5px;font-weight:600;margin-bottom:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:13.5px;font-weight:600;cursor:pointer;color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:#fff}
+.muted{color:var(--ink-soft)}.small{font-size:13px}.xs{font-size:12px}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.grid{display:grid;gap:16px}
+.pill{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:700}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}.pill.bad{background:var(--bad-soft);color:var(--bad)}.pill.warn{background:var(--warn-soft);color:var(--warn)}.pill.brand{background:var(--brand-soft);color:var(--brand)}
+.tab{font-variant-numeric:tabular-nums}
+/* Accueil */
+.hero{background:var(--brand-deep);color:#fff;padding-block:44px 76px;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;right:-120px;top:-140px;width:420px;height:420px;border-radius:50%;background:rgb(255 255 255/.06)}
+.hero h1{font-size:clamp(28px,4.6vw,46px);max-width:760px;color:#fff}
+.hero p{color:rgb(255 255 255/.82);max-width:620px;font-size:17px;margin:12px 0 22px}
+.searchbar{display:grid;grid-template-columns:1.3fr 1fr auto;background:var(--surface);border-radius:14px;padding:6px;gap:6px;box-shadow:var(--pop);max-width:860px;position:relative;z-index:1}
+.searchbar .field{display:flex;flex-direction:column;padding:6px 12px;min-width:0}
+.searchbar .field+.field{border-left:1px solid var(--line)}
+.searchbar span{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft)}
+.searchbar input{border:0;outline:none;background:none;padding:2px 0;font-size:15.5px;color:var(--ink);min-width:0}
+.cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-top:-40px;position:relative;z-index:2}
+.cat{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 8px;text-align:center;cursor:pointer;font-weight:600;font-size:14px;border-radius:14px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);color:var(--ink)}
+.cat:hover{border-color:var(--brand);transform:translateY(-2px)}
+.ico{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:var(--brand-soft);color:var(--brand)}
+.ico svg{width:21px;height:21px}
+.section{padding-block:36px}
+.section h2{font-size:24px;margin-bottom:16px}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.kpi{font:800 28px var(--f-display)}
+/* Recherche */
+.layout-search{display:grid;grid-template-columns:260px minmax(0,1fr) 340px;gap:16px;padding-block:20px}
+.filters .group{padding-block:12px;border-top:1px solid var(--line)}
+.filters .group:first-child{border-top:0;padding-top:0}
+.result{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:14px;align-items:start;cursor:pointer}
+.result:hover{border-color:var(--brand)}
+.avatar{width:64px;height:64px;border-radius:14px;display:grid;place-items:center;font:800 22px var(--f-display);color:#fff}
+.slots-mini{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.slot-mini{border:1px solid var(--brand);color:var(--brand);background:var(--brand-softer);border-radius:8px;padding:4px 9px;font-size:13px;font-weight:700;cursor:pointer}
+.stars{color:#f2a900;letter-spacing:1px}
+.map{position:sticky;top:76px;height:calc(100dvh - 110px);min-height:360px;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:var(--brand-softer)}
+.map svg{width:100%;height:100%;display:block}
+.pin{cursor:pointer}
+/* Fiche */
+.bizhead{background:var(--head);color:#fff;padding-block:22px}
+.layout-biz{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:20px;padding-block:20px}
+.svc{display:flex;justify-content:space-between;gap:12px;align-items:center;padding-block:12px;border-top:1px solid var(--line)}
+.svc:first-child{border-top:0}
+.booking{position:sticky;top:76px;padding:0;overflow:auto;max-height:calc(100dvh - 92px)}
+.booking h3{background:var(--brand-softer);padding:14px 18px;font-size:17px;border-bottom:1px solid var(--line)}
+.bstep{padding:14px 18px;border-bottom:1px solid var(--line)}
+.bstep h4{margin:0 0 10px;font-size:14px;display:flex;align-items:center;gap:8px}
+.num{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--brand);color:#fff;font-size:12px}
+.opt{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 12px;cursor:pointer;margin-bottom:8px}
+.opt[aria-pressed="true"]{border-color:var(--brand);background:var(--brand-softer);box-shadow:inset 0 0 0 1px var(--brand)}
+.days{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.day{flex:0 0 auto;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:6px 10px;text-align:center;cursor:pointer;min-width:58px}
+.day b{display:block;font-size:16px}
+.day[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:#fff}
+.slotgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
+.slot{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 0;font-weight:700;font-size:13.5px;cursor:pointer;color:var(--brand)}
+.slot[aria-pressed="true"]{background:var(--brand);color:#fff;border-color:var(--brand)}
+.slot:disabled{color:var(--ink-soft);text-decoration:line-through;opacity:.5;cursor:not-allowed}
+.sum{display:grid;gap:6px;font-size:14px}
+.sum div{display:flex;justify-content:space-between;gap:10px}
+.notice{background:var(--canvas);border-radius:10px;padding:10px 12px;font-size:12.5px;color:var(--ink-soft)}
+details.faq{border-top:1px solid var(--line);padding-block:12px}
+details.faq summary{cursor:pointer;font-weight:600;list-style:none}
+details.faq[open] summary{color:var(--brand)}
+/* Pro */
+.layout-pro{display:grid;grid-template-columns:220px minmax(0,1fr);gap:20px;padding-block:20px}
+.pronav{display:flex;flex-direction:column;gap:2px}
+.pronav button{display:flex;align-items:center;gap:10px;text-align:left;border:0;background:none;padding:9px 12px;border-radius:10px;font-weight:600;color:var(--ink-soft);cursor:pointer}
+.pronav button[aria-current="page"]{background:var(--brand);color:#fff}
+.pronav svg{width:17px;height:17px;flex:0 0 auto}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.tile .lab{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft)}
+.tile .val{font:800 26px var(--f-display);margin-top:4px}
+.bar{height:8px;background:var(--canvas);border-radius:99px;overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--brand);border-radius:99px}
+.appt{display:grid;grid-template-columns:70px minmax(0,1fr) auto;gap:12px;align-items:center;padding-block:12px;border-top:1px solid var(--line)}
+.appt:first-child{border-top:0}
+.time{font:800 17px var(--f-display)}
+.spark{display:flex;align-items:flex-end;gap:4px;height:70px}
+.spark i{flex:1;background:var(--brand-soft);border-radius:4px 4px 0 0;position:relative}
+.spark i.last{background:var(--brand)}
+.check{display:flex;gap:12px;padding-block:11px;border-top:1px solid var(--line);align-items:flex-start}
+.check:first-child{border-top:0}
+.dot{width:20px;height:20px;border-radius:50%;border:2px solid var(--line);flex:0 0 auto;display:grid;place-items:center;margin-top:2px}
+.dot.on{background:var(--ok);border-color:var(--ok);color:#fff}
+.code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:12px 18px;border-radius:12px;font-weight:600;box-shadow:var(--pop);z-index:50;max-width:calc(100vw - 32px);text-align:center}
+.modal-bg{position:fixed;inset:0;background:rgb(11 31 58/.5);display:grid;place-items:center;z-index:40;padding:16px}
+.modal{background:var(--surface);border-radius:16px;max-width:460px;width:100%;padding:22px;box-shadow:var(--pop);max-height:90dvh;overflow:auto}
+.assistant{position:fixed;right:max(18px,calc(env(safe-area-inset-right,0px) + 12px));bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:25}
+.assistant>button{width:54px;height:54px;border-radius:50%;border:0;background:var(--brand);color:#fff;box-shadow:var(--pop);cursor:pointer;display:grid;place-items:center}
+.chat{position:absolute;right:0;bottom:66px;width:min(360px,calc(100vw - 36px));background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--pop);overflow:hidden}
+.chat .msgs{max-height:300px;overflow:auto;padding:12px;display:grid;gap:8px}
+.msg{padding:9px 12px;border-radius:12px;font-size:14px;max-width:88%}
+.msg.bot{background:var(--canvas)}.msg.me{background:var(--brand);color:#fff;justify-self:end}
+footer{border-top:1px solid var(--line);margin-top:40px;padding-block:24px;color:var(--ink-soft);font-size:13px}
+@media (max-width:1020px){.layout-search{grid-template-columns:minmax(0,1fr)}.map{position:relative;top:0;height:300px}.filters{order:0}}
+@media (max-width:860px){.layout-biz,.layout-pro{grid-template-columns:minmax(0,1fr)}.booking{position:relative;top:0;max-height:none}.pronav{flex-direction:row;overflow-x:auto}.pronav button{flex:0 0 auto}.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.steps{grid-template-columns:1fr}}
+@media (max-width:620px){.searchbar{grid-template-columns:1fr}.searchbar .field+.field{border-left:0;border-top:1px solid var(--line)}.navlabel{display:none}.mob{display:inline}.result{grid-template-columns:48px minmax(0,1fr)}.result .price{grid-column:2}.avatar{width:48px;height:48px;font-size:17px}.appt{grid-template-columns:56px minmax(0,1fr)}.appt .acts{grid-column:1/-1}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="demo">Version de démonstration avec des établissements d'exemple : réservez, payez et gérez comme dans l'application réelle, sans aucun débit.</div>
+<header class="top"><div class="wrap">
+  <button class="logo" data-go="accueil" aria-label="Accueil Rendez-vous"><i>✓</i>Rendez-vous</button>
+  <div class="side">
+    <div class="seg" role="group" aria-label="Espace">
+      <button id="mode-client" aria-pressed="true" data-mode="client">Client</button>
+      <button id="mode-pro" aria-pressed="false" data-mode="pro">Pro</button>
+    </div>
+    <button class="navlink" data-go="compte" id="nav-compte"><span class="mob" aria-hidden="true"></span><span class="navlabel">Mes rendez-vous</span></button>
+  </div>
+</div></header>
+<main id="app"></main>
+<footer><div class="wrap row" style="justify-content:space-between">
+  <span>© Rendez-vous — prise de rendez-vous en ligne pour tous les métiers (hors santé).</span>
+  <span>Gratuit pour les clients · Pro à 39 € par mois, 0 % de commission</span>
+</div></footer>
+<div class="assistant" id="assistant"></div>
+
+<script>
+(function(){
+"use strict";
+// ---------- Icônes (traits simples, 24px) ----------
+const I={
+ scissors:'<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.12 15.88M14.47 14.48 20 20M8.12 8.12 12 12"/>',
+ flower:'<path d="M12 7.5a4.5 4.5 0 1 1 4.5 4.5M12 7.5A4.5 4.5 0 1 0 7.5 12M12 7.5V9m-4.5 3a4.5 4.5 0 1 0 4.5 4.5M7.5 12H9m7.5 0a4.5 4.5 0 1 1-4.5 4.5m4.5-4.5H15m-3 4.5V15"/><circle cx="12" cy="12" r="3"/>',
+ dumbbell:'<path d="M14.4 14.4 9.6 9.6M18.66 21.51a2 2 0 1 1-2.83-2.83l-1.77 1.77a2 2 0 1 1-2.83-2.83l6.37-6.36a2 2 0 1 1 2.83 2.82l-1.77 1.77a2 2 0 1 1 2.83 2.83zM21.5 21.5l-1.4-1.4M3.9 3.9 2.5 2.5M6.4 12.77a2 2 0 1 1-2.83-2.83l1.77-1.77a2 2 0 1 1-2.83-2.83l2.83-2.83a2 2 0 1 1 2.83 2.83l1.76-1.77a2 2 0 1 1 2.83 2.83z"/>',
+ car:'<path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/>',
+ house:'<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .7-1.5l7-6a2 2 0 0 1 2.6 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+ paw:'<circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="20" cy="16" r="2"/><path d="M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.05Q6.52 17.48 4.46 16.84A3.5 3.5 0 0 1 5.5 10Z"/>',
+ cap:'<path d="M21.42 10.92a1 1 0 0 0-.02-1.84L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.83l8.57 3.91a2 2 0 0 0 1.66 0z"/><path d="M22 10v6M6 12.5V16a6 3 0 0 0 12 0v-3.5"/>',
+ brief:'<path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/>',
+ party:'<path d="M5.8 11.3 2 22l10.7-3.79M4 3h.01M22 8h.01M15 2h.01M22 20h.01M22 2l-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10M22 13l-.82-.33c-.86-.34-1.82.2-1.98 1.11-.11.7-.72 1.22-1.43 1.22H17M11 2l.33.82c.34.86-.2 1.82-1.11 1.98-.7.1-1.22.72-1.22 1.43V7"/><path d="M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z"/>',
+ store:'<path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4M2 7h20M22 7v3a2 2 0 0 1-2 2a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7"/>',
+ cal:'<path d="M8 2v4M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>',
+ trend:'<path d="M22 7 13.5 15.5 8.5 10.5 2 17"/><path d="M16 7h6v6"/>',
+ gift:'<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/>',
+ card:'<rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/>',
+ star:'<path d="M11.5 2.3a.5.5 0 0 1 1 0l2.3 4.7a2 2 0 0 0 1.5 1.1l5.2.8a.5.5 0 0 1 .3.9l-3.8 3.6a2 2 0 0 0-.6 1.9l.9 5.2a.5.5 0 0 1-.8.6l-4.6-2.5a2 2 0 0 0-2 0l-4.6 2.5a.5.5 0 0 1-.8-.6l.9-5.2a2 2 0 0 0-.6-1.9L1.3 9.8a.5.5 0 0 1 .3-.9l5.2-.8a2 2 0 0 0 1.5-1.1z"/>',
+ share:'<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98M15.41 6.51l-6.82 3.98"/>',
+ chat:'<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
+ pin:'<path d="M20 10c0 4.99-5.54 10.19-7.4 11.8a1 1 0 0 1-1.2 0C9.54 20.19 4 14.99 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>',
+ shield:'<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>'
+};
+const icon=(n,s="")=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ${s}>${I[n]||""}</svg>`;
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const eur=c=>(c%100===0?(c/100):(c/100).toFixed(2).replace(".",","))+" €";
+
+// ---------- Données d'exemple ----------
+const CATS=[
+ {slug:"coiffeur",label:"Coiffeur",ic:"scissors"},{slug:"barbier",label:"Barbier",ic:"scissors"},{slug:"institut",label:"Institut de beauté",ic:"flower"},
+ {slug:"massage",label:"Massage",ic:"flower"},{slug:"coach",label:"Coach sportif",ic:"dumbbell"},{slug:"garage",label:"Garage",ic:"car"},
+ {slug:"detailing",label:"Detailing auto",ic:"car"},{slug:"plombier",label:"Plombier",ic:"house"},{slug:"toilettage",label:"Toilettage",ic:"paw"},
+ {slug:"cours",label:"Cours particuliers",ic:"cap"},{slug:"avocat",label:"Avocat",ic:"brief"},{slug:"restaurant",label:"Restaurant",ic:"party"}
+];
+const HOURS_STD={1:["09:00","19:00"],2:["09:00","19:00"],3:["09:00","19:00"],4:["09:00","20:00"],5:["09:00","20:00"],6:["09:00","17:00"]};
+const B=[
+ {id:"salon-elegance",name:"Salon Élégance",cat:"coiffeur",city:"Lyon",addr:"12 rue de la République, 69001 Lyon",x:48,y:42,rating:4.8,reviews:214,color:"#1758e6",pro:true,home:false,
+  tagline:"Coupe, couleur et balayage naturel, en plein centre de Lyon.",
+  desc:"Depuis 2012, l'équipe de Salon Élégance travaille la couleur douce et les coupes faciles à coiffer. Diagnostic offert avant chaque prestation, produits professionnels sans ammoniaque, et un vrai conseil pour garder votre coupe à la maison.",
+  highlights:["Accès PMR","Wi-Fi","Produits vegan"],pay:["Carte bancaire","Espèces","Apple Pay"],guarantee:50,gift:true,
+  services:[{id:"s1",name:"Coupe + brushing",price:45,dur:60,variants:[["Cheveux courts",1,1],["Mi-longs",1.2,1.15],["Longs",1.4,1.3]]},{id:"s2",name:"Balayage",price:120,dur:150,variants:[["Mi-longs",1,1],["Longs",1.25,1.2]]},{id:"s3",name:"Brushing",price:28,dur:30}],
+  staff:["Julie","Karim","Inès"]},
+ {id:"barber-club",name:"Barber Club Croix-Rousse",cat:"barbier",city:"Lyon",addr:"4 place de la Croix-Rousse, 69004 Lyon",x:44,y:24,rating:4.9,reviews:388,color:"#0f8a5f",pro:true,
+  tagline:"Dégradés, taille de barbe à l'ancienne et serviette chaude.",desc:"Un salon de barbier de quartier, sans attente : vous réservez votre créneau, on s'occupe du reste. Dégradés à blanc, contours au rasoir et soin de barbe.",
+  highlights:["Sans attente","Boissons offertes"],pay:["Carte bancaire","Espèces"],guarantee:40,gift:true,
+  services:[{id:"b1",name:"Coupe homme",price:25,dur:30},{id:"b2",name:"Coupe + barbe",price:38,dur:45},{id:"b3",name:"Taille de barbe",price:18,dur:20}],staff:["Sami","Léo"]},
+ {id:"zen-massage",name:"Atelier Zen",cat:"massage",city:"Lyon",addr:"28 cours Vitton, 69006 Lyon",x:66,y:34,rating:4.7,reviews:126,color:"#7a4ee0",pro:false,home:true,
+  tagline:"Massages bien-être au cabinet ou à domicile.",desc:"Massages relaxants, deep tissue et pierres chaudes. Possibilité d'intervention à domicile dans un rayon de 15 km, table et linge fournis.",
+  highlights:["À domicile","Huiles bio"],pay:["Carte bancaire","Chèque"],guarantee:0,gift:true,
+  services:[{id:"z1",name:"Massage relaxant",price:65,dur:60},{id:"z2",name:"Pierres chaudes",price:85,dur:75},{id:"z3",name:"Massage duo",price:120,dur:60}],staff:["Claire"]},
+ {id:"fit-coach",name:"Thomas Martin — Coach",cat:"coach",city:"Lyon",addr:"Parc de la Tête d'Or, 69006 Lyon",x:60,y:20,rating:4.9,reviews:73,color:"#d9482b",pro:true,home:true,
+  tagline:"Remise en forme et préparation physique, en extérieur ou chez vous.",desc:"Coach diplômé d'État. Séances individuelles ou en petit groupe, bilan offert au premier rendez-vous, programme suivi entre les séances.",
+  highlights:["Diplômé d'État","Bilan offert"],pay:["Carte bancaire","Virement"],guarantee:100,gift:false,
+  services:[{id:"c1",name:"Séance individuelle",price:50,dur:60},{id:"c2",name:"Pack découverte (bilan + séance)",price:35,dur:75},{id:"c3",name:"Small group (4 pers. max)",price:20,dur:60}],staff:["Thomas"]},
+ {id:"garage-saxe",name:"Garage Saxe Auto",cat:"garage",city:"Lyon",addr:"95 avenue de Saxe, 69003 Lyon",x:56,y:56,rating:4.6,reviews:162,color:"#334155",pro:true,
+  tagline:"Révision, freins, pneus et diagnostic toutes marques.",desc:"Garage indépendant, devis clair avant toute intervention et prix affichés en ligne. Véhicule de courtoisie sur demande.",
+  highlights:["Devis gratuit","Véhicule de courtoisie"],pay:["Carte bancaire","Virement"],guarantee:0,gift:false,
+  services:[{id:"g1",name:"Révision constructeur",price:159,dur:120,variants:[["Citadine",.85,.85],["Berline",1,1],["SUV",1.2,1.2]]},{id:"g2",name:"Changement plaquettes",price:89,dur:60},{id:"g3",name:"Diagnostic électronique",price:49,dur:30}],staff:["Marc","Yanis"]},
+ {id:"shine-detailing",name:"Shine Detailing",cat:"detailing",city:"Lyon",addr:"Intervention à domicile, Lyon et alentours",x:34,y:60,rating:4.9,reviews:95,color:"#0ea5b7",pro:true,home:true,
+  tagline:"Nettoyage intérieur et extérieur à domicile, sans eau.",desc:"Detailing complet chez vous ou sur votre lieu de travail : aspiration, shampoing des sièges, décontamination et protection céramique.",
+  highlights:["Sans eau","À domicile"],pay:["Carte bancaire"],guarantee:30,gift:true,
+  services:[{id:"d1",name:"Intérieur complet",price:89,dur:120,variants:[["Citadine",.85,.85],["Berline",1,1],["SUV",1.2,1.2]]},{id:"d2",name:"Extérieur + cire",price:69,dur:90},{id:"d3",name:"Formule complète",price:149,dur:210}],staff:["Nico"]},
+ {id:"plomberie-rapide",name:"Plomberie Rapide 69",cat:"plombier",city:"Villeurbanne",addr:"Villeurbanne et Lyon",x:78,y:46,rating:4.5,reviews:58,color:"#b45309",pro:false,home:true,
+  tagline:"Fuite, chauffe-eau, débouchage : créneau garanti sous 48 h.",desc:"Artisan plombier certifié RGE. Déplacement offert dans un rayon de 10 km, tarif annoncé avant intervention.",
+  highlights:["Certifié RGE","Déplacement offert 10 km"],pay:["Carte bancaire","Chèque"],guarantee:0,gift:false,
+  services:[{id:"p1",name:"Recherche de fuite",price:90,dur:60},{id:"p2",name:"Débouchage",price:110,dur:60},{id:"p3",name:"Entretien chauffe-eau",price:95,dur:60}],staff:["Damien"]},
+ {id:"toilettage-pattes",name:"Les Pattes Douces",cat:"toilettage",city:"Lyon",addr:"7 rue Paul Bert, 69003 Lyon",x:52,y:66,rating:4.8,reviews:201,color:"#c2410c",pro:true,
+  tagline:"Toilettage tout en douceur, sans cage ni stress.",desc:"Toilettage chiens et chats, bain, coupe aux ciseaux et coupe des griffes. Un animal à la fois, sans cage.",
+  highlights:["Sans cage","Produits doux"],pay:["Carte bancaire","Espèces"],guarantee:30,gift:true,
+  services:[{id:"t1",name:"Bain + séchage",price:35,dur:60,variants:[["Petit chien",1,1],["Moyen",1.3,1.25],["Grand",1.6,1.5]]},{id:"t2",name:"Toilettage complet",price:55,dur:90,variants:[["Petit chien",1,1],["Moyen",1.3,1.25],["Grand",1.6,1.5]]}],staff:["Emma","Lucie"]},
+ {id:"maths-plus",name:"Maths Plus",cat:"cours",city:"Lyon",addr:"En ligne ou à domicile",x:40,y:76,rating:4.9,reviews:44,color:"#4338ca",pro:false,home:true,
+  tagline:"Cours de maths et physique du collège à la prépa.",desc:"Ingénieure de formation, cours individuels en visio ou à domicile, méthode et exercices corrigés entre les séances.",
+  highlights:["Visio possible","Suivi entre les cours"],pay:["Carte bancaire","Virement"],guarantee:0,gift:false,
+  services:[{id:"m1",name:"Cours collège / lycée (1 h)",price:30,dur:60},{id:"m2",name:"Cours prépa (1 h 30)",price:55,dur:90}],staff:["Sarah"]},
+ {id:"cabinet-durand",name:"Cabinet Durand Avocats",cat:"avocat",city:"Lyon",addr:"3 quai Jules Courmont, 69002 Lyon",x:46,y:50,rating:4.7,reviews:31,color:"#1e293b",pro:true,
+  tagline:"Droit du travail, de la famille et du logement.",desc:"Première consultation de 30 minutes à prix fixe, au cabinet ou en visio. Honoraires annoncés par écrit.",
+  highlights:["Visio","Prix fixe 1re consultation"],pay:["Carte bancaire","Virement"],guarantee:0,gift:false,
+  services:[{id:"a1",name:"Consultation (30 min)",price:60,dur:30},{id:"a2",name:"Consultation approfondie (1 h)",price:110,dur:60}],staff:["Me Durand","Me Benali"]},
+ {id:"chez-lucien",name:"Chez Lucien",cat:"restaurant",city:"Lyon",addr:"19 rue Mercière, 69002 Lyon",x:47,y:47,rating:4.6,reviews:512,color:"#9f1239",pro:true,
+  tagline:"Bouchon lyonnais, produits du marché, réservation en 2 clics.",desc:"Cuisine lyonnaise de saison, terrasse en été. Réservez votre table, on vous la garde 15 minutes.",
+  highlights:["Terrasse","Menu enfant"],pay:["Carte bancaire","Tickets restaurant"],guarantee:0,gift:true,
+  services:[{id:"r1",name:"Table déjeuner",price:0,dur:90,variants:[["1-2 pers.",1,1],["3-4 pers.",1,1],["5-6 pers.",1,1.2]]},{id:"r2",name:"Table dîner",price:0,dur:120,variants:[["1-2 pers.",1,1],["3-4 pers.",1,1],["5-6 pers.",1,1.2]]}],staff:["Salle"]},
+ {id:"beaute-ines",name:"Institut Belle & Zen",cat:"institut",city:"Villeurbanne",addr:"52 cours Émile Zola, 69100 Villeurbanne",x:74,y:38,rating:4.7,reviews:139,color:"#be185d",pro:false,
+  tagline:"Soins du visage, épilation et beauté des mains.",desc:"Institut indépendant, soins sur mesure et produits made in France. Carte fidélité : le 10e soin offert.",
+  highlights:["Made in France","Carte fidélité"],pay:["Carte bancaire","Espèces"],guarantee:0,gift:true,
+  services:[{id:"i1",name:"Soin visage hydratant",price:55,dur:60},{id:"i2",name:"Épilation jambes complètes",price:32,dur:45},{id:"i3",name:"Manucure + vernis semi-permanent",price:35,dur:50}],staff:["Inès","Nora"]}
+];
+const BY=Object.fromEntries(B.map(b=>[b.id,b]));
+const catOf=s=>CATS.find(c=>c.slug===s);
+const USER={lat:45.7578,x:50,y:46};
+
+// ---------- État (persistant pour ce navigateur) ----------
+const KEY="rdv-demo-v1";
+function load(){try{const v=JSON.parse(localStorage.getItem(KEY)||"null");if(v&&v.v===1)return v}catch(e){}return null}
+function seed(){
+  const t=new Date();const d=(n,h,m)=>{const x=new Date(t);x.setDate(x.getDate()+n);x.setHours(h,m,0,0);return x.toISOString()};
+  return {v:1,mode:"client",bookings:[
+    {id:"k1",biz:"salon-elegance",svc:"Coupe + brushing",variant:"Mi-longs",staff:"Julie",start:d(0,10,0),dur:69,total:5400,client:"Camille R.",email:"camille@exemple.fr",status:"confirmed",guarantee:2700,source:"marketplace"},
+    {id:"k2",biz:"salon-elegance",svc:"Balayage",variant:"Longs",staff:"Inès",start:d(0,14,30),dur:180,total:15000,client:"Sophie L.",email:"sophie@exemple.fr",status:"scheduled",guarantee:7500,source:"direct"},
+    {id:"k3",biz:"salon-elegance",svc:"Brushing",variant:null,staff:"Karim",start:d(0,17,0),dur:30,total:2800,client:"Nadia B.",email:"nadia@exemple.fr",status:"scheduled",guarantee:1400,source:"marketplace"},
+    {id:"k4",biz:"salon-elegance",svc:"Coupe + brushing",variant:"Cheveux courts",staff:"Karim",start:d(1,11,0),dur:60,total:4500,client:"Hugo M.",email:"hugo@exemple.fr",status:"scheduled",guarantee:2250,source:"marketplace"},
+    {id:"k5",biz:"barber-club",svc:"Coupe + barbe",variant:null,staff:"Sami",start:d(2,18,0),dur:45,total:3800,client:"Vous",email:"vous@exemple.fr",status:"scheduled",guarantee:1520,source:"marketplace",mine:true}
+  ],gifts:[{code:"K7PQ-M3ZD-8HTA",biz:"salon-elegance",amount:8000,from:"Marc",to:"Léa",status:"active"},{code:"R2XW-9NBE-4KFU",biz:"salon-elegance",amount:5000,from:"Anaïs",to:"Paul",status:"redeemed"}],
+  favorites:["salon-elegance"],plan:"pro",profile:{name:"",email:"",phone:""},listing:{desc:BY["salon-elegance"].desc,photo:false,hoursSet:true},seen:{}};
+}
+let S=load()||seed();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+
+// ---------- Vue courante ----------
+let V={page:"accueil",biz:null,q:"",where:"Lyon",cat:null,maxPrice:200,minRating:0,home:false,today:false,sort:"pertinence",proTab:"agenda"};
+const app=document.getElementById("app");
+function toast(msg){document.querySelectorAll(".toast").forEach(x=>x.remove());const t=document.createElement("div");t.className="toast";t.setAttribute("role","status");t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3200)}
+function go(page,extra){Object.assign(V,{page},extra||{});const h=page==="fiche"&&V.biz?"fiche-"+V.biz:page;if(location.hash.slice(1)!==h)history.replaceState(null,"","#"+h);render();window.scrollTo({top:0})}
+
+// ---------- Calculs ----------
+function startPrice(s){const f=s.variants?Math.min(...s.variants.map(v=>v[1])):1;return Math.round(s.price*f*100)}
+function minPrice(b){return Math.min(...b.services.map(startPrice))}
+function dist(b){const dx=(b.x-USER.x)*0.12,dy=(b.y-USER.y)*0.12;return Math.round(Math.sqrt(dx*dx+dy*dy)*1.25*10)/10}
+function stars(r){const f=Math.round(r);return `<span class="stars" aria-label="${r} sur 5">${"★".repeat(f)}${"☆".repeat(5-f)}</span>`}
+function dayKey(d){return d.toISOString().slice(0,10)}
+function slotsFor(b,date,dur){
+  const dow=date.getDay();const h=HOURS_STD[dow];if(!h)return [];
+  const [oh,om]=h[0].split(":").map(Number),[ch,cm]=h[1].split(":").map(Number);
+  const out=[];const now=new Date();
+  for(let m=oh*60+om;m+dur<=ch*60+cm;m+=30){
+    const st=new Date(date);st.setHours(Math.floor(m/60),m%60,0,0);
+    const lead=st-now<2*3600e3;
+    // créneaux pris : réservations réelles + charge simulée stable par établissement
+    const taken=S.bookings.some(k=>k.biz===b.id&&k.status!=="cancelled"&&Math.abs(new Date(k.start)-st)<k.dur*60e3)||((m/30+date.getDate()+b.name.length)%5===0);
+    out.push({t:`${String(Math.floor(m/60)).padStart(2,"0")}h${String(m%60).padStart(2,"0")}`,iso:st.toISOString(),off:lead||taken});
+  }
+  return out;
+}
+function nextSlots(b,n){const res=[];for(let i=0;i<7&&res.length<n;i++){const d=new Date();d.setDate(d.getDate()+i);for(const s of slotsFor(b,d,b.services[0].dur)){if(!s.off){res.push({...s,label:i===0?"Auj. "+s.t:i===1?"Dem. "+s.t:d.toLocaleDateString("fr-FR",{weekday:"short"})+" "+s.t});if(res.length>=n)break}}}return res}
+function fmtDate(iso){return new Date(iso).toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})+" à "+new Date(iso).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}).replace(":","h")}
+function code(){const A="ABCDEFGHJKMNPQRSTUVWXYZ23456789";let s="";for(let i=0;i<12;i++)s+=A[Math.floor(Math.random()*A.length)];return s.match(/.{4}/g).join("-")}
+function norm(s){return s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase()}
+
+// ---------- Pages client ----------
+function pageHome(){
+  return `<section class="hero"><div class="wrap">
+    <h1>Tous vos rendez-vous, au même endroit</h1>
+    <p>Coiffeur, garage, coach, avocat, restaurant, plombier… Comparez les prix, voyez les créneaux libres en temps réel et réservez en quelques secondes.</p>
+    <form class="searchbar" id="f-search" role="search">
+      <label class="field"><span>Quoi</span><input id="q" placeholder="Métier, établissement ou prestation" value="${esc(V.q)}" autocomplete="off"></label>
+      <label class="field"><span>Où</span><input id="where" value="${esc(V.where)}" placeholder="Ville ou adresse" autocomplete="off"></label>
+      <button class="btn btn-primary" type="submit" style="padding:12px 22px">Rechercher</button>
+    </form>
+    <div class="row" style="margin-top:16px;gap:8px">${["Coiffeur","Barbier","Massage","Garage","Coach sportif"].map(l=>`<button class="chip" style="background:rgb(255 255 255/.12);border-color:transparent;color:#fff" data-cat="${CATS.find(c=>c.label===l).slug}">${l}</button>`).join("")}</div>
+  </div></section>
+  <div class="wrap"><div class="cats">${CATS.map(c=>`<button class="cat" data-cat="${c.slug}"><span class="ico">${icon(c.ic)}</span>${c.label}</button>`).join("")}</div></div>
+  <section class="section"><div class="wrap">
+    <h2>Comment ça marche</h2>
+    <div class="steps">
+      ${[["Cherchez","Par métier, prestation ou nom, près de chez vous ou à domicile.","pin"],["Comparez","Prix exacts, avis vérifiés, créneaux libres affichés en direct.","star"],["Réservez","Confirmation immédiate, rappel la veille, annulation en 1 clic.","cal"]].map(([t,x,i])=>`<div class="card"><span class="ico">${icon(i)}</span><h3 style="font-size:18px;margin-top:12px">${t}</h3><p class="muted" style="margin:6px 0 0">${x}</p></div>`).join("")}
+    </div>
+  </div></section>
+  <section class="section" style="padding-top:0"><div class="wrap">
+    <h2>Les mieux notés près de Lyon</h2>
+    <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr))">${B.slice().sort((a,b)=>b.rating*Math.log(b.reviews)-a.rating*Math.log(a.reviews)).slice(0,6).map(b=>`
+      <button class="card result" style="grid-template-columns:48px minmax(0,1fr);text-align:left" data-biz="${b.id}">
+        <span class="avatar" style="width:48px;height:48px;font-size:17px;background:${b.color}">${esc(b.name[0])}</span>
+        <span style="min-width:0"><b style="display:block">${esc(b.name)}</b><span class="small muted">${catOf(b.cat).label} · ${b.city}</span><br><span class="small">${stars(b.rating)} <b>${b.rating.toLocaleString("fr-FR")}</b> <span class="muted">(${b.reviews})</span></span></span>
+      </button>`).join("")}</div>
+  </div></section>
+  <section class="wrap"><div class="card row" style="background:var(--brand-deep);color:#fff;border:0;justify-content:space-between;padding:28px">
+    <div style="max-width:620px"><h2 style="font-size:24px;color:#fff">Vous recevez sur rendez-vous ?</h2><p style="color:rgb(255 255 255/.82);margin:8px 0 0">Votre page en 60 secondes, visible par tous les clients de Rendez-vous. Agenda d'équipe, rappels, empreinte bancaire, cartes cadeaux. 0 % de commission.</p></div>
+    <button class="btn btn-sun" data-mode="pro">Découvrir l'espace pro</button>
+  </div></section>`;
+}
+
+function filtered(){
+  const q=norm(V.q.trim());
+  let list=B.filter(b=>{
+    if(V.cat&&b.cat!==V.cat)return false;
+    if(q){const hay=norm([b.name,catOf(b.cat).label,b.tagline,...b.services.map(s=>s.name)].join(" "));if(!q.split(/\s+/).every(w=>hay.includes(w)))return false}
+    if(minPrice(b)/100>V.maxPrice)return false;
+    if(b.rating<V.minRating)return false;
+    if(V.home&&!b.home)return false;
+    if(V.today&&!slotsFor(b,new Date(),b.services[0].dur).some(s=>!s.off))return false;
+    return true;
+  });
+  const score=b=>b.rating*Math.log(b.reviews+1)+(b.pro?0.15:0);
+  list.sort(V.sort==="prix"?(a,b)=>minPrice(a)-minPrice(b):V.sort==="note"?(a,b)=>b.rating-a.rating:V.sort==="distance"?(a,b)=>dist(a)-dist(b):(a,b)=>score(b)-score(a));
+  return list;
+}
+function pageSearch(){
+  const list=filtered();const c=V.cat?catOf(V.cat):null;
+  return `<div class="wrap layout-search">
+  <aside class="filters card" aria-label="Filtres">
+    <div class="group"><label class="lbl" for="sq">Recherche</label><input class="input" id="sq" value="${esc(V.q)}" placeholder="Ex. balayage, révision…"></div>
+    <div class="group"><span class="lbl">Métier</span><div class="row" style="gap:6px"><button class="chip" aria-pressed="${!V.cat}" data-cat="">Tous</button>${CATS.map(x=>`<button class="chip" aria-pressed="${V.cat===x.slug}" data-cat="${x.slug}">${x.label}</button>`).join("")}</div></div>
+    <div class="group"><label class="lbl" for="fp">Prix maximum : <span class="tab">${V.maxPrice} €</span></label><input type="range" id="fp" min="10" max="200" step="5" value="${V.maxPrice}" style="width:100%"></div>
+    <div class="group"><span class="lbl">Note minimum</span><div class="row" style="gap:6px">${[0,4,4.5,4.8].map(r=>`<button class="chip" aria-pressed="${V.minRating===r}" data-rating="${r}">${r?r.toLocaleString("fr-FR")+" ★":"Toutes"}</button>`).join("")}</div></div>
+    <div class="group"><label class="row small" style="gap:8px;font-weight:600"><input type="checkbox" id="fh" ${V.home?"checked":""}> Se déplace à domicile</label><label class="row small" style="gap:8px;font-weight:600;margin-top:8px"><input type="checkbox" id="ft" ${V.today?"checked":""}> Disponible aujourd'hui</label></div>
+  </aside>
+  <section style="min-width:0">
+    <div class="row" style="justify-content:space-between;margin-bottom:12px">
+      <h1 style="font-size:22px">${c?c.label+"s":"Établissements"} à ${esc(V.where||"Lyon")} <span class="muted" style="font-weight:600;font-size:16px">· ${list.length} résultat${list.length>1?"s":""}</span></h1>
+      <label class="small row" style="gap:6px">Trier par <select class="input" id="sort" style="width:auto;padding:6px 10px">${[["pertinence","Pertinence"],["distance","Distance"],["prix","Prix croissant"],["note","Note"]].map(([v,l])=>`<option value="${v}" ${V.sort===v?"selected":""}>${l}</option>`).join("")}</select></label>
+    </div>
+    <div class="grid" style="gap:12px">${list.length?list.map(b=>{const ns=nextSlots(b,4);return `
+      <article class="card result" data-biz="${b.id}" tabindex="0">
+        <span class="avatar" style="background:${b.color}">${esc(b.name[0])}</span>
+        <div style="min-width:0">
+          <div class="row" style="gap:8px"><h2 style="font-size:17px">${esc(b.name)}</h2>${b.pro&&V.sort==="pertinence"?'<span class="pill brand">Mis en avant</span>':""}</div>
+          <p class="small muted" style="margin:2px 0">${catOf(b.cat).label} · ${esc(b.city)} · ${dist(b).toLocaleString("fr-FR")} km${b.home?" · à domicile":""}</p>
+          <p class="small" style="margin:2px 0">${stars(b.rating)} <b>${b.rating.toLocaleString("fr-FR")}</b> <span class="muted">(${b.reviews} avis vérifiés)</span></p>
+          <div class="slots-mini">${ns.map(s=>`<button class="slot-mini" data-biz="${b.id}" data-slot="${s.iso}">${s.label}</button>`).join("")||'<span class="small muted">Complet cette semaine</span>'}</div>
+        </div>
+        <div class="price" style="text-align:right"><span class="xs muted">à partir de</span><br><b style="font-size:17px">${minPrice(b)?eur(minPrice(b)):"Gratuit"}</b></div>
+      </article>`}).join(""):`<div class="card"><h2 style="font-size:18px">Aucun résultat</h2><p class="muted">Élargissez le prix maximum ou retirez un filtre.</p><button class="btn btn-secondary" data-reset>Réinitialiser les filtres</button></div>`}</div>
+  </section>
+  <aside class="map" aria-label="Carte des résultats">${mapSvg(list)}</aside>
+  </div>`;
+}
+function mapSvg(list){
+  return `<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Carte de Lyon avec ${list.length} établissements">
+    <rect width="100" height="100" fill="var(--brand-softer)"/>
+    <path d="M30 0 C 36 20, 32 40, 40 55 S 44 80, 38 100" stroke="var(--brand-soft)" stroke-width="5" fill="none"/>
+    <path d="M70 0 C 62 18, 58 35, 50 48 S 44 70, 46 100" stroke="var(--brand-soft)" stroke-width="7" fill="none"/>
+    <g stroke="var(--line)" stroke-width=".4">${[15,30,45,60,75,90].map(v=>`<line x1="0" y1="${v}" x2="100" y2="${v}"/><line x1="${v}" y1="0" x2="${v}" y2="100"/>`).join("")}</g>
+    <text x="4" y="96" font-size="2.6" fill="var(--ink-soft)" font-weight="700">Lyon · vous êtes ici ●</text>
+    <circle cx="${USER.x+2}" cy="${USER.y+6}" r="1.2" fill="var(--ok)" stroke="var(--surface)" stroke-width=".5"/>
+    ${list.map(b=>`<g class="pin" data-biz="${b.id}" tabindex="0" role="link" aria-label="${esc(b.name)}"><rect x="${b.x-5}" y="${b.y-6.2}" width="10" height="3.8" rx="1.9" fill="var(--brand)"/><path d="M${b.x-1} ${b.y-2.5} L${b.x} ${b.y-1.2} L${b.x+1} ${b.y-2.5}Z" fill="var(--brand)"/><text x="${b.x}" y="${b.y-3.6}" text-anchor="middle" font-size="2" font-weight="800" fill="#fff">${minPrice(b)?eur(minPrice(b)):"Table"}</text></g>`).join("")}
+  </svg>`;
+}
+
+function faqFor(b){
+  const hrs=Object.entries(HOURS_STD).map(([d,h])=>["","lundi","mardi","mercredi","jeudi","vendredi","samedi"][d]+" "+h[0].replace(":","h")+"–"+h[1].replace(":","h")).join(", ");
+  return [[`Comment prendre rendez-vous chez ${b.name} ?`,"En ligne, 24 h/24 : choisissez la prestation puis un créneau libre. Confirmation immédiate par email et rappel la veille."],
+   [`Quels sont les tarifs de ${b.name} ?`,b.services.map(s=>`${s.name} : ${s.variants?"à partir de ":""}${startPrice(s)?eur(startPrice(s)):"gratuit"} (${s.dur} min)`).join(" ; ")+"."],
+   [`Quels sont les horaires ?`,hrs+", dimanche fermé."],
+   ["Quels moyens de paiement sont acceptés ?",b.pay.join(", ")+"."],
+   ["Peut-on annuler ?","Oui, gratuitement jusqu'à 24 h avant, depuis « Mes rendez-vous »."]];
+}
+let BK=null;
+function resetBK(b,slotIso){BK={biz:b.id,svc:b.services.length===1?b.services[0].id:null,variant:null,staff:"",day:0,slot:slotIso||null,step:"svc"};if(slotIso){const d=new Date(slotIso);const t=new Date();t.setHours(0,0,0,0);const x=new Date(d);x.setHours(0,0,0,0);BK.day=Math.round((x-t)/864e5)}}
+function curSvc(b){return b.services.find(s=>s.id===BK.svc)}
+function quote(b){const s=curSvc(b);if(!s)return null;const v=s.variants&&BK.variant!=null?s.variants[BK.variant]:s.variants?null:[null,1,1];if(!v)return null;const total=Math.round(s.price*v[1]*100);const dur=Math.round(s.dur*v[2]);const fee=b.guarantee&&total>=200?Math.round(total*b.guarantee/100):0;return {total,dur,fee,s,v}}
+function pageBiz(){
+  const b=BY[V.biz];if(!b)return pageSearch();
+  if(!BK||BK.biz!==b.id)resetBK(b);
+  const fav=S.favorites.includes(b.id);
+  return `<section class="bizhead"><div class="wrap row" style="justify-content:space-between">
+    <div class="row" style="gap:16px"><span class="avatar" style="background:rgb(255 255 255/.18);width:72px;height:72px">${esc(b.name[0])}</span>
+      <div><p class="xs" style="margin:0;color:rgb(255 255 255/.8)"><button class="btn-ghost" style="color:inherit;border:0;background:none;padding:0;cursor:pointer" data-cat="${b.cat}">${catOf(b.cat).label}s</button> › ${esc(b.city)}</p>
+      <h1 style="font-size:28px;color:#fff">${esc(b.name)}</h1>
+      <p style="margin:4px 0 0;color:rgb(255 255 255/.9)">${stars(b.rating)} <b>${b.rating.toLocaleString("fr-FR")}</b> · ${b.reviews} avis vérifiés</p></div></div>
+    <div class="row" style="gap:8px">${b.gift?`<button class="btn" style="background:rgb(255 255 255/.15);color:#fff" data-giftbuy="${b.id}">${icon("gift",'width="17" height="17"')} Offrir</button>`:""}
+      <button class="btn" style="background:rgb(255 255 255/.15);color:#fff" data-fav="${b.id}" aria-pressed="${fav}">${fav?"♥ Favori":"♡ Favori"}</button>
+      <button class="btn" style="background:rgb(255 255 255/.15);color:#fff" data-share>${icon("share",'width="17" height="17"')} Partager</button></div>
+  </div></section>
+  <div class="wrap layout-biz">
+    <div class="grid" style="align-content:start">
+      <section class="card"><h2 style="font-size:19px">À propos</h2><p style="font-weight:600;margin:10px 0 6px">${esc(b.tagline)}</p><p class="muted" style="margin:0">${esc(b.desc)}</p>
+        <div class="row" style="gap:6px;margin-top:12px">${b.highlights.map(h=>`<span class="pill brand">${esc(h)}</span>`).join("")}</div></section>
+      <section class="card"><h2 style="font-size:19px;margin-bottom:6px">Prestations</h2>${b.services.map(s=>`<div class="svc"><div style="min-width:0"><b>${esc(s.name)}</b><div class="xs muted">${s.dur} min${s.variants?` · ${s.variants.length} options`:""}</div></div><div class="row" style="gap:10px"><b>${s.variants?'<span class="xs muted" style="font-weight:500">dès </span>':""}${startPrice(s)?eur(startPrice(s)):"Gratuit"}</b><button class="btn btn-secondary btn-sm" data-pick="${s.id}">Choisir</button></div></div>`).join("")}</section>
+      <section class="card"><h2 style="font-size:19px">Infos pratiques</h2>
+        <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-top:10px">
+          <div><p class="small" style="margin:0;font-weight:700">Adresse</p><p class="small muted" style="margin:2px 0 10px">${esc(b.addr)}</p><p class="small" style="margin:0;font-weight:700">Paiement</p><p class="small muted" style="margin:2px 0 10px">${b.pay.join(", ")}</p><p class="small row" style="gap:6px;margin:0;color:var(--ok);font-weight:600">${icon("shield",'width="16" height="16"')} Annulation gratuite jusqu'à 24 h avant</p></div>
+          <div><p class="small" style="margin:0;font-weight:700">Horaires</p><table class="small tab" style="width:100%;margin-top:4px">${[1,2,3,4,5,6,0].map(d=>`<tr style="${d===new Date().getDay()?"font-weight:700":"color:var(--ink-soft)"}"><td>${["Dimanche","Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi"][d]}</td><td style="text-align:right">${HOURS_STD[d]?HOURS_STD[d].join(" – ").replaceAll(":","h"):"Fermé"}</td></tr>`).join("")}</table></div>
+        </div></section>
+      <section class="card"><h2 style="font-size:19px">Avis vérifiés</h2>${[["Camille","Accueil au top et résultat exactement comme demandé.",5],["Hugo","Ponctuel, efficace, je recommande.",5],["Nadia","Très bien, un peu d'attente à l'arrivée.",4]].map(([n,t,r])=>`<div class="svc" style="display:block"><div class="row" style="justify-content:space-between"><b>${n}</b>${stars(r)}</div><p class="small muted" style="margin:4px 0 0">${t}</p></div>`).join("")}</section>
+      <section class="card"><h2 style="font-size:19px;margin-bottom:4px">Questions fréquentes</h2>${faqFor(b).map(([q,a])=>`<details class="faq"><summary>${esc(q)}</summary><p class="small muted" style="margin:6px 0 0">${esc(a)}</p></details>`).join("")}</section>
+    </div>
+    <aside class="card booking" id="booking" aria-label="Réserver">${bookingPanel(b)}</aside>
+  </div>`;
+}
+function bookingPanel(b){
+  const s=curSvc(b);const q=quote(b);
+  const days=[...Array(10)].map((_,i)=>{const d=new Date();d.setDate(d.getDate()+i);return d});
+  const day=days[BK.day]||days[0];const slots=q?slotsFor(b,day,q.dur):[];
+  return `<h3>Prendre rendez-vous</h3>
+  <div class="bstep"><h4><span class="num">1</span> Prestation</h4>${b.services.map(x=>`<button class="opt" aria-pressed="${BK.svc===x.id}" data-svc="${x.id}"><span><b>${esc(x.name)}</b><br><span class="xs muted">${x.dur} min</span></span><b>${x.variants?"dès ":""}${startPrice(x)?eur(startPrice(x)):"Gratuit"}</b></button>`).join("")}</div>
+  ${s&&s.variants?`<div class="bstep"><h4><span class="num">2</span> ${b.cat==="garage"||b.cat==="detailing"?"Véhicule":b.cat==="toilettage"?"Taille de l'animal":b.cat==="restaurant"?"Nombre de personnes":"Longueur"}</h4><div class="row" style="gap:6px">${s.variants.map((v,i)=>`<button class="chip" aria-pressed="${BK.variant===i}" data-var="${i}">${esc(v[0])}${s.price?" · "+eur(Math.round(s.price*v[1]*100)):""}</button>`).join("")}</div></div>`:""}
+  ${q?`<div class="bstep"><h4><span class="num">${s.variants?3:2}</span> Avec qui ?</h4><select class="input" id="staff"><option value="">Peu importe (premier disponible)</option>${b.staff.map(p=>`<option ${BK.staff===p?"selected":""}>${esc(p)}</option>`).join("")}</select></div>
+  <div class="bstep"><h4><span class="num">${s.variants?4:3}</span> Date et heure</h4>
+    <div class="days" role="group" aria-label="Jour">${days.map((d,i)=>`<button class="day" aria-pressed="${BK.day===i}" data-day="${i}"><span class="xs">${i===0?"Auj.":d.toLocaleDateString("fr-FR",{weekday:"short"})}</span><b>${d.getDate()}</b></button>`).join("")}</div>
+    ${slots.length?`<div class="slotgrid">${slots.map(x=>`<button class="slot" ${x.off?"disabled":""} aria-pressed="${BK.slot===x.iso}" data-slot2="${x.iso}">${x.t}</button>`).join("")}</div>`:`<p class="small muted">Fermé ce jour-là. Choisissez un autre jour.</p>`}
+  </div>`:""}
+  ${q&&BK.slot?`<form class="bstep" id="f-book" style="border-bottom:0"><h4><span class="num">${s.variants?5:4}</span> Vos coordonnées</h4>
+    <div class="grid" style="gap:10px">
+      <div><label class="lbl" for="bn">Nom</label><input class="input" id="bn" required value="${esc(S.profile.name)}" autocomplete="name"></div>
+      <div><label class="lbl" for="be">Email</label><input class="input" id="be" type="email" required value="${esc(S.profile.email)}" autocomplete="email"></div>
+      <div><label class="lbl" for="bp">Téléphone</label><input class="input" id="bp" type="tel" value="${esc(S.profile.phone)}" autocomplete="tel"></div>
+    </div>
+    <div class="sum" style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">
+      <div><span>${esc(q.s.name)}${q.v[0]?" · "+esc(q.v[0]):""}</span><span>${q.total?eur(q.total):"Gratuit"}</span></div>
+      <div class="muted"><span>${fmtDate(BK.slot)}</span><span>${q.dur} min</span></div>
+      <div style="font-weight:800;font-size:16px"><span>Total</span><span>${q.total?eur(q.total):"Gratuit"}</span></div>
+      <div style="color:var(--brand);font-weight:700"><span>À régler aujourd'hui</span><span>0 €</span></div>
+    </div>
+    ${q.fee?`<p class="notice" style="margin:10px 0 0">Rendez-vous garanti par carte : aucun débit aujourd'hui. En cas d'absence sans annulation, ${eur(q.fee)} pourront être prélevés par ${esc(b.name)}.</p>`:""}
+    <button class="btn btn-primary" style="width:100%;margin-top:12px;padding:13px" type="submit">${q.fee?"Garantir et confirmer":"Confirmer le rendez-vous"}</button>
+    <p class="xs muted" style="text-align:center;margin:8px 0 0">Gratuit pour vous. Confirmation par email et rappel la veille.</p>
+  </form>`:""}`;
+}
+
+function pageAccount(){
+  const mine=S.bookings.filter(k=>k.mine).sort((a,b)=>new Date(a.start)-new Date(b.start));
+  const up=mine.filter(k=>k.status!=="cancelled"&&new Date(k.start)>new Date());const past=mine.filter(k=>!up.includes(k));
+  const row=k=>{const b=BY[k.biz];return `<div class="appt"><div class="time">${new Date(k.start).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}).replace(":","h")}</div>
+    <div style="min-width:0"><b>${esc(b.name)}</b> <span class="pill ${k.status==="cancelled"?"bad":"ok"}">${k.status==="cancelled"?"Annulé":"Confirmé"}</span><div class="small muted">${esc(k.svc)}${k.variant?" · "+esc(k.variant):""} · ${new Date(k.start).toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})}</div></div>
+    <div class="row acts" style="gap:6px">${k.status!=="cancelled"&&new Date(k.start)>new Date()?`<button class="btn btn-secondary btn-sm" data-ics="${k.id}">Calendrier</button><button class="btn btn-ghost btn-sm" data-cancel="${k.id}">Annuler</button>`:`<button class="btn btn-secondary btn-sm" data-biz="${b.id}">Reprendre RDV</button>`}</div></div>`};
+  return `<div class="wrap" style="padding-block:24px;max-width:860px">
+    <h1 style="font-size:26px">Mes rendez-vous</h1>
+    <section class="card" style="margin-top:16px"><h2 style="font-size:18px;margin-bottom:6px">À venir</h2>${up.length?up.map(row).join(""):`<p class="muted">Aucun rendez-vous à venir. <button class="btn btn-primary btn-sm" data-go="recherche">Trouver un professionnel</button></p>`}</section>
+    ${past.length?`<section class="card" style="margin-top:16px"><h2 style="font-size:18px;margin-bottom:6px">Passés et annulés</h2>${past.map(row).join("")}</section>`:""}
+    <section class="card" style="margin-top:16px"><h2 style="font-size:18px">Mes favoris</h2><div class="row" style="margin-top:10px">${S.favorites.length?S.favorites.map(id=>`<button class="chip" data-biz="${id}">♥ ${esc(BY[id].name)}</button>`).join(""):'<span class="muted small">Ajoutez un établissement en favori depuis sa page.</span>'}</div></section>
+    <section class="card" style="margin-top:16px"><h2 style="font-size:18px">Sécurité du compte</h2><p class="small muted" style="margin:6px 0 12px">Connexion par Google, Apple, Microsoft ou code email. Double authentification par application disponible.</p><div class="row" style="gap:8px"><span class="pill ok">Email vérifié</span><span class="pill brand">Double authentification recommandée</span></div></section>
+  </div>`;
+}
+
+// ---------- Espace pro ----------
+const PRO="salon-elegance";
+function proChecks(){const b=BY[PRO];return [
+  ["Page publiée","Google et la recherche vous montrent.",10,true,null],
+  ["Présentation détaillée (300 caractères et plus)","Le texte que les assistants IA résument pour vous recommander.",15,S.listing.desc.length>=300,"ia"],
+  ["Photo de l'établissement","Les fiches avec photo sont nettement plus cliquées.",10,S.listing.photo,"photo"],
+  ["Au moins 3 prestations décrites","Chaque prestation décrite est une recherche de plus.",15,true,null],
+  ["Horaires renseignés","Répond aux « ouvert le samedi ? ».",10,S.listing.hoursSet,null],
+  ["Adresse géolocalisée","Indispensable pour les recherches « près de moi ».",10,true,null],
+  ["5 avis vérifiés ou plus",`${b.reviews} avis : excellent.`,10,true,null],
+  ["Paiement en ligne activé","Empreinte bancaire active : moins d'absences.",10,true,null],
+  ["Site web et téléphone","Signaux de confiance pour Google.",10,false,"site"]]}
+function proScore(){const c=proChecks();return Math.round(c.reduce((s,x)=>s+(x[3]?x[2]:0),0)/c.reduce((s,x)=>s+x[2],0)*100)}
+function pagePro(){
+  const tabs=[["agenda","Agenda","cal"],["visibilite","Visibilité","trend"],["cadeaux","Cartes cadeaux","gift"],["partager","Partager","share"],["abonnement","Abonnement","card"]];
+  const body={agenda:proAgenda,visibilite:proVisibility,cadeaux:proGifts,partager:proShare,abonnement:proBilling}[V.proTab]();
+  return `<div class="wrap layout-pro"><nav class="pronav" aria-label="Espace pro">${tabs.map(([k,l,i])=>`<button data-protab="${k}" ${V.proTab===k?'aria-current="page"':""}>${icon(i)} ${l}</button>`).join("")}<p class="xs muted" style="padding:10px 12px;margin:0">Connecté : ${esc(BY[PRO].name)}</p></nav><section style="min-width:0" class="grid">${body}</section></div>`;
+}
+function proAgenda(){
+  const today=new Date().toDateString();
+  const list=S.bookings.filter(k=>k.biz===PRO&&new Date(k.start).toDateString()===today).sort((a,b)=>new Date(a.start)-new Date(b.start));
+  const month=S.bookings.filter(k=>k.biz===PRO&&k.status!=="cancelled");
+  const st={scheduled:["Prévu","brand"],confirmed:["Confirmé","ok"],completed:["Venu","ok"],no_show:["Absent","bad"],cancelled:["Annulé","bad"]};
+  return `<div class="row" style="justify-content:space-between"><h1 style="font-size:24px">Aujourd'hui</h1><span class="muted">${new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})}</span></div>
+  <div class="tiles">${[["Rendez-vous aujourd'hui",list.filter(k=>k.status!=="cancelled").length],["CA réservé du jour",eur(list.filter(k=>!["cancelled","no_show"].includes(k.status)).reduce((s,k)=>s+k.total,0))],["Ce mois-ci",month.length+" RDV"],["Absences facturées",eur(S.bookings.filter(k=>k.biz===PRO&&k.feeCharged).reduce((s,k)=>s+k.guarantee,0))]].map(([l,v])=>`<div class="card tile"><div class="lab">${l}</div><div class="val tab">${v}</div></div>`).join("")}</div>
+  <div class="card">${list.length?list.map(k=>`<div class="appt"><div class="time">${new Date(k.start).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}).replace(":","h")}</div>
+    <div style="min-width:0"><b>${esc(k.client)}</b> <span class="pill ${st[k.status][1]}">${st[k.status][0]}</span> ${k.source==="direct"?'<span class="pill warn">Votre client</span>':'<span class="pill brand">Via Rendez-vous</span>'}
+    <div class="small muted">${esc(k.svc)}${k.variant?" · "+esc(k.variant):""} · ${esc(k.staff)} · ${eur(k.total)}${k.feeCharged?` · frais d'absence ${eur(k.guarantee)} encaissés`:""}</div></div>
+    <div class="row acts" style="gap:6px">${["scheduled","confirmed"].includes(k.status)?`<button class="btn btn-secondary btn-sm" data-st="completed" data-id="${k.id}">Venu</button><button class="btn btn-ghost btn-sm" data-st="no_show" data-id="${k.id}">Absent</button>`:k.status==="no_show"?`<button class="btn btn-ghost btn-sm" data-st="completed" data-id="${k.id}">Corriger : venu</button>`:""}</div></div>`).join(""):'<p class="muted">Aucun rendez-vous aujourd\'hui. Réservez depuis l\'espace client pour le voir arriver ici.</p>'}</div>
+  <p class="xs muted">Marquer « Absent » prélève automatiquement les frais annoncés au client (empreinte bancaire). « Corriger » rembourse intégralement.</p>`;
+}
+function proVisibility(){
+  const sc=proScore();const views=[38,52,47,61,58,73,69,84,77,92,88,104];
+  return `<h1 style="font-size:24px">Visibilité</h1>
+  <div class="tiles">${[["Vues de la page","1 024","30 derniers jours"],["Réservations","87","dont 54 via Rendez-vous"],["Taux de réservation","8,5 %","vues → rendez-vous"],["CA réservé","5 842 €","30 derniers jours"]].map(([l,v,s])=>`<div class="card tile"><div class="lab">${l}</div><div class="val tab">${v}</div><div class="xs muted">${s}</div></div>`).join("")}</div>
+  <div class="card"><div class="row" style="justify-content:space-between"><b>Vues par semaine</b><span class="xs muted">12 dernières semaines</span></div><div class="spark" style="margin-top:12px" role="img" aria-label="Vues en hausse, de 38 à 104 par semaine">${views.map((v,i)=>`<i style="height:${v/104*100}%" class="${i===views.length-1?"last":""}" title="${v} vues"></i>`).join("")}</div></div>
+  <div class="card"><div class="row" style="justify-content:space-between"><div><h2 style="font-size:19px">Score de visibilité</h2><p class="small muted" style="margin:4px 0 0">Plus il est haut, plus vous remontez dans la recherche, sur Google et dans les réponses des assistants IA.</p></div><b style="font:800 40px var(--f-display);color:${sc>=80?"var(--ok)":"var(--warn)"}">${sc}<span class="muted" style="font-size:18px">/100</span></b></div>
+    <div class="bar" style="margin-top:12px"><i style="width:${sc}%"></i></div>
+    <div style="margin-top:10px">${proChecks().sort((a,b)=>a[3]-b[3]).map(([l,h,p,d,act])=>`<div class="check"><span class="dot ${d?"on":""}">${d?"✓":""}</span><div style="flex:1;min-width:0"><b class="${d?"muted":""}">${l}</b>${d?"":`<div class="small muted">${h}</div>`}</div>${d?"":act?`<button class="btn btn-secondary btn-sm" data-fix="${act}">+${p} pts</button>`:`<span class="pill warn">+${p}</span>`}</div>`).join("")}</div></div>
+  <div class="card" id="ia"><h2 style="font-size:19px">Rédaction de votre fiche</h2><p class="small muted" style="margin:6px 0 10px">Un texte construit à partir de vos prestations, prix, horaires et lieux, écrit pour Google et les assistants de recherche. Vous relisez avant de publier.</p>
+    <textarea class="input" id="ia-notes" rows="2" placeholder="Ce qui vous rend unique (facultatif) : produits bio, 12 ans d'expérience…"></textarea>
+    <button class="btn btn-primary" style="margin-top:10px" data-write>Rédiger ma fiche</button><div id="ia-out"></div></div>`;
+}
+function proGifts(){
+  const g=S.gifts.filter(x=>x.biz===PRO);const sold=g.reduce((s,x)=>s+x.amount,0);const open=g.filter(x=>x.status==="active").reduce((s,x)=>s+x.amount,0);
+  return `<h1 style="font-size:24px">Cartes cadeaux</h1>
+  <div class="tiles" style="grid-template-columns:repeat(3,minmax(0,1fr))">${[["Vendu",eur(sold)],["Cartes vendues",g.length],["À honorer",eur(open)]].map(([l,v])=>`<div class="card tile"><div class="lab">${l}</div><div class="val tab">${v}</div></div>`).join("")}</div>
+  <form class="card" id="f-redeem"><h2 style="font-size:18px">Valider une carte</h2><p class="small muted" style="margin:4px 0 10px">Le jour du rendez-vous, saisissez le code présenté par le client.</p>
+    <div class="row"><input class="input code" id="rc" placeholder="ABCD-EFGH-JKMN" style="flex:1;min-width:200px;text-transform:uppercase" autocomplete="off"><button class="btn btn-primary" type="submit">Valider</button></div><p id="rc-msg" class="small" style="margin:8px 0 0" role="status"></p>
+    <p class="xs muted" style="margin:6px 0 0">Essayez avec <button type="button" class="btn-ghost code" style="border:0;background:none;cursor:pointer;color:var(--brand);padding:0" data-try="${g.find(x=>x.status==="active")?.code||""}">${g.find(x=>x.status==="active")?.code||"un code acheté côté client"}</button></p></form>
+  <div class="card"><h2 style="font-size:18px;margin-bottom:6px">Historique</h2>${g.map(x=>`<div class="svc"><div><b>${eur(x.amount)} · pour ${esc(x.to)}</b><div class="small muted">de ${esc(x.from)} · <span class="code">${x.code}</span></div></div><span class="pill ${x.status==="active"?"ok":"brand"}">${x.status==="active"?"Valable":"Utilisée"}</span></div>`).join("")}</div>`;
+}
+function proShare(){
+  const url="rendez-vous.app/coiffeur/lyon/salon-elegance";
+  return `<h1 style="font-size:24px">Partager</h1>
+  <div class="card"><h2 style="font-size:18px">Votre lien de réservation</h2><p class="small muted" style="margin:4px 0 10px">Les clients venus par ce lien, votre QR code ou votre module sont les vôtres : jamais de commission.</p><div class="row"><input class="input" readonly value="https://${url}?via=pro" id="share-url" style="flex:1;min-width:220px"><button class="btn btn-secondary" data-copy="share-url">Copier</button></div></div>
+  <div class="card"><h2 style="font-size:18px">Réservation sur votre site web</h2><p class="small muted" style="margin:4px 0 10px">Une ligne à coller dans Wix, WordPress ou Shopify : un bouton « Prendre rendez-vous » ouvre votre agenda en direct.</p><textarea class="input code xs" rows="2" readonly id="embed">&lt;script src="https://rendez-vous.app/embed.js" data-business="salon-elegance" async&gt;&lt;/script&gt;</textarea><button class="btn btn-secondary" style="margin-top:8px" data-copy="embed">Copier le code</button></div>
+  <div class="card" style="background:var(--brand-softer)"><h2 style="font-size:18px">${icon("gift",'width="18" height="18"')} Recommandez Rendez-vous : 1 mois offert pour vous et pour lui</h2><p class="small muted" style="margin:6px 0 10px">Dès le premier paiement de votre filleul, vous recevez chacun un mois d'abonnement offert. Sans limite.</p><div class="row"><input class="input" readonly value="https://rendez-vous.app/pro?parrain=k3m9x2qa" id="ref" style="flex:1;min-width:220px"><button class="btn btn-primary" data-copy="ref">Copier</button></div><p class="small" style="margin:10px 0 0;font-weight:700;color:var(--brand)">3 professionnels inscrits grâce à vous · 2 mois offerts</p></div>`;
+}
+function proBilling(){
+  return `<h1 style="font-size:24px">Abonnement</h1>
+  <div class="card"><div class="row" style="justify-content:space-between"><h2 style="font-size:19px">${S.plan==="pro"?"Plan Pro":"Plan Gratuit"}</h2>${S.plan==="pro"?'<span class="pill ok">Actif</span>':""}</div>
+  <p class="muted small" style="margin:6px 0 12px">${S.plan==="pro"?"3 agendas · 39 € + 2 × 15 € = 69 € par mois · prochaine facture le 1er du mois":"30 rendez-vous par mois inclus. Passez en Pro pour l'illimité, les rappels, l'empreinte bancaire et la mise en avant."}</p>
+  <div class="row" style="gap:8px">${S.plan==="pro"?`<button class="btn btn-primary" data-annual>Passer à l'annuel : 2 mois offerts</button><button class="btn btn-secondary" data-portal>Factures et moyen de paiement</button><button class="btn btn-ghost" data-cancelplan>Résilier</button>`:`<button class="btn btn-primary" data-upgrade>Essayer Pro 14 jours</button>`}</div></div>
+  <div class="card"><h2 style="font-size:18px">Paiements en ligne et anti-absence</h2><p class="small muted" style="margin:4px 0 12px">Acomptes, frais d'absence et cartes cadeaux arrivent directement sur votre compte Stripe. 0 % de commission.</p>
+    ${[["Demander un acompte","Le client paie une partie à la réservation.",false],["Empreinte bancaire (50 %)","Carte enregistrée sans débit, frais prélevés si absence.",true],["Vendre des cartes cadeaux","Bouton « Offrir » sur votre page.",true]].map(([l,h,on],i)=>`<label class="check" style="cursor:pointer"><input type="checkbox" ${on?"checked":""} id="pay-${i}" style="margin-top:4px"><div><b>${l}</b><div class="small muted">${h}</div></div></label>`).join("")}</div>`;
+}
+
+// ---------- Assistant ----------
+let chatOpen=false,chat=[{me:false,t:"Bonjour ! Je peux vous trouver un professionnel et ses prochains créneaux. Que cherchez-vous ?"}];
+function renderAssistant(){
+  const el=document.getElementById("assistant");
+  if(S.mode==="pro"){el.innerHTML="";return}
+  el.innerHTML=`${chatOpen?`<div class="chat" role="dialog" aria-label="Assistant"><div style="padding:12px 14px;border-bottom:1px solid var(--line);font-weight:700">Assistant Rendez-vous</div><div class="msgs" id="msgs">${chat.map(m=>`<div class="msg ${m.me?"me":"bot"}">${m.h||esc(m.t)}</div>`).join("")}</div><form id="f-chat" style="display:flex;gap:6px;padding:10px;border-top:1px solid var(--line)"><input class="input" id="ci" placeholder="Ex. barbier ce soir" autocomplete="off"><button class="btn btn-primary" type="submit">Envoyer</button></form><p class="xs muted" style="margin:0;padding:0 12px 10px">Assistant IA : vérifiez les informations avant de réserver.</p></div>`:""}<button aria-label="${chatOpen?"Fermer":"Ouvrir"} l'assistant" data-chat>${icon(chatOpen?"chat":"chat",'width="24" height="24"')}</button>`;
+  const m=document.getElementById("msgs");if(m)m.scrollTop=m.scrollHeight;
+}
+function answer(q){
+  const n=norm(q);const c=CATS.find(x=>n.includes(norm(x.label).split(" ")[0]));
+  const list=B.filter(b=>(c?b.cat===c.slug:norm(b.name+b.tagline+b.services.map(s=>s.name).join(" ")).split(" ").some(w=>w.length>3&&n.includes(w)))).slice(0,3);
+  if(!list.length)return {t:"Je n'ai rien trouvé avec ces mots. Essayez un métier (coiffeur, garage, massage…) ou ouvrez la recherche."};
+  return {h:`Voici ${list.length} suggestion${list.length>1?"s":""} :`+list.map(b=>{const s=nextSlots(b,1)[0];return `<button class="opt" style="margin:6px 0 0" data-biz="${b.id}"><span><b>${esc(b.name)}</b><br><span class="xs muted">${b.rating.toLocaleString("fr-FR")} ★ · dès ${minPrice(b)?eur(minPrice(b)):"gratuit"}</span></span><span class="xs" style="color:var(--brand);font-weight:700">${s?s.label:""}</span></button>`}).join("")};
+}
+
+// ---------- Rendu + événements ----------
+function render(){
+  const mob=document.querySelector("#nav-compte .mob");if(mob&&!mob.innerHTML)mob.innerHTML=icon("cal",'width="20" height="20" style="vertical-align:-4px"');
+  document.getElementById("mode-client").setAttribute("aria-pressed",S.mode==="client");
+  document.getElementById("mode-pro").setAttribute("aria-pressed",S.mode==="pro");
+  document.getElementById("nav-compte").hidden=S.mode==="pro";
+  document.getElementById("nav-compte").setAttribute("aria-current",V.page==="compte"?"page":"false");
+  app.innerHTML=S.mode==="pro"?pagePro():V.page==="recherche"?pageSearch():V.page==="fiche"?pageBiz():V.page==="compte"?pageAccount():pageHome();
+  renderAssistant();
+}
+function rerenderBooking(){const el=document.getElementById("booking");if(el)el.innerHTML=bookingPanel(BY[V.biz])}
+function modal(html){const bg=document.createElement("div");bg.className="modal-bg";bg.innerHTML=`<div class="modal" role="dialog" aria-modal="true">${html}</div>`;bg.addEventListener("click",e=>{if(e.target===bg||e.target.closest("[data-close]"))bg.remove()});document.body.appendChild(bg);return bg}
+
+document.addEventListener("click",e=>{
+  const t=e.target.closest("button,[data-biz],.pin");if(!t)return;
+  const d=t.dataset;
+  if(d.mode){S.mode=d.mode;save();if(d.mode==="client"&&V.page==="pro")V.page="accueil";go(S.mode==="pro"?"pro":V.page==="pro"?"accueil":V.page);return}
+  if(d.go){S.mode="client";save();go(d.go);return}
+  if(d.cat!==undefined&&!d.biz){V.cat=d.cat||null;go("recherche");return}
+  if(d.slot&&d.biz){V.biz=d.biz;const b=BY[d.biz];resetBK(b,d.slot);BK.svc=b.services[0].id;BK.variant=b.services[0].variants?0:null;go("fiche");return}
+  if(d.biz&&!d.slot){S.mode="client";V.biz=d.biz;BK=null;chatOpen=false;go("fiche");return}
+  if(d.rating!==undefined){V.minRating=Number(d.rating);render();return}
+  if(d.reset!==undefined){Object.assign(V,{q:"",cat:null,maxPrice:200,minRating:0,home:false,today:false});render();return}
+  if(d.pick||d.svc){BK.svc=d.pick||d.svc;BK.variant=null;BK.slot=null;rerenderBooking();if(d.pick)document.getElementById("booking").scrollIntoView({behavior:"smooth",block:"start"});return}
+  if(d.var!==undefined){BK.variant=Number(d.var);BK.slot=null;rerenderBooking();return}
+  if(d.day!==undefined){BK.day=Number(d.day);BK.slot=null;rerenderBooking();return}
+  if(d.slot2){BK.slot=d.slot2;rerenderBooking();document.getElementById("bn")?.focus();return}
+  if(d.fav){const i=S.favorites.indexOf(d.fav);i>=0?S.favorites.splice(i,1):S.favorites.push(d.fav);save();render();toast(i>=0?"Retiré des favoris":"Ajouté aux favoris");return}
+  if(d.share!==undefined){const u="https://rendez-vous.app/"+V.biz;navigator.clipboard?.writeText(u).then(()=>toast("Lien copié"),()=>toast(u));return}
+  if(d.giftbuy){giftModal(BY[d.giftbuy]);return}
+  if(d.cancel){const k=S.bookings.find(x=>x.id===d.cancel);k.status="cancelled";save();render();toast("Rendez-vous annulé. Le créneau est libéré et la liste d'attente prévenue.");return}
+  if(d.ics){toast("Invitation calendrier envoyée avec la confirmation par email");return}
+  if(d.chat!==undefined){chatOpen=!chatOpen;renderAssistant();document.getElementById("ci")?.focus();return}
+  if(d.protab){V.proTab=d.protab;render();return}
+  if(d.st){const k=S.bookings.find(x=>x.id===d.id);const prev=k.status;k.status=d.st;
+    if(d.st==="no_show"&&k.guarantee&&!k.feeCharged){k.feeCharged=true;toast(`Absence enregistrée : ${eur(k.guarantee)} prélevés sur la carte de ${k.client}, versés sur votre compte.`)}
+    else if(prev==="no_show"&&k.feeCharged){k.feeCharged=false;toast("Corrigé : les frais d'absence ont été remboursés au client.")}
+    else toast(d.st==="completed"?"Marqué venu. Une demande d'avis part ce soir.":"Mis à jour");save();render();return}
+  if(d.fix){if(d.fix==="photo"){S.listing.photo=true;toast("Photo ajoutée : +10 points")}else if(d.fix==="ia"){document.getElementById("ia").scrollIntoView({behavior:"smooth"});return}else toast("Ajoutez votre site et votre téléphone dans « Ma page ».");save();render();return}
+  if(d.write!==undefined){const out=document.getElementById("ia-out");const notes=document.getElementById("ia-notes").value.trim();
+    const txt=`Salon Élégance vous accueille au cœur de Lyon, rue de la République, pour des coupes faciles à coiffer et des couleurs naturelles. Julie, Karim et Inès réalisent coupes femme et homme, brushings et balayages, avec un diagnostic offert avant chaque prestation.${notes?" "+notes.charAt(0).toUpperCase()+notes.slice(1)+(/[.!?]$/.test(notes)?"":"."):""}\n\nComptez 45 € pour une coupe avec brushing et 120 € pour un balayage, prix exacts affichés avant de réserver. Le salon est ouvert du lundi au samedi, jusqu'à 20 h le jeudi et le vendredi, et accessible aux personnes à mobilité réduite.\n\nRéservez en ligne en quelques secondes, 24 h/24 : vous voyez les créneaux libres en temps réel et recevez un rappel la veille.`;
+    out.innerHTML=`<div class="notice" style="margin-top:12px;background:var(--brand-softer)"><label class="lbl" for="ia-txt">Proposition (modifiable)</label><textarea class="input" id="ia-txt" rows="9">${esc(txt)}</textarea><button class="btn btn-primary" style="margin-top:8px" data-publish>Publier sur ma page</button></div>`;return}
+  if(d.publish!==undefined){S.listing.desc=document.getElementById("ia-txt").value;save();render();toast("Publié. Google et Bing sont prévenus automatiquement.");return}
+  if(d.amt){document.getElementById("ga").value=d.amt;return}
+  if(d.try){document.getElementById("rc").value=d.try;return}
+  if(d.copy){const el=document.getElementById(d.copy);const v=el.value;navigator.clipboard?.writeText(v).then(()=>toast("Copié"),()=>{el.select();toast("Sélectionné : copiez avec Ctrl+C")});return}
+  if(d.annual!==undefined){toast("Passage à l'annuel : 690 € par an au lieu de 828 €. Confirmé.");return}
+  if(d.portal!==undefined){toast("Ouverture du portail de facturation sécurisé Stripe");return}
+  if(d.cancelplan!==undefined){const m=modal(`<h2 style="font-size:20px">Avant de partir…</h2><p class="muted">Restez avec -50 % pendant 3 mois. Vous gardez vos réservations illimitées, l'empreinte bancaire et votre mise en avant.</p><div class="row" style="gap:8px;margin-top:14px"><button class="btn btn-primary" data-close data-keep>Profiter de -50 %</button><button class="btn btn-ghost" data-close data-quit>Résilier quand même</button></div>`);
+    m.addEventListener("click",ev=>{if(ev.target.closest("[data-keep]"))toast("Offre appliquée : -50 % sur vos 3 prochaines factures.");if(ev.target.closest("[data-quit]")){S.plan="free";save();render();toast("Résiliation prise en compte à la fin de la période.")}});return}
+  if(d.upgrade!==undefined){S.plan="pro";save();render();toast("Essai Pro activé pour 14 jours. Aucun débit avant la fin de l'essai.");return}
+});
+document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.matches("article.result,.pin")){e.target.click()}if(e.key==="Escape")document.querySelector(".modal-bg")?.remove()});
+document.addEventListener("input",e=>{
+  if(e.target.id==="fp"){V.maxPrice=Number(e.target.value);const p=document.activeElement.id;render();document.getElementById(p)?.focus()}
+  if(e.target.id==="sq"){V.q=e.target.value;clearTimeout(window.__sq);window.__sq=setTimeout(()=>{render();const el=document.getElementById("sq");el.focus();el.setSelectionRange(el.value.length,el.value.length)},250)}
+});
+document.addEventListener("change",e=>{
+  if(e.target.id==="sort"){V.sort=e.target.value;render()}
+  if(e.target.id==="fh"){V.home=e.target.checked;render()}
+  if(e.target.id==="ft"){V.today=e.target.checked;render()}
+  if(e.target.id==="staff"){BK.staff=e.target.value}
+});
+document.addEventListener("submit",e=>{
+  e.preventDefault();const f=e.target;
+  if(f.id==="f-search"){V.q=document.getElementById("q").value;V.where=document.getElementById("where").value||"Lyon";const c=CATS.find(x=>norm(x.label)===norm(V.q.trim()));if(c){V.cat=c.slug;V.q=""}else V.cat=null;go("recherche")}
+  if(f.id==="f-book"){const b=BY[V.biz];const q=quote(b);const name=document.getElementById("bn").value.trim(),email=document.getElementById("be").value.trim();
+    if(!name||!/^\S+@\S+\.\S+$/.test(email)){toast("Indiquez votre nom et un email valide.");return}
+    S.profile={name,email,phone:document.getElementById("bp").value.trim()};
+    const k={id:"k"+Date.now(),biz:b.id,svc:q.s.name,variant:q.v[0],staff:BK.staff||b.staff[0],start:BK.slot,dur:q.dur,total:q.total,client:name,email,status:"scheduled",guarantee:q.fee,source:"marketplace",mine:true};
+    S.bookings.push(k);save();
+    const finish=()=>{modal(`<div style="text-align:center"><span style="display:inline-grid;place-items:center;width:56px;height:56px;border-radius:50%;background:var(--ok);color:#fff;font-size:28px">✓</span><h2 style="font-size:22px;margin-top:12px">Rendez-vous confirmé</h2><p style="font-weight:700;color:var(--brand);margin:6px 0">${fmtDate(k.start)}</p><p class="muted small">${esc(b.name)} · ${esc(k.svc)}${k.variant?" · "+esc(k.variant):""}<br>Confirmation et invitation calendrier envoyées à ${esc(email)}. Rappel la veille.</p><div class="row" style="justify-content:center;gap:8px;margin-top:14px"><button class="btn btn-primary" data-close data-go="compte">Mes rendez-vous</button><button class="btn btn-secondary" data-close>Fermer</button></div></div>`);BK=null;render()};
+    if(q.fee){const m=modal(`<h2 style="font-size:20px">${icon("shield",'width="20" height="20" style="vertical-align:-3px;color:var(--brand)"')} Garantir mon rendez-vous</h2><p class="small muted">Aucun débit aujourd'hui. En cas d'absence sans annulation au moins 24 h avant, ${eur(q.fee)} pourront être prélevés par ${esc(b.name)}.</p>
+      <div class="grid" style="gap:10px;margin-top:12px"><button class="btn" style="background:#000;color:#fff" data-pay>Apple Pay</button><button class="btn btn-secondary" data-pay>Google Pay</button>
+      <div><label class="lbl" for="cc">Carte bancaire</label><input class="input code" id="cc" value="4242 4242 4242 4242" inputmode="numeric"></div><div class="row" style="gap:8px"><input class="input" value="12 / 29" aria-label="Expiration" style="flex:1"><input class="input" value="123" aria-label="Code de sécurité" style="flex:1"></div>
+      <button class="btn btn-primary" data-pay>Enregistrer ma carte et confirmer</button></div><p class="xs muted" style="margin:10px 0 0">Paiement sécurisé par Stripe, conservé pour le compte de ${esc(b.name)}. Démonstration : aucune carte n'est réellement enregistrée.</p>`);
+      m.addEventListener("click",ev=>{if(ev.target.closest("[data-pay]")){m.remove();finish()}})}
+    else finish();
+  }
+  if(f.id==="f-chat"){const i=document.getElementById("ci");const q=i.value.trim();if(!q)return;chat.push({me:true,t:q});chat.push(answer(q));renderAssistant();document.getElementById("ci")?.focus()}
+  if(f.id==="f-redeem"){const raw=document.getElementById("rc").value.toUpperCase().replace(/[^A-Z0-9]/g,"");const c=(raw.match(/.{1,4}/g)||[]).join("-");const g=S.gifts.find(x=>x.code===c&&x.biz===PRO);const msg=document.getElementById("rc-msg");
+    if(!g){msg.style.color="var(--bad)";msg.textContent="Code inconnu pour votre établissement.";return}
+    if(g.status!=="active"){msg.style.color="var(--bad)";msg.textContent="Cette carte a déjà été utilisée.";return}
+    g.status="redeemed";save();render();toast(`Carte de ${eur(g.amount)} validée pour ${g.to}.`)}
+  if(f.id==="f-gift"){const b=BY[f.dataset.biz];const amt=Number(document.getElementById("ga").value);const to=document.getElementById("gt").value.trim(),from=document.getElementById("gf").value.trim();
+    if(!(amt>=10&&amt<=1000)||!to||!from){toast("Indiquez un montant entre 10 et 1 000 € et les deux prénoms.");return}
+    const g={code:code(),biz:b.id,amount:amt*100,from,to,status:"active"};S.gifts.unshift(g);save();f.closest(".modal-bg").remove();
+    modal(`<div style="text-align:center"><span class="ico" style="margin:0 auto">${icon("gift")}</span><h2 style="font-size:21px;margin-top:10px">Carte cadeau envoyée</h2><p class="muted small">${esc(to)} reçoit ${eur(g.amount)} chez ${esc(b.name)}, valable 1 an.</p><p class="code" style="font-size:20px;font-weight:800;margin:12px 0">${g.code}</p><p class="xs muted">${b.id===PRO?"Passez en mode Pro › Cartes cadeaux pour la valider.":"Le code est à présenter le jour du rendez-vous."}</p><button class="btn btn-primary" data-close>Fermer</button></div>`)}
+});
+function giftModal(b){modal(`<h2 style="font-size:20px">${icon("gift",'width="20" height="20" style="vertical-align:-3px;color:var(--brand)"')} Offrir ${esc(b.name)}</h2><p class="small muted">Envoyée par email en quelques secondes, valable 1 an. Paiement versé directement à l'établissement.</p>
+  <form id="f-gift" data-biz="${b.id}" class="grid" style="gap:10px;margin-top:10px"><div class="row" style="gap:6px">${[30,50,80,100].map(a=>`<button type="button" class="chip" data-amt="${a}">${a} €</button>`).join("")}</div>
+  <div><label class="lbl" for="ga">Montant (€)</label><input class="input" id="ga" type="number" min="10" max="1000" value="50"></div>
+  <div><label class="lbl" for="gt">Pour</label><input class="input" id="gt" placeholder="Prénom du bénéficiaire" required></div>
+  <div><label class="lbl" for="gf">De la part de</label><input class="input" id="gf" value="${esc(S.profile.name)}" required></div>
+  <button class="btn btn-primary" type="submit">Payer et envoyer</button><button class="btn btn-ghost" type="button" data-close>Annuler</button></form>`)}
+
+function fromHash(){const h=location.hash.slice(1);if(h.startsWith("fiche-")&&BY[h.slice(6)]){S.mode="client";V.page="fiche";V.biz=h.slice(6)}else if(["accueil","recherche","compte"].includes(h)){S.mode="client";V.page=h}else if(h==="pro"){S.mode="pro"}render()}
+window.addEventListener("hashchange",fromHash);
+fromHash();
+})();
+</script>

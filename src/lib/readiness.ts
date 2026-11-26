@@ -1,7 +1,7 @@
 import "server-only";
 import { Resend } from "resend";
 import { getStripe } from "@/lib/stripe";
-import { ensureBillingPortal, ensureProPrice } from "@/lib/stripe-catalog";
+import { ensureBillingPortal, ensureProPrice, ensureRetentionCoupon } from "@/lib/stripe-catalog";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { errorMessage } from "@/lib/events";
 
@@ -53,7 +53,7 @@ export async function readiness(): Promise<{ ready: boolean; checks: ReadinessCh
       if (!account.charges_enabled) throw new Error("compte Stripe non activé pour les paiements");
       // Catalogue auto-provisionné (idempotent) : prix Pro mensuel / annuel par agenda + portail client.
       const [price] = await Promise.all([ensureProPrice("month"), ensureProPrice("year")]);
-      await ensureBillingPortal();
+      await Promise.all([ensureBillingPortal(), ensureRetentionCoupon()]);
       const hooks = await stripe.webhookEndpoints.list({ limit: 100 });
       const ours = hooks.data.filter((h) => h.url === `${appUrl}/api/webhooks/stripe` && h.status === "enabled");
       if (ours.length < 1) throw new Error(`webhook ${appUrl}/api/webhooks/stripe absent`);

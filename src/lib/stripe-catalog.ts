@@ -22,6 +22,9 @@ export async function ensureProPrice(interval: BillingInterval): Promise<Stripe.
       name: "Rendez-vous Pro",
       description: "Rendez-vous illimités, 0 % de commission, rappels, mise en avant. Prix par agenda (membre d'équipe).",
       metadata: { rdv_plan: "pro" },
+      // Compte Stripe partagé avec d'autres activités : libellé bancaire propre à Rendez-vous sur les abonnements.
+      statement_descriptor: "RENDEZ-VOUS PRO",
+      unit_label: "agenda",
     }));
   return stripe.prices.create({
     product: product.id,
@@ -38,12 +41,18 @@ export async function ensureProPrice(interval: BillingInterval): Promise<Stripe.
 }
 
 /** Portail client : résiliation, moyens de paiement, factures, passage mensuel ↔ annuel. */
-export async function ensureBillingPortal(): Promise<void> {
+/**
+ * Configuration de portail dédiée à Rendez-vous (identifiée par metadata) : le compte Stripe peut servir à d'autres
+ * activités, on ne touche donc jamais à la configuration par défaut. Renvoie son identifiant.
+ */
+export async function ensureBillingPortal(): Promise<string> {
   const stripe = getStripe();
-  const configs = await stripe.billingPortal.configurations.list({ is_default: true, active: true, limit: 1 });
-  if (configs.data[0]) return;
+  const configs = await stripe.billingPortal.configurations.list({ active: true, limit: 100 });
+  const mine = configs.data.find((c) => c.metadata?.rdv_portal === "v1");
+  if (mine) return mine.id;
   const [monthly, yearly] = await Promise.all([ensureProPrice("month"), ensureProPrice("year")]);
-  await stripe.billingPortal.configurations.create({
+  const created = await stripe.billingPortal.configurations.create({
+    metadata: { rdv_portal: "v1" },
     business_profile: { headline: "Rendez-vous — gérez votre abonnement" },
     default_return_url: `${env.appUrl()}/pro/abonnement`,
     features: {
@@ -63,6 +72,7 @@ export async function ensureBillingPortal(): Promise<void> {
       },
     },
   });
+  return created.id;
 }
 
 export const RETENTION_COUPON_ID = "rdv_retention_50_3m";

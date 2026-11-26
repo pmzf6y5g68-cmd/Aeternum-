@@ -18,7 +18,7 @@ export async function POST(request: Request) {
   const returnUrl = `${env.appUrl()}/pro/abonnement`;
 
   try {
-    await ensureBillingPortal();
+    const configuration = await ensureBillingPortal();
     const stripe = getStripe();
     let flow: Stripe.BillingPortal.SessionCreateParams.FlowData | undefined;
     if (business.stripe_subscription_id && (body.flow === "annual" || body.flow === "cancel")) {
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
         };
       }
     }
-    const session = await stripe.billingPortal.sessions.create({ customer: business.stripe_customer_id, return_url: returnUrl, locale: "fr", ...(flow ? { flow_data: flow } : {}) });
+    const session = await stripe.billingPortal.sessions.create({ customer: business.stripe_customer_id, configuration, return_url: returnUrl, locale: "fr", ...(flow ? { flow_data: flow } : {}) });
     return json({ url: session.url });
   } catch (err) {
     await logEvent("stripe.portal", errorMessage(err), { business_id: business.id, flow: body.flow });

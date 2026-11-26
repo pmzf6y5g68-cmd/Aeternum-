@@ -167,3 +167,17 @@ créneaux visibles dès les résultats, carte, fiche avec réservation pas à pa
   à l'annuel en 1 clic (`subscription_update_confirm`), résiliation avec offre de fidélité (coupon -50 % × 3 mois, une fois),
   motifs de résiliation dans le portail.
 - Vérifs : `tsc` ✅ · 129 tests ✅ · build ✅ · SQL (cartes cadeaux, droits sur garantie) ✅.
+
+## S — Mise en service Stripe & démo ✅
+- **Stripe (compte live, partagé avec d'autres activités)** : produit « Rendez-vous Pro » (`metadata.rdv_plan=pro`, libellé
+  bancaire `RENDEZ-VOUS PRO`), prix à paliers `rdv_pro_monthly_v2` (39 € + 15 €/agenda) et `rdv_pro_yearly_v2` (390 € + 150 €),
+  coupon `rdv_retention_50_3m`, portail client dédié (`metadata.rdv_portal=v1`, motifs de résiliation, mensuel ↔ annuel).
+  Le code retrouve ces objets par clés (`lookup_key`, metadata) et ne touche jamais aux réglages par défaut du compte.
+- **Reste à faire une fois le site en ligne** : webhooks plateforme + Connect (URL du site requise), activation de Connect
+  (profil de plateforme, tableau de bord Stripe).
+- **Supabase** : projet existant réactivé mais déjà utilisé par une autre application (téléphonie) → schéma non installé ;
+  créer un projet dédié « rendez-vous » (offre gratuite) puis exécuter `supabase/schema.sql`.
+- **Démo interactive** (`docs/demo.html`, publiée en artifact) : recherche + filtres + tri + carte, fiche avec FAQ,
+  réservation en 5 étapes avec empreinte bancaire, cartes cadeaux, mes rendez-vous, assistant, espace pro (agenda
+  venu/absent avec frais et remboursement, visibilité et score, rédaction de fiche, cartes cadeaux, partage, abonnement
+  avec passage à l'annuel et offre de fidélité), thème clair/sombre, mobile.
