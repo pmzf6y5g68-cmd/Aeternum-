@@ -4,7 +4,9 @@ import { Pwa } from "@/components/pwa";
 import { siteConfig } from "@/config/site";
 import "@fontsource-variable/inter";
 import "@fontsource-variable/manrope";
+import { Suspense } from "react";
 import { MobileTabBar } from "@/components/mobile-tab-bar";
+import { NavProgress } from "@/components/nav-progress";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -40,6 +42,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="fr">
       <body className="min-h-dvh bg-canvas pb-[env(safe-area-inset-bottom)] font-sans text-ink antialiased">
+        <Suspense>
+          <NavProgress />
+        </Suspense>
         {children}
         <MobileTabBar />
         <AssistantWidget />

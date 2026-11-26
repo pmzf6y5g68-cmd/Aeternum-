@@ -16,7 +16,9 @@ import { fr } from "@/i18n/fr";
 import { formatDuration, formatEur, startingPriceCents } from "@/lib/domain/pricing";
 import { isValidDateString, zonedDateString } from "@/lib/domain/time";
 import { loadCatalog, loadPublicBusiness, pricingOf } from "@/lib/marketplace";
+import { publicStorageUrl } from "@/lib/images";
 import { reviewPhotoUrl } from "@/lib/review-photos";
+import { PhotoGallery } from "@/components/photo-gallery";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { businessPath } from "@/lib/slug";
 import { breadcrumbJsonLd, businessFaq, businessJsonLd, faqJsonLd, jsonLdScript } from "@/lib/seo";
@@ -122,12 +124,12 @@ export default async function BusinessPage({ params, searchParams }: { params: P
               <h1 className="text-2xl font-bold leading-tight md:text-3xl">{biz.name}</h1>
               <p className="mt-0.5 font-medium text-white/90">{cat?.label}</p>
               {biz.rating_count > 0 && (
-                <p className="mt-1.5 inline-flex rounded-md bg-white px-2 py-0.5">
+                <p className="mt-1.5 inline-flex rounded-md bg-surface px-2 py-0.5">
                   <Stars rating={Number(biz.rating_avg)} count={biz.rating_count} />
                 </p>
               )}
               {offerText(biz) && (
-                <p className="mt-1.5 ml-1.5 inline-flex rounded-md bg-amber-300 px-2 py-0.5 text-sm font-bold text-ink">{offerText(biz)}</p>
+                <p className="mt-1.5 ml-1.5 inline-flex rounded-md bg-amber-300 px-2 py-0.5 text-sm font-bold text-[#0b1f3a]">{offerText(biz)}</p>
               )}
             </div>
           </div>
@@ -157,7 +159,7 @@ export default async function BusinessPage({ params, searchParams }: { params: P
       )}
       <main className="mx-auto grid max-w-6xl gap-6 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
         <aside id="reserver" className="scroll-mt-24 lg:order-2">
-          <div className="sticky top-24 overflow-hidden rounded-xl border border-line bg-white shadow-(--shadow-card)">
+          <div className="sticky top-24 overflow-hidden rounded-xl border border-line bg-surface shadow-(--shadow-card)">
             <h2 className="bg-brand-softer px-5 py-3.5 text-lg font-bold text-ink">{fr.booking.title}</h2>
             {catalog.services.length ? (
               <BookingWidget
@@ -180,6 +182,7 @@ export default async function BusinessPage({ params, searchParams }: { params: P
         </aside>
 
         <div className="space-y-6 lg:order-1">
+          {biz.photos?.length > 0 && <PhotoGallery name={biz.name} urls={biz.photos.map((ph) => publicStorageUrl("business-photos", ph))} />}
           {(biz.tagline || biz.description || biz.highlights.length > 0) && (
             <section className="card">
               <h2 className="flex items-center gap-2 text-lg font-bold">
@@ -379,7 +382,7 @@ export default async function BusinessPage({ params, searchParams }: { params: P
       {catalog.services.length > 0 && (
         <>
           <div aria-hidden className="h-[calc(5rem+env(safe-area-inset-bottom))] lg:hidden" />
-          <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-white/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur lg:hidden">
+          <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur lg:hidden">
             <div className="mx-auto flex max-w-xl items-center gap-3">
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-bold">{biz.name}</p>

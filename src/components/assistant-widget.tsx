@@ -32,7 +32,7 @@ const price = (eur: number | null) => (eur === null ? "" : eur === 0 ? "Gratuit"
 function CardView({ card, onNavigate }: { card: Card; onNavigate: () => void }) {
   if (card.type === "business") {
     return (
-      <Link href={card.href} onClick={onNavigate} className="block rounded-lg border border-line bg-white p-3 hover:border-brand">
+      <Link href={card.href} onClick={onNavigate} className="block rounded-lg border border-line bg-surface p-3 hover:border-brand">
         <span className="flex items-start justify-between gap-2">
           <span className="min-w-0">
             <span className="block truncate font-bold text-brand">{card.name}</span>
@@ -58,7 +58,7 @@ function CardView({ card, onNavigate }: { card: Card; onNavigate: () => void }) 
   }
   if (card.type === "slots") {
     return (
-      <div className="rounded-lg border border-line bg-white p-3">
+      <div className="rounded-lg border border-line bg-surface p-3">
         <p className="text-sm font-bold">
           {card.businessName} <span className="font-normal text-ink-soft">· {card.serviceName}</span>
         </p>
@@ -83,7 +83,7 @@ function CardView({ card, onNavigate }: { card: Card; onNavigate: () => void }) 
   }
   if (card.type === "appointment") {
     return (
-      <Link href={card.href} onClick={onNavigate} className="flex items-center gap-3 rounded-lg border border-line bg-white p-3 hover:border-brand">
+      <Link href={card.href} onClick={onNavigate} className="flex items-center gap-3 rounded-lg border border-line bg-surface p-3 hover:border-brand">
         <CalendarDays className="size-5 shrink-0 text-brand" aria-hidden />
         <span className="min-w-0 text-sm">
           <span className="block truncate font-bold">{card.businessName}</span>
@@ -213,7 +213,7 @@ export function AssistantWidget() {
             {messages.map((m, i) => (
               <div key={i} className={m.role === "user" ? "flex justify-end" : ""}>
                 <div className={`max-w-[88%] space-y-2 ${m.role === "user" ? "" : "w-full"}`}>
-                  <p className={`whitespace-pre-line rounded-2xl px-3.5 py-2.5 text-sm ${m.role === "user" ? "rounded-br-sm bg-brand text-white" : "rounded-bl-sm bg-white text-ink shadow-(--shadow-card)"}`}>{m.content}</p>
+                  <p className={`whitespace-pre-line rounded-2xl px-3.5 py-2.5 text-sm ${m.role === "user" ? "rounded-br-sm bg-brand text-white" : "rounded-bl-sm bg-surface text-ink shadow-(--shadow-card)"}`}>{m.content}</p>
                   {m.cards?.map((c, j) => (
                     <CardView key={j} card={c} onNavigate={() => setOpen(false)} />
                   ))}
@@ -241,7 +241,7 @@ export function AssistantWidget() {
               e.preventDefault();
               void send(input);
             }}
-            className="flex items-center gap-2 border-t border-line bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+            className="flex items-center gap-2 border-t border-line bg-surface p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
           >
             <button type="button" onClick={shareLocation} className={`btn-ghost size-10 shrink-0 p-0 ${location ? "text-success" : ""}`} aria-label="Partager ma position" title={location ? "Position partagée" : "Partager ma position"}>
               {location ? <MapPin className="size-5" aria-hidden /> : <LocateFixed className="size-5" aria-hidden />}
@@ -251,7 +251,7 @@ export function AssistantWidget() {
               <Send className="size-4" aria-hidden />
             </button>
           </form>
-          <p className="bg-white px-4 pb-2 text-center text-[11px] text-ink-soft">Assistant IA : vérifiez les informations avant de réserver.</p>
+          <p className="bg-surface px-4 pb-2 text-center text-[11px] text-ink-soft">Assistant IA : vérifiez les informations avant de réserver.</p>
         </section>
       )}
     </>

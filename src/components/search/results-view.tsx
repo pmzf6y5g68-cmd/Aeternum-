@@ -37,7 +37,7 @@ export function ResultsView({ results, center, radiusKm = null }: { results: Ser
         ))}
       </div>
       <div className={`${showMap ? "block" : "hidden"} lg:block`}>
-        <div className="sticky top-36 h-[calc(100dvh-11rem)] overflow-hidden rounded-xl border border-line bg-white lg:top-24 lg:h-[calc(100dvh-7.5rem)]">
+        <div className="sticky top-36 h-[calc(100dvh-11rem)] overflow-hidden rounded-xl border border-line bg-surface lg:top-24 lg:h-[calc(100dvh-7.5rem)]">
           <ResultsMap points={points} center={center} radiusKm={radiusKm} activeId={active} onHover={onHover} />
         </div>
       </div>

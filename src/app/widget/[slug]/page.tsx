@@ -27,7 +27,7 @@ export default async function EmbeddedWidget({ params, searchParams }: { params:
   const path = businessPath(biz);
 
   return (
-    <main className="min-h-dvh bg-white">
+    <main className="min-h-dvh bg-surface">
       <Attribution slug={biz.slug} via="pro" />
       <header className="flex items-center justify-between gap-3 border-b border-line px-4 py-3 sm:px-5">
         <div className="min-w-0">

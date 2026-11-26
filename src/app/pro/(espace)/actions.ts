@@ -11,6 +11,7 @@ import { errorMessage, logEvent } from "@/lib/events";
 import { requireBusiness } from "@/lib/pro";
 import { slugify } from "@/lib/slug";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { BUSINESS_PHOTO_MAX, IMAGE_MIME, PHOTO_MAX_BYTES, publicStorageUrl, sniffImage } from "@/lib/images";
 import type { Booking } from "@/lib/supabase/types";
 import { notifyWaitlistForSlot } from "@/lib/waitlist";
 import { chargeNoShowFee, refundNoShowFee } from "@/lib/guarantee";
@@ -289,7 +290,6 @@ const pageSchema = z.object({
   email: z.email().trim().toLowerCase(),
   phone: z.string().trim().max(30).optional().default(""),
   website: z.union([z.url().max(200), z.literal("")]).optional().default(""),
-  cover_url: z.union([z.url().max(500), z.literal("")]).optional().default(""),
   address: z.string().trim().min(5).max(200),
 });
 
@@ -304,7 +304,6 @@ export async function updatePage(formData: FormData): Promise<void> {
     email: input.email,
     phone: input.phone || null,
     website: input.website || null,
-    cover_url: input.cover_url || null,
     highlights: lines(formData.get("highlights"), 8),
     payment_methods: lines(formData.get("payment_methods"), 8),
     modes: modes.length ? modes : business.modes,
@@ -518,4 +517,48 @@ export async function removeReviewPhotos(formData: FormData): Promise<void> {
   await admin.from("reviews").update({ photos: [] }).eq("id", id);
   await logEvent("pro.removeReviewPhotos", "photos retirées", { review_id: id, business_id: business.id }, "info");
   revalidatePath("/pro/avis");
+}
+
+/** Galerie : envoi de photos (type vérifié par les octets, 5 Mo max), la première devient la couverture. */
+export async function uploadBusinessPhotos(formData: FormData): Promise<void> {
+  const { business } = await requireBusiness();
+  const admin = createAdminClient();
+  const current = business.photos ?? [];
+  const room = BUSINESS_PHOTO_MAX - current.length;
+  const files = formData.getAll("photos").filter((f): f is File => f instanceof File && f.size > 0).slice(0, Math.max(0, room));
+  const added: string[] = [];
+  for (const file of files) {
+    if (file.size > PHOTO_MAX_BYTES) continue;
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const ext = sniffImage(bytes);
+    if (!ext) continue;
+    const path = `${business.id}/${crypto.randomUUID()}.${ext}`;
+    const { error } = await admin.storage.from("business-photos").upload(path, bytes, { contentType: IMAGE_MIME[ext], upsert: false, cacheControl: "31536000" });
+    if (error) await logEvent("pro.uploadPhoto", error.message, { business_id: business.id }, "warning");
+    else added.push(path);
+  }
+  if (added.length) await savePhotos(business.id, [...current, ...added]);
+  revalidatePath("/pro/ma-page");
+}
+
+export async function managePhoto(formData: FormData): Promise<void> {
+  const { business } = await requireBusiness();
+  const path = String(formData.get("path") ?? "");
+  const current = business.photos ?? [];
+  if (!current.includes(path)) return;
+  if (formData.get("op") === "cover") {
+    await savePhotos(business.id, [path, ...current.filter((p) => p !== path)]);
+  } else {
+    await createAdminClient().storage.from("business-photos").remove([path]);
+    await savePhotos(business.id, current.filter((p) => p !== path));
+  }
+  revalidatePath("/pro/ma-page");
+}
+
+async function savePhotos(businessId: string, photos: string[]): Promise<void> {
+  const first = photos[0];
+  await createAdminClient()
+    .from("businesses")
+    .update({ photos, cover_url: first ? publicStorageUrl("business-photos", first) : null })
+    .eq("id", businessId);
 }

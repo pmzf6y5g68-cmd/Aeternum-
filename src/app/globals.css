@@ -9,6 +9,7 @@
   --color-ink: #0b1f3a;
   --color-ink-soft: #4a5b75;
   --color-canvas: #f2f5f9;
+  --color-surface: #ffffff;
   --color-line: #dce3ec;
   --color-sun: #ffc93c;
   --color-success: #0f8a5f;
@@ -23,7 +24,59 @@
   --shadow-pop: 0 12px 32px rgb(11 31 58 / 0.14);
 }
 
+/* Mode sombre : suit le réglage du téléphone ou de l'ordinateur. Bleu de marque inchangé, surfaces bleu nuit
+   (pas de noir pur, plus doux à lire), texte légèrement atténué pour éviter l'éblouissement. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-canvas: #0a1120;
+    --color-surface: #121b2c;
+    --color-ink: #e6ecf5;
+    --color-ink-soft: #9badc4;
+    --color-line: #24324a;
+    --color-brand: #3b7bff;
+    --color-brand-dark: #2f69e6;
+    --color-brand-soft: #172a52;
+    --color-brand-softer: #121f3d;
+    --color-success: #2bb57f;
+    --color-danger: #f0525d;
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-pop: 0 12px 32px rgb(0 0 0 / 0.5);
+    color-scheme: dark;
+  }
+  .skeleton {
+    background: linear-gradient(90deg, #172235 0%, #1d2a40 40%, #172235 80%);
+    background-size: 200% 100%;
+  }
+  img {
+    /* Photos un peu moins éclatantes la nuit. */
+    filter: brightness(0.92);
+  }
+  /* Bandeaux d'information (succès, alerte, erreur) : teintes sombres translucides au lieu des pastels. */
+  .bg-green-50 {
+    background-color: rgb(43 181 127 / 0.12);
+  }
+  .bg-red-50 {
+    background-color: rgb(240 82 93 / 0.12);
+  }
+  .bg-amber-50 {
+    background-color: rgb(245 180 50 / 0.12);
+  }
+  .border-green-200 {
+    border-color: rgb(43 181 127 / 0.35);
+  }
+  .border-amber-200 {
+    border-color: rgb(245 180 50 / 0.35);
+  }
+  .text-amber-800 {
+    color: #f5c66a;
+  }
+  .leaflet-tile-pane {
+    filter: brightness(0.75) contrast(1.1) saturate(0.8);
+  }
+}
+
 html {
+  color-scheme: light dark;
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
   scroll-padding-top: 5rem;
@@ -94,6 +147,35 @@ p {
   animation: sheet-up 0.28s var(--ease-out);
 }
 
+/* Barre de navigation : avance vite puis ralentit, disparaît à l'arrivée de la page. */
+.nav-progress {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 70;
+  height: 3px;
+  background: var(--color-brand);
+  box-shadow: 0 0 8px rgb(23 88 230 / 0.6);
+  transform-origin: left;
+  transform: scaleX(0);
+  opacity: 0;
+  pointer-events: none;
+}
+.nav-progress.is-active {
+  opacity: 1;
+  animation: nav-grow 6s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+}
+@keyframes nav-grow {
+  0% {
+    transform: scaleX(0.05);
+  }
+  20% {
+    transform: scaleX(0.55);
+  }
+  100% {
+    transform: scaleX(0.92);
+  }
+}
+
 /* Confirmation : la coche « tombe » en place, le moment où l'usager sait que c'est réservé. */
 @keyframes pop {
   0% {
@@ -121,7 +203,7 @@ p {
 }
 
 @utility input {
-  @apply w-full rounded-[10px] border border-line bg-white px-3.5 py-2.5 text-[15px] text-ink outline-none transition placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20;
+  @apply w-full rounded-[10px] border border-line bg-surface px-3.5 py-2.5 text-[15px] text-ink outline-none transition placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20;
 }
 @utility label {
   @apply mb-1.5 block text-sm font-semibold text-ink;
@@ -133,19 +215,19 @@ p {
   @apply btn bg-brand text-white shadow-[0_1px_0_rgb(255_255_255/0.15)_inset,0_1px_2px_rgb(11_31_58/0.2)] hover:bg-brand-dark;
 }
 @utility btn-secondary {
-  @apply btn border border-line bg-white text-ink hover:border-brand hover:text-brand;
+  @apply btn border border-line bg-surface text-ink hover:border-brand hover:text-brand;
 }
 @utility btn-ghost {
   @apply btn text-ink-soft hover:bg-brand-softer hover:text-brand;
 }
 @utility btn-sun {
-  @apply btn bg-sun text-ink hover:brightness-95;
+  @apply btn bg-sun text-[#0b1f3a] hover:brightness-95;
 }
 @utility card {
-  @apply rounded-2xl border border-line bg-white p-5 shadow-(--shadow-card);
+  @apply rounded-2xl border border-line bg-surface p-5 shadow-(--shadow-card);
 }
 @utility chip {
-  @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1.5 text-sm font-medium text-ink transition hover:border-brand hover:text-brand;
+  @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1.5 text-sm font-medium text-ink transition hover:border-brand hover:text-brand;
 }
 @utility chip-active {
   @apply chip border-brand bg-brand-soft text-brand;
@@ -158,7 +240,7 @@ p {
   font-family: var(--font-sans);
 }
 .price-pin {
-  background: white;
+  background: var(--color-surface);
   border: 1px solid var(--color-line);
   border-radius: 999px;
   padding: 2px 8px;

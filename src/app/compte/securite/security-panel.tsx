@@ -124,14 +124,14 @@ export function SecurityPanel() {
       {enrollment && (
         <div className="mt-5 grid gap-5 rounded-xl border border-line bg-canvas p-4 sm:grid-cols-[180px_1fr]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={enrollment.qr} alt="QR code à scanner avec votre application d'authentification" width={180} height={180} className="rounded-lg bg-white p-2" />
+          <img src={enrollment.qr} alt="QR code à scanner avec votre application d'authentification" width={180} height={180} className="rounded-lg bg-surface p-2" />
           <form onSubmit={confirmEnroll} className="space-y-3">
             <ol className="list-decimal space-y-1 pl-5 text-sm">
               <li>Ouvrez Google Authenticator, Microsoft Authenticator, 1Password ou l&apos;app Mots de passe d&apos;iOS.</li>
               <li>Scannez le QR code (ou saisissez la clé ci-dessous).</li>
               <li>Entrez le code à 6 chiffres affiché.</li>
             </ol>
-            <code className="block break-all rounded bg-white px-2 py-1 text-xs">{enrollment.secret}</code>
+            <code className="block break-all rounded bg-surface px-2 py-1 text-xs">{enrollment.secret}</code>
             <input value={code} onChange={(e) => setCode(e.target.value)} inputMode="numeric" autoComplete="one-time-code" maxLength={7} required placeholder="123456" aria-label="Code de vérification" className="input text-center text-lg font-semibold tracking-[.3em]" />
             <button type="submit" disabled={busy} className="btn-primary w-full">
               {busy && <Loader2 className="size-4 animate-spin" aria-hidden />} Confirmer

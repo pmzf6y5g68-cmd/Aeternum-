@@ -82,7 +82,7 @@ export default async function ProLandingPage({ searchParams }: { searchParams: P
             <div className="card flex flex-col border-brand p-7 ring-2 ring-brand">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-bold">{t.proName}</h3>
-                <span className="rounded-full bg-sun px-2.5 py-1 text-xs font-bold text-ink">{t.proBadge}</span>
+                <span className="rounded-full bg-sun px-2.5 py-1 text-xs font-bold text-[#0b1f3a]">{t.proBadge}</span>
               </div>
               <div className="mt-3">
                 <PlanPicker mode="simulator" />

@@ -21,7 +21,7 @@ export function PlanPicker({ initialSeats = 1, mode, ctaHref = "/pro/inscription
 
   return (
     <div className="space-y-4">
-      <div className="inline-flex rounded-lg border border-line bg-white p-1">
+      <div className="inline-flex rounded-lg border border-line bg-surface p-1">
         {(["month", "year"] as const).map((i) => (
           <button key={i} type="button" onClick={() => setInterval(i)} className={`rounded-md px-3 py-1.5 text-sm font-semibold ${interval === i ? "bg-brand text-white" : "text-ink-soft"}`}>
             {i === "month" ? "Mensuel" : "Annuel · 2 mois offerts"}

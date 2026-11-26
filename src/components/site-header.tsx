@@ -10,7 +10,7 @@ export async function SiteHeader({ search, variant = "brand" }: { search?: Searc
   const { user } = await getCurrentUser().catch(() => ({ user: null }));
   const light = variant === "brand";
   return (
-    <header className={`${light ? "bg-brand" : "border-b border-line bg-white"} sticky top-0 z-30`}>
+    <header className={`${light ? "bg-brand" : "border-b border-line bg-surface"} sticky top-0 z-30`}>
       <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-3 md:flex-nowrap md:gap-6">
         <Logo tone={light ? "light" : "dark"} />
         {search && (

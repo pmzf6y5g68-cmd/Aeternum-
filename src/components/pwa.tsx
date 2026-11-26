@@ -58,7 +58,7 @@ export function Pwa() {
 
   if (!visible) return null;
   return (
-    <div className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-50 mx-auto flex max-w-md items-center gap-3 rounded-xl border border-line bg-white p-3 shadow-(--shadow-pop) sm:inset-x-auto sm:right-4">
+    <div className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-50 mx-auto flex max-w-md items-center gap-3 rounded-xl border border-line bg-surface p-3 shadow-(--shadow-pop) sm:inset-x-auto sm:right-4">
       <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-brand text-white">
         <Download className="size-5" aria-hidden />
       </span>

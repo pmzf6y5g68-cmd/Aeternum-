@@ -28,7 +28,7 @@ export function ProNav() {
       {items.map(({ href, label, icon: Icon }) => {
         const active = pathname.startsWith(href);
         return (
-          <Link key={href} href={href} className={`inline-flex shrink-0 items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-semibold transition ${active ? "bg-brand text-white" : "text-ink-soft hover:bg-white hover:text-ink"}`}>
+          <Link key={href} href={href} className={`inline-flex shrink-0 items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-semibold transition ${active ? "bg-brand text-white" : "text-ink-soft hover:bg-surface hover:text-ink"}`}>
             <Icon className="size-4" aria-hidden />
             {label}
           </Link>

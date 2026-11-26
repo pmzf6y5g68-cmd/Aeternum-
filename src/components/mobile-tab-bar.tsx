@@ -19,7 +19,7 @@ export function MobileTabBar() {
   return (
     <>
       <div aria-hidden className="h-[calc(4rem+env(safe-area-inset-bottom))] md:hidden" />
-      <nav aria-label="Navigation principale" className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
+      <nav aria-label="Navigation principale" className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
         <ul className="grid h-16 grid-cols-4">
           {TABS.map(({ href, label, icon: Icon, match }) => {
             const active = match(pathname);

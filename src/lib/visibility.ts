@@ -18,7 +18,7 @@ export interface VisibilityCheck {
 export interface VisibilityInput {
   business: Pick<
     Business,
-    "tagline" | "description" | "cover_url" | "phone" | "website" | "lat" | "lng" | "highlights" | "payment_methods" | "rating_count" | "stripe_connect_onboarded" | "deposit_enabled" | "published"
+    "tagline" | "description" | "cover_url" | "photos" | "phone" | "website" | "lat" | "lng" | "highlights" | "payment_methods" | "rating_count" | "stripe_connect_onboarded" | "deposit_enabled" | "published"
   >;
   services: Pick<Service, "description" | "active">[];
   hours: OpeningHours[];
@@ -31,7 +31,7 @@ export function visibilityChecks({ business: b, services, hours }: VisibilityInp
     { key: "published", label: "Page publiée", hint: "Sans publication, ni Google ni la recherche ne vous montrent.", points: 10, done: b.published, href: "/pro/ma-page" },
     { key: "description", label: "Présentation détaillée (300 caractères et plus)", hint: "Le texte que les IA résument pour vous recommander. Utilisez la rédaction IA.", points: 15, done: (b.description ?? "").trim().length >= 300, href: "/pro/visibilite#ia" },
     { key: "tagline", label: "Accroche", hint: "Affichée dans les résultats : c'est elle qui donne envie de cliquer.", points: 5, done: (b.tagline ?? "").trim().length >= 20, href: "/pro/ma-page" },
-    { key: "photo", label: "Photo de l'établissement", hint: "Les fiches avec photo sont nettement plus cliquées.", points: 10, done: Boolean(b.cover_url), href: "/pro/ma-page" },
+    { key: "photo", label: "Au moins 3 photos", hint: "Les clients choisissent d'abord avec les yeux : le lieu, l'équipe, un résultat.", points: 10, done: (b.photos?.length ?? 0) >= 3, href: "/pro/ma-page" },
     { key: "services", label: "Au moins 3 prestations décrites", hint: "Chaque prestation décrite est une recherche de plus où vous apparaissez.", points: 15, done: active.length >= 3 && described >= Math.min(3, active.length), href: "/pro/prestations" },
     { key: "hours", label: "Horaires renseignés", hint: "Répond aux questions « ouvert le samedi ? » de Google et des assistants.", points: 10, done: hours.some((h) => !h.is_closed && h.open_time), href: "/pro/horaires" },
     { key: "location", label: "Adresse géolocalisée", hint: "Indispensable pour les recherches « près de moi ».", points: 10, done: b.lat !== null && b.lng !== null, href: "/pro/ma-page" },

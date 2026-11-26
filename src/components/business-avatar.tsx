@@ -21,7 +21,7 @@ export function BusinessAvatar({ name, category, coverUrl, size = "md" }: { name
     <span className={`${dims} relative grid shrink-0 place-items-center rounded-xl font-bold text-white`} style={{ background: PALETTE[hash(name) % PALETTE.length] }}>
       {initials}
       {cat && (
-        <span className="absolute -bottom-1 -right-1 grid size-6 place-items-center rounded-full border-2 border-white bg-white text-ink">
+        <span className="absolute -bottom-1 -right-1 grid size-6 place-items-center rounded-full border-2 border-surface bg-surface text-ink">
           <CategoryIcon name={cat.icon} className="size-3.5" />
         </span>
       )}

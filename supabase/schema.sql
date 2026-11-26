@@ -1178,3 +1178,15 @@ do $$ begin
     on conflict (id) do update set public = true, file_size_limit = 5242880, allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp'];
   end if;
 end $$;
+
+-- ---------------------------------------------------------------------
+-- Galerie photo des établissements (8 max) : la première sert de couverture
+-- ---------------------------------------------------------------------
+alter table public.businesses add column if not exists photos text[] not null default '{}' check (cardinality(photos) <= 8);
+do $$ begin
+  if exists (select 1 from information_schema.tables where table_schema = 'storage' and table_name = 'buckets') then
+    insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+    values ('business-photos', 'business-photos', true, 5242880, array['image/jpeg', 'image/png', 'image/webp'])
+    on conflict (id) do update set public = true, file_size_limit = 5242880, allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp'];
+  end if;
+end $$;

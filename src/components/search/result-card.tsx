@@ -42,7 +42,7 @@ export function ResultCard({ r, active, onHover }: { r: SerializedResult; active
           <p className="flex items-center gap-2 text-sm font-medium text-ink">
             {category?.label}
             {r.sponsored && (
-              <span className="rounded bg-sun/30 px-1.5 py-0.5 text-[11px] font-bold text-ink" title="Établissement abonné Pro, mis en avant dans le tri « Pertinence »">
+              <span className="rounded bg-sun/30 px-1.5 py-0.5 text-[11px] font-bold text-[#0b1f3a]" title="Établissement abonné Pro, mis en avant dans le tri « Pertinence »">
                 Mis en avant
               </span>
             )}

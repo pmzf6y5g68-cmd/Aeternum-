@@ -148,7 +148,7 @@ function Choice({ selected, onClick, children }: { selected: boolean; onClick: (
       type="button"
       onClick={onClick}
       aria-pressed={selected}
-      className={`w-full rounded-lg border px-3.5 py-3 text-left transition ${selected ? "border-brand bg-brand-softer ring-1 ring-brand" : "border-line bg-white hover:border-brand"}`}
+      className={`w-full rounded-lg border px-3.5 py-3 text-left transition ${selected ? "border-brand bg-brand-softer ring-1 ring-brand" : "border-line bg-surface hover:border-brand"}`}
     >
       {children}
     </button>
@@ -292,14 +292,31 @@ export function BookingWidget({
     if (variantKey) params.set("variant", variantKey);
     if (staffId) params.set("staff", staffId);
     if (addonIds.length) params.set("addons", addonIds.join(","));
-    fetch(`/api/slots?${params}`, { signal: c.signal })
-      .then((r) => r.json() as Promise<{ days?: DayData[]; next_available?: string | null }>)
-      .then((d) => {
-        setDays(d.days ?? []);
-        setNextAvailable(d.next_available ?? null);
-      })
-      .catch(() => undefined);
-    return () => c.abort();
+    // Créneaux en direct : rechargés toutes les 45 s et au retour sur l'onglet ; un créneau choisi qui vient
+    // d'être pris par quelqu'un d'autre est retiré tout de suite (plus de mauvaise surprise au moment de confirmer).
+    const load = () =>
+      fetch(`/api/slots?${params}`, { signal: c.signal, cache: "no-store" })
+        .then((r) => r.json() as Promise<{ days?: DayData[]; next_available?: string | null }>)
+        .then((d) => {
+          const fresh = d.days ?? [];
+          setDays(fresh);
+          setNextAvailable(d.next_available ?? null);
+          setSlot((cur) => {
+            if (!cur) return cur;
+            const day = fresh.find((dd) => dd.slots.some((x) => x.startAt === cur.startAt) || dd.date === cur.startAt.slice(0, 10));
+            return day && !day.slots.some((x) => x.startAt === cur.startAt) ? null : cur;
+          });
+        })
+        .catch(() => undefined);
+    void load();
+    const timer = setInterval(() => document.visibilityState === "visible" && void load(), 45_000);
+    const onVisible = () => document.visibilityState === "visible" && void load();
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      c.abort();
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [slotReady, service, effectiveLocation, weekStart, variantKey, staffId, addonIds, seats, groupService, business.slug]);
 
   function resetAfter(k: StepKey) {
@@ -808,7 +825,7 @@ export function BookingWidget({
               </div>
               <p className="text-xs text-ink-soft">{formatDuration(service ? servicePrice(service, variantKey).duration_minutes : 0)}</p>
               {quote.guaranteeFeeCents > 0 && (
-                <p className="rounded-lg bg-white p-2.5 text-xs leading-relaxed text-ink-soft">
+                <p className="rounded-lg bg-surface p-2.5 text-xs leading-relaxed text-ink-soft">
                   Rendez-vous garanti par carte : aucun débit aujourd&apos;hui. En cas d&apos;absence sans annulation, {formatEur(quote.guaranteeFeeCents)} pourront être prélevés.
                 </p>
               )}

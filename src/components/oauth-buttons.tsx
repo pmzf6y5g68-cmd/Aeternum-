@@ -48,7 +48,7 @@ export function OAuthButtons({ next }: { next: string }) {
           <button
             type="submit"
             className={`flex w-full items-center justify-center gap-3 rounded-xl border px-4 py-3 text-[15px] font-semibold transition active:scale-[.99] ${
-              p.id === "apple" ? "border-black bg-black text-white hover:bg-neutral-800" : "border-line bg-white text-ink hover:bg-canvas"
+              p.id === "apple" ? "border-black bg-black text-white hover:bg-neutral-800" : "border-line bg-surface text-ink hover:bg-canvas"
             }`}
           >
             <ProviderIcon id={p.id} /> {p.label}

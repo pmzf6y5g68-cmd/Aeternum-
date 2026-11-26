@@ -21,7 +21,7 @@ export function StatusCard({
         <div className="card p-7 text-center">
           <Icon className={`mx-auto size-12 ${color}`} aria-hidden />
           <h1 className="mt-4 text-xl font-bold">{title}</h1>
-          <div className="mt-2 space-y-3 text-sm text-slate-600">{children}</div>
+          <div className="mt-2 space-y-3 text-sm text-ink-soft">{children}</div>
         </div>
       </div>
     </main>

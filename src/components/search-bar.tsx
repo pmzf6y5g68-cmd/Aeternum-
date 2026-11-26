@@ -49,6 +49,8 @@ export function SearchBar({ defaultQuery = "", defaultCategory = null, defaultPl
   const [cities, setCities] = useState<Place[]>([]);
   const [locating, setLocating] = useState(false);
   const root = useRef<HTMLFormElement>(null);
+  // Mobile, dans l'en-tête : une pastille résumé (« Coiffeur · Lyon ») qui se déplie au toucher, comme Airbnb.
+  const [expanded, setExpanded] = useState(false);
 
   const dWhat = useDebounced(what, 180);
   const dWhere = useDebounced(where, 220);
@@ -129,7 +131,23 @@ export function SearchBar({ defaultQuery = "", defaultCategory = null, defaultPl
   const tall = size === "lg";
   const hasWhatMenu = open === "what" && (suggestions.categories.length > 0 || suggestions.businesses.length > 0);
 
+  const compact = !tall && !expanded;
   return (
+    <>
+    {!tall && (
+      <button
+        type="button"
+        onClick={() => setExpanded(true)}
+        className={`${expanded ? "hidden" : "flex"} w-full items-center gap-3 rounded-full border border-line bg-surface px-4 py-2.5 text-left shadow-(--shadow-card) md:hidden`}
+        aria-expanded={expanded}
+      >
+        <Search className="size-5 shrink-0 text-brand" aria-hidden />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[15px] font-semibold text-ink">{what || "Que cherchez-vous ?"}</span>
+          <span className="block truncate text-xs text-ink-soft">{where || "Partout · toutes dates"}</span>
+        </span>
+      </button>
+    )}
     <form
       ref={root}
       role="search"
@@ -137,7 +155,7 @@ export function SearchBar({ defaultQuery = "", defaultCategory = null, defaultPl
         e.preventDefault();
         go(category, what, place);
       }}
-      className={`relative flex w-full flex-col gap-2 rounded-xl bg-white p-2 shadow-(--shadow-pop) md:flex-row md:items-center md:gap-0 ${tall ? "md:p-2" : "md:p-1.5"}`}
+      className={`relative w-full flex-col gap-2 rounded-xl bg-surface p-2 shadow-(--shadow-pop) md:flex md:flex-row md:items-center md:gap-0 ${tall ? "flex md:p-2" : "md:p-1.5"} ${tall ? "" : compact ? "hidden" : "flex sheet-in"}`}
     >
       <div className="relative flex-1">
         <label className="flex items-center gap-2.5 rounded-lg px-3 hover:bg-brand-softer">
@@ -157,7 +175,7 @@ export function SearchBar({ defaultQuery = "", defaultCategory = null, defaultPl
           />
         </label>
         {hasWhatMenu && (
-          <div className="absolute left-0 right-0 top-full z-40 mt-2 overflow-hidden rounded-xl border border-line bg-white shadow-(--shadow-pop)">
+          <div className="absolute left-0 right-0 top-full z-40 mt-2 overflow-hidden rounded-xl border border-line bg-surface shadow-(--shadow-pop)">
             {suggestions.categories.length > 0 && (
               <div className="py-2">
                 <p className="px-4 pb-1 text-xs font-semibold text-ink-soft">{fr.search.suggestions.categories}</p>
@@ -223,7 +241,7 @@ export function SearchBar({ defaultQuery = "", defaultCategory = null, defaultPl
           />
         </label>
         {open === "where" && (
-          <div className="absolute left-0 right-0 top-full z-40 mt-2 overflow-hidden rounded-xl border border-line bg-white py-2 shadow-(--shadow-pop)">
+          <div className="absolute left-0 right-0 top-full z-40 mt-2 overflow-hidden rounded-xl border border-line bg-surface py-2 shadow-(--shadow-pop)">
             <button type="button" onClick={locate} className="flex w-full items-center gap-3 px-4 py-2.5 text-left font-semibold text-brand hover:bg-brand-softer">
               <LocateFixed className={`size-5 ${locating ? "animate-pulse" : ""}`} aria-hidden />
               {t.aroundMe}
@@ -252,5 +270,6 @@ export function SearchBar({ defaultQuery = "", defaultCategory = null, defaultPl
         {t.search}
       </button>
     </form>
+    </>
   );
 }

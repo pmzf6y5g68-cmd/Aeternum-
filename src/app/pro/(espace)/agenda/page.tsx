@@ -18,8 +18,8 @@ const badge: Record<BookingStatus, string> = {
   scheduled: "bg-brand-soft text-brand ring-brand/20",
   confirmed: "bg-green-50 text-success ring-green-200",
   at_risk: "bg-red-50 text-danger ring-red-200",
-  completed: "bg-slate-100 text-slate-600 ring-slate-200",
-  cancelled: "bg-slate-50 text-slate-400 ring-slate-200 line-through",
+  completed: "bg-canvas text-ink-soft ring-slate-200",
+  cancelled: "bg-canvas text-slate-400 ring-slate-200 line-through",
   no_show: "bg-red-50 text-danger ring-red-200",
 };
 
@@ -114,7 +114,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
               ))}
             </div>
           )}
-          <div className="inline-flex rounded-lg border border-line bg-white p-1">
+          <div className="inline-flex rounded-lg border border-line bg-surface p-1">
             <Link href={href({ vue: "jour" })} className={`rounded-md px-3 py-1.5 text-sm font-semibold ${view === "jour" ? "bg-brand text-white" : "text-ink-soft"}`}>
               {t.day}
             </Link>

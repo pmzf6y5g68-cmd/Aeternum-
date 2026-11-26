@@ -48,7 +48,7 @@ export function GiftForm({ slug, amounts, businessName }: { slug: string; amount
                 setAmount(a);
                 setCustom("");
               }}
-              className={`rounded-xl border px-3 py-3 text-base font-bold transition ${!custom && amount === a ? "border-brand bg-brand text-white" : "border-line bg-white hover:border-brand"}`}
+              className={`rounded-xl border px-3 py-3 text-base font-bold transition ${!custom && amount === a ? "border-brand bg-brand text-white" : "border-line bg-surface hover:border-brand"}`}
             >
               {a} €
             </button>

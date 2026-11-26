@@ -225,3 +225,9 @@ créneaux visibles dès les résultats, carte, fiche avec réservation pas à pa
 - Squelettes de chargement (recherche, fiche) au lieu d'un écran blanc ; carte de résultat entièrement cliquable ; confirmation de réservation animée.
 - Toucher : boutons ≥ 44 px, léger enfoncement au tap, pas de surbrillance grise ; focus clavier visible partout ; animations coupées si « réduire les animations ».
 - Détails : « rendez‑vous » insécable dans le titre, hero compact sur mobile, recherches populaires défilantes, plus de « résultat(s) », état vide qui propose une action, libellés sans majuscules criardes, champ email avec exemple.
+
+## G — Mode sombre, photos, recherche compacte, site vivant ✅
+- **Mode sombre** automatique (réglage du téléphone/ordinateur) : jeton `surface` à la place du blanc codé en dur, palette bleu nuit, bandeaux d'alerte adaptés, photos et carte légèrement atténuées.
+- **Photos d'établissement** : galerie de 8 photos envoyées depuis le téléphone (type vérifié, 5 Mo), la 1re = couverture des résultats ; mosaïque sur ordinateur, défilement au doigt sur mobile, plein écran avec balayage et clavier ; score de visibilité « au moins 3 photos ». Bucket `business-photos`.
+- **Recherche mobile compacte** : pastille « Coiffeur · Lyon » qui se déplie au toucher (Airbnb).
+- **Site vivant** : créneaux rechargés toutes les 45 s et au retour sur l'onglet (un créneau pris ailleurs disparaît aussitôt), barre de progression fine à chaque navigation.

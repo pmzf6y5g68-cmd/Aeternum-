@@ -27,7 +27,7 @@ export function DepositCheckout({ clientSecret, account, publishableKey, holdUnt
         {left > 0 ? `Créneau réservé pour vous pendant ${mm}:${ss}` : "Le délai est écoulé : le créneau a peut-être été libéré."}
       </p>
       )}
-      <div className="overflow-hidden rounded-xl border border-line bg-white">
+      <div className="overflow-hidden rounded-xl border border-line bg-surface">
         <EmbeddedCheckoutProvider stripe={stripePromise} options={{ clientSecret }}>
           <EmbeddedCheckout />
         </EmbeddedCheckoutProvider>

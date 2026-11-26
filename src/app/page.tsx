@@ -88,7 +88,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="bg-white">
+        <section className="bg-surface">
           <div className="mx-auto max-w-6xl px-4 py-16">
             <h2 className="text-center text-2xl font-bold tracking-tight md:text-3xl">{t.howTitle}</h2>
             <ol className="mt-10 grid gap-8 md:grid-cols-3">

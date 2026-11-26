@@ -8,7 +8,7 @@ const hours = [
   { day_of_week: 6, open_time: "09:00:00", close_time: "17:00:00", break_start: null, break_end: null, is_closed: false },
 ];
 const empty = {
-  tagline: null, description: null, cover_url: null, phone: null, website: null, lat: null, lng: null, highlights: [], payment_methods: [],
+  tagline: null, description: null, cover_url: null, photos: [] as string[], phone: null, website: null, lat: null, lng: null, highlights: [], payment_methods: [],
   rating_count: 0, stripe_connect_onboarded: false, deposit_enabled: false, published: false,
 };
 
@@ -16,7 +16,7 @@ describe("score de visibilité", () => {
   it("fiche vide = 0, fiche complète = 100", () => {
     expect(visibilityScore(visibilityChecks({ business: empty, services: [], hours: [] }))).toBe(0);
     const full = {
-      ...empty, tagline: "Spécialiste du balayage naturel", description: "x".repeat(320), cover_url: "https://x/y.jpg", phone: "0400", website: "https://a.fr",
+      ...empty, tagline: "Spécialiste du balayage naturel", description: "x".repeat(320), cover_url: "https://x/y.jpg", photos: ["a.jpg", "b.jpg", "c.jpg"], phone: "0400", website: "https://a.fr",
       lat: 45, lng: 4, highlights: ["Parking", "PMR"], payment_methods: ["CB"], rating_count: 7, stripe_connect_onboarded: true, deposit_enabled: true, published: true,
     };
     const services = Array.from({ length: 3 }, () => ({ description: "Une description suffisamment longue", active: true }));

@@ -167,7 +167,7 @@ export function ResultsMap({ points, center, radiusKm = null, activeId, onHover,
       <div ref={el} className="h-full w-full rounded-xl" />
       <div className="pointer-events-none absolute inset-x-0 top-3 z-[500] flex justify-center px-3">
         {controls && moved && (
-          <button type="button" onClick={searchHere} className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-ink shadow-(--shadow-pop) hover:text-brand">
+          <button type="button" onClick={searchHere} className="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-surface px-4 py-2 text-sm font-semibold text-ink shadow-(--shadow-pop) hover:text-brand">
             <RefreshCw className="size-4" aria-hidden /> Rechercher dans cette zone
           </button>
         )}
@@ -177,12 +177,12 @@ export function ResultsMap({ points, center, radiusKm = null, activeId, onHover,
         type="button"
         onClick={locate}
         aria-label="Autour de moi"
-        className="absolute left-3 top-3 z-[500] inline-flex items-center gap-2 rounded-full bg-white px-3.5 py-2 text-sm font-semibold text-ink shadow-(--shadow-pop) hover:text-brand"
+        className="absolute left-3 top-3 z-[500] inline-flex items-center gap-2 rounded-full bg-surface px-3.5 py-2 text-sm font-semibold text-ink shadow-(--shadow-pop) hover:text-brand"
       >
         <LocateFixed className={`size-4 ${locating ? "animate-pulse text-brand" : ""}`} aria-hidden /> Autour de moi
       </button>
       )}
-      {geoError && <p className="absolute inset-x-3 bottom-3 z-[500] rounded-lg bg-white p-2.5 text-xs font-medium text-danger shadow-(--shadow-pop)">{geoError}</p>}
+      {geoError && <p className="absolute inset-x-3 bottom-3 z-[500] rounded-lg bg-surface p-2.5 text-xs font-medium text-danger shadow-(--shadow-pop)">{geoError}</p>}
     </div>
   );
 }
