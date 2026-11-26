@@ -1190,3 +1190,53 @@ do $$ begin
     on conflict (id) do update set public = true, file_size_limit = 5242880, allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp'];
   end if;
 end $$;
+
+-- ---------------------------------------------------------------------
+-- Annuaire ouvert : établissements non inscrits, issus d'OpenStreetMap (ODbL, attribution obligatoire).
+-- Fiche informative seulement (pas de réservation, pas d'avis inventés), retrait en 1 clic, revendication.
+-- ---------------------------------------------------------------------
+create table if not exists public.directory_listings (
+  id uuid primary key default gen_random_uuid(),
+  source text not null check (source in ('osm')),
+  source_id text not null,
+  category text not null,
+  name text not null check (char_length(name) between 2 and 120),
+  address text,
+  postal_code text,
+  city text,
+  city_slug text,
+  lat double precision not null,
+  lng double precision not null,
+  phone text,
+  website text,
+  opening_hours text,
+  opted_out_at timestamptz,
+  claimed_business_id uuid references public.businesses(id) on delete set null,
+  imported_at timestamptz not null default now(),
+  unique (source, source_id)
+);
+create index if not exists directory_listings_geo_idx on public.directory_listings (lat, lng) where opted_out_at is null and claimed_business_id is null;
+create index if not exists directory_listings_category_idx on public.directory_listings (category, city_slug);
+create index if not exists directory_listings_business_idx on public.directory_listings (claimed_business_id);
+alter table public.directory_listings enable row level security;
+drop policy if exists directory_public_read on public.directory_listings;
+create policy directory_public_read on public.directory_listings for select using (opted_out_at is null and claimed_business_id is null);
+revoke insert, update, delete on public.directory_listings from anon, authenticated;
+
+-- Fiches proches (bbox + Haversine), filtrables par métier ; les inscrits passent toujours avant (autre requête).
+create or replace function public.nearby_listings(p_lat double precision, p_lng double precision, p_radius_km double precision default 10, p_category text default null, p_limit integer default 20)
+returns table (id uuid, category text, name text, address text, city text, lat double precision, lng double precision, phone text, website text, opening_hours text, distance_km double precision)
+language sql stable security definer set search_path = public
+as $$
+  select l.id, l.category, l.name, l.address, l.city, l.lat, l.lng, l.phone, l.website, l.opening_hours,
+         6371 * 2 * asin(sqrt(power(sin(radians(l.lat - p_lat) / 2), 2) + cos(radians(p_lat)) * cos(radians(l.lat)) * power(sin(radians(l.lng - p_lng) / 2), 2))) as distance_km
+    from public.directory_listings l
+   where l.opted_out_at is null and l.claimed_business_id is null
+     and (p_category is null or l.category = p_category)
+     and l.lat between p_lat - least(greatest(p_radius_km, 1), 50) / 111.0 and p_lat + least(greatest(p_radius_km, 1), 50) / 111.0
+     and l.lng between p_lng - least(greatest(p_radius_km, 1), 50) / (111.0 * greatest(cos(radians(p_lat)), 0.2))
+                   and p_lng + least(greatest(p_radius_km, 1), 50) / (111.0 * greatest(cos(radians(p_lat)), 0.2))
+   order by distance_km
+   limit least(greatest(coalesce(p_limit, 20), 1), 50);
+$$;
+grant execute on function public.nearby_listings(double precision, double precision, double precision, text, integer) to anon, authenticated, service_role;

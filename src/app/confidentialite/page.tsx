@@ -36,6 +36,13 @@ export default function ConfidentialitePage() {
           ],
         },
         {
+          title: "Annuaire des établissements non inscrits",
+          paragraphs: [
+            `Pour aider les usagers à trouver tous les professionnels près de chez eux, Rendez-vous affiche des fiches informatives d'établissements non inscrits (nom, métier, adresse, téléphone et site publics, horaires), issues d'OpenStreetMap (© les contributeurs d'OpenStreetMap, licence ODbL). Base légale : intérêt légitime à informer le public. Aucune réservation, aucun avis ni aucune donnée n'est inventé pour ces fiches, et elles sont présentées comme non inscrites.`,
+            `Chaque fiche comporte un lien « Retirer cette fiche » : le retrait est immédiat et définitif (une mise à jour ultérieure ne la remet pas en ligne). L'établissement peut aussi revendiquer sa fiche pour activer la réservation en ligne.`,
+          ],
+        },
+        {
           title: "Sous-traitants",
           paragraphs: [
             `Hébergement : ${siteConfig.legal.host} et ${siteConfig.legal.dataHost}. Paiements : Stripe. Emails : Resend et Cloudflare. Assistant email : Anthropic. Géocodage : Base Adresse Nationale (data.gouv.fr) et OpenStreetMap Nominatim. Cartes : OpenStreetMap.`,

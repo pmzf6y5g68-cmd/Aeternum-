@@ -231,3 +231,9 @@ créneaux visibles dès les résultats, carte, fiche avec réservation pas à pa
 - **Photos d'établissement** : galerie de 8 photos envoyées depuis le téléphone (type vérifié, 5 Mo), la 1re = couverture des résultats ; mosaïque sur ordinateur, défilement au doigt sur mobile, plein écran avec balayage et clavier ; score de visibilité « au moins 3 photos ». Bucket `business-photos`.
 - **Recherche mobile compacte** : pastille « Coiffeur · Lyon » qui se déplie au toucher (Airbnb).
 - **Site vivant** : créneaux rechargés toutes les 45 s et au retour sur l'onglet (un créneau pris ailleurs disparaît aussitôt), barre de progression fine à chaque navigation.
+
+## H — Annuaire ouvert (démarrage sans attendre les inscriptions) ✅
+- Table `directory_listings` + RPC `nearby_listings` : établissements non inscrits issus d'**OpenStreetMap** (ODbL, attribution sur chaque bloc), jamais de Google Maps (conditions de Google).
+- `scripts/import_osm.py` (Overpass, 28 étiquettes → métiers, tests) + workflow `import-osm.yml` (manuel par villes, mise à jour mensuelle via `OSM_CITIES`) ; un réimport ne remet jamais en ligne une fiche retirée ou revendiquée.
+- Affichage : « Autres établissements à proximité » sous les résultats réservables (appel, site, horaires ; pas de réservation ni d'avis), mention « pas encore sur Rendez-vous ».
+- Retrait en 1 clic `/annuaire/retrait/[id]` (définitif) ; revendication `/pro/inscription?fiche=…` pré-remplie, la fiche cède la place à la vraie page. Politique de confidentialité mise à jour.

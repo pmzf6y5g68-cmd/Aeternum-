@@ -1,0 +1,34 @@
+name: Annuaire ouvert (OpenStreetMap)
+
+on:
+  workflow_dispatch:
+    inputs:
+      cities:
+        description: "Villes séparées par des virgules (ex. Lyon, Villeurbanne, Annecy)"
+        required: true
+        default: "Lyon"
+  schedule:
+    # Mise à jour mensuelle des villes déjà ouvertes (variable OSM_CITIES).
+    - cron: "41 3 2 * *"
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: cd scripts && python test_import_osm.py
+      - name: Importer
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          CITIES: ${{ github.event_name == 'workflow_dispatch' && inputs.cities || vars.OSM_CITIES }}
+        run: |
+          [ -n "$CITIES" ] || { echo "Aucune ville (variable OSM_CITIES)"; exit 0; }
+          args=()
+          IFS=',' read -ra list <<< "$CITIES"
+          for c in "${list[@]}"; do args+=(--city "$(echo "$c" | xargs)"); done
+          python scripts/import_osm.py "${args[@]}"

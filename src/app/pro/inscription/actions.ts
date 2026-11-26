@@ -77,6 +77,12 @@ export async function createBusiness(_prev: OnboardingState, formData: FormData)
       .single<{ id: string }>();
     if (error || !business) throw new Error(error?.message ?? "insert business");
 
+    // Fiche de l'annuaire ouvert revendiquée : elle disparaît au profit de la vraie page réservable.
+    const listingId = String(formData.get("fiche") ?? "");
+    if (/^[0-9a-f-]{36}$/.test(listingId)) {
+      await admin.from("directory_listings").update({ claimed_business_id: business.id }).eq("id", listingId).is("claimed_business_id", null);
+    }
+
     // Parrainage : rattache le filleul au parrain (récompense au premier paiement, cf. webhook Stripe).
     const jar = await cookies();
     const ref = jar.get("rdv_ref")?.value;

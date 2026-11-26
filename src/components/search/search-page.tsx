@@ -10,6 +10,7 @@ import { businessPath } from "@/lib/slug";
 import { SiteFooter } from "../site-footer";
 import { SiteHeader } from "../site-header";
 import { FiltersBar } from "./filters-bar";
+import { DirectorySection } from "./directory-section";
 import { ResultsView } from "./results-view";
 import type { SerializedResult } from "./types";
 import { breadcrumbJsonLd, faqJsonLd, itemListJsonLd, jsonLdScript } from "@/lib/seo";
@@ -178,6 +179,7 @@ export async function SearchPage({ params, fixedCategory, fixedCity, title, intr
             )}
           </nav>
         )}
+        {response.page === 1 && <DirectorySection lat={lat} lng={lng} citySlug={fixedCity?.slug ?? null} category={category} hasResults={results.length > 0} />}
         {seo && seo.faq.length > 0 && (
           <section className="mt-10 max-w-3xl">
             <h2 className="mb-3 text-xl font-bold">Questions fréquentes</h2>

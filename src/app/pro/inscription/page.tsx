@@ -6,18 +6,25 @@ import { Logo } from "@/components/logo";
 import { MagicLinkForm } from "@/components/magic-link-form";
 import { fr } from "@/i18n/fr";
 import { verifyPrefill } from "@/lib/prefill";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getOwnBusiness } from "@/lib/pro";
 import { OnboardingForm } from "./onboarding-form";
 
 export const metadata: Metadata = { title: "Créer ma page professionnelle" };
 
-export default async function OnboardingPage({ searchParams }: { searchParams: Promise<{ prefill?: string; parrain?: string }> }) {
-  const { prefill: token, parrain } = await searchParams;
-  const prefill = verifyPrefill(token, process.env.PREFILL_SECRET ?? "");
+export default async function OnboardingPage({ searchParams }: { searchParams: Promise<{ prefill?: string; parrain?: string; fiche?: string }> }) {
+  const { prefill: token, parrain, fiche } = await searchParams;
+  const signed = verifyPrefill(token, process.env.PREFILL_SECRET ?? "");
+  // Revendication d'une fiche de l'annuaire ouvert : nom, métier et ville déjà remplis.
+  const listing =
+    !signed && fiche && /^[0-9a-f-]{36}$/.test(fiche)
+      ? (await createAdminClient().from("directory_listings").select("id, name, category, city").eq("id", fiche).is("claimed_business_id", null).maybeSingle<{ id: string; name: string; category: string; city: string | null }>()).data
+      : null;
+  const prefill = signed ?? (listing ? { name: listing.name, city: listing.city ?? "", email: "", category: listing.category } : null);
   const { user, business } = await getOwnBusiness().catch(() => ({ user: null, business: null }));
   if (business) redirect("/pro/agenda");
   const t = fr.onboarding;
-  const next = token && prefill ? `/pro/inscription?prefill=${encodeURIComponent(token)}` : "/pro/inscription";
+  const next = token && signed ? `/pro/inscription?prefill=${encodeURIComponent(token)}` : listing ? `/pro/inscription?fiche=${listing.id}` : "/pro/inscription";
 
   return (
     <main className="min-h-dvh bg-canvas px-4 py-10">
@@ -36,7 +43,7 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
           )}
           <div className="mt-6">
             {user ? (
-              <OnboardingForm defaults={{ name: prefill?.name ?? "", city: prefill?.city ?? "", email: prefill?.email ?? user.email ?? "", category: prefill?.category ?? null }} />
+              <OnboardingForm defaults={{ name: prefill?.name ?? "", city: prefill?.city ?? "", email: prefill?.email ?? user.email ?? "", category: prefill?.category ?? null }} listingId={listing?.id ?? null} />
             ) : (
               <>
                 <p className="mb-3 text-sm font-semibold">{t.loginFirst}</p>

@@ -10,7 +10,7 @@ import { createBusiness, type OnboardingState } from "./actions";
 
 const t = fr.onboarding;
 
-export function OnboardingForm({ defaults }: { defaults: { name: string; city: string; email: string; category: string | null } }) {
+export function OnboardingForm({ defaults, listingId }: { defaults: { name: string; city: string; email: string; category: string | null }; listingId?: string | null }) {
   const [state, action] = useActionState(createBusiness, {} as OnboardingState);
   const [category, setCategory] = useState<string | null>(defaults.category);
   const [filter, setFilter] = useState("");
@@ -25,6 +25,7 @@ export function OnboardingForm({ defaults }: { defaults: { name: string; city: s
   return (
     <form action={action} className="space-y-5">
       <input type="hidden" name="category" value={category ?? ""} />
+      {listingId && <input type="hidden" name="fiche" value={listingId} />}
       <div>
         <p className="label">{t.category}</p>
         {cat ? (

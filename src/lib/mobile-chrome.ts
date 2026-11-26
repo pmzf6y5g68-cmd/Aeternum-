@@ -1,5 +1,5 @@
 /** Quelle barre fixe s'affiche en bas de l'écran mobile pour une page donnée. */
-const HIDDEN = ["/pro", "/paiement", "/widget", "/login", "/auth", "/cancel", "/confirm", "/avis", "/carnet/paiement", "/carte-cadeau/paiement", "/desinscription"];
+const HIDDEN = ["/pro", "/paiement", "/widget", "/login", "/auth", "/cancel", "/confirm", "/avis", "/carnet/paiement", "/carte-cadeau/paiement", "/desinscription", "/annuaire"];
 
 export const isBusinessPage = (p: string) => /^\/[a-z0-9-]+\/[a-z0-9-]+\/[a-z0-9-]{3,60}$/.test(p) && !p.startsWith("/compte");
 

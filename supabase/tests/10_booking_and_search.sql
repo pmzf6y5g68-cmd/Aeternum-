@@ -120,6 +120,22 @@ do $$ declare cp uuid; got uuid; bk bookings; begin
   delete from client_packs where id = cp;
 end $$;
 
+-- Annuaire ouvert : proche, filtrable, retiré dès l'opposition ou la revendication
+do $$ declare a uuid; begin
+  insert into directory_listings (source, source_id, category, name, city, lat, lng) values
+    ('osm', 'node/1', 'coiffeur', 'Coiffure du Parc', 'Lyon', 45.765, 4.836),
+    ('osm', 'node/2', 'garage', 'Garage Central', 'Lyon', 45.770, 4.840),
+    ('osm', 'node/3', 'coiffeur', 'Coiffure Paris', 'Paris', 48.857, 2.352);
+  assert (select count(*) from nearby_listings(45.764, 4.8357, 5)) = 2, 'deux fiches autour de Lyon';
+  assert (select name from nearby_listings(45.764, 4.8357, 5, 'coiffeur')) = 'Coiffure du Parc', 'filtre métier';
+  select id into a from directory_listings where source_id = 'node/1';
+  update directory_listings set opted_out_at = now() where id = a;
+  assert (select count(*) from nearby_listings(45.764, 4.8357, 5)) = 1, 'opposition : fiche retirée';
+  update directory_listings set claimed_business_id = 'b0000000-0000-0000-0000-000000000001' where source_id = 'node/2';
+  assert (select count(*) from nearby_listings(45.764, 4.8357, 5)) = 0, 'revendiquée : fiche remplacée par l''établissement';
+  delete from directory_listings;
+end $$;
+
 -- Congé d'un membre
 insert into time_off (business_id, staff_id, start_at, end_at) values ('b0000000-0000-0000-0000-000000000001', '5a000000-0000-0000-0000-000000000002', '2026-12-02 00:00+01', '2026-12-03 00:00+01');
 do $$ declare b bookings; begin
