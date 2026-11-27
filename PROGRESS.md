@@ -237,3 +237,5 @@ créneaux visibles dès les résultats, carte, fiche avec réservation pas à pa
 - `scripts/import_osm.py` (Overpass, 28 étiquettes → métiers, tests) + workflow `import-osm.yml` (manuel par villes, mise à jour mensuelle via `OSM_CITIES`) ; un réimport ne remet jamais en ligne une fiche retirée ou revendiquée.
 - Affichage : « Autres établissements à proximité » sous les résultats réservables (appel, site, horaires ; pas de réservation ni d'avis), mention « pas encore sur Rendez-vous ».
 - Retrait en 1 clic `/annuaire/retrait/[id]` (définitif) ; revendication `/pro/inscription?fiche=…` pré-remplie, la fiche cède la place à la vraie page. Politique de confidentialité mise à jour.
+- Annuaire ouvert aussi dans « À côté de chez vous » (accueil) et dans le compagnon IA, toujours après les inscrits et signalé « pas encore sur Rendez-vous ».
+- Résultats mobile avec grande photo de couverture ; préconnexion au stockage des photos.

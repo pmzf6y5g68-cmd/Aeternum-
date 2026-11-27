@@ -33,8 +33,14 @@ export function ResultCard({ r, active, onHover }: { r: SerializedResult; active
       onMouseLeave={() => onHover?.(null)}
       className={`card relative grid gap-5 p-4 transition duration-150 hover:border-brand/40 hover:shadow-(--shadow-pop) md:grid-cols-[1fr_minmax(0,20rem)] md:p-5 ${active ? "border-brand ring-2 ring-brand/20" : ""}`}
     >
+      {r.cover_url && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={r.cover_url} alt="" loading="lazy" className="-mx-4 -mt-4 aspect-[16/9] w-[calc(100%+2rem)] max-w-none rounded-t-2xl object-cover md:hidden" />
+      )}
       <div className="flex gap-4">
-        <BusinessAvatar name={r.name} category={r.category} coverUrl={r.cover_url} />
+        <span className={r.cover_url ? "hidden md:block" : ""}>
+          <BusinessAvatar name={r.name} category={r.category} coverUrl={r.cover_url} />
+        </span>
         <div className="min-w-0 space-y-1">
           <Link href={r.path} className="block text-lg font-bold leading-snug text-brand after:absolute after:inset-0 after:rounded-2xl after:content-[''] hover:underline">
             {r.name}

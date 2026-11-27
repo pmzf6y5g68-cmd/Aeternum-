@@ -55,6 +55,31 @@ export async function GET(request: NextRequest) {
     g.nearestKm = Math.min(g.nearestKm, r.distance_km);
     groups.set(cat.slug, g);
   }
+  // Annuaire ouvert : complète les métiers où trop peu d'établissements sont inscrits (signalés « non inscrit »,
+  // toujours après les inscrits). Le site reste utile partout dès le premier jour.
+  const { data: listingRows } = await createAdminClient().rpc("nearby_listings", { p_lat: lat, p_lng: lng, p_radius_km: Math.min(radius, 50), p_category: null, p_limit: 50 });
+  for (const l of (listingRows ?? []) as { id: string; category: string; name: string; address: string | null; city: string | null; lat: number; lng: number; phone: string | null; distance_km: number }[]) {
+    const cat = getCategory(l.category);
+    if (!cat) continue;
+    const g = groups.get(cat.slug) ?? { slug: cat.slug, label: cat.label, nearestKm: l.distance_km, items: [] };
+    if (g.items.length >= perCategory) continue;
+    g.items.push({
+      id: l.id,
+      name: l.name,
+      path: l.phone ? `tel:${l.phone.replace(/\s/g, "")}` : `/recherche?categorie=${cat.slug}&lat=${lat}&lng=${lng}&tri=distance`,
+      city: l.city,
+      address: l.address,
+      lat: l.lat,
+      lng: l.lng,
+      minPriceEur: null,
+      rating: 0,
+      reviews: 0,
+      distanceKm: Math.round(l.distance_km * 10) / 10,
+      unlisted: true,
+    });
+    g.nearestKm = Math.min(g.nearestKm, l.distance_km);
+    groups.set(cat.slug, g);
+  }
   const categories = [...groups.values()].sort((a, b) => a.nearestKm - b.nearestKm);
   return json({ position: { lat, lng }, radiusKm: radius, total: rows.length, categories });
 }

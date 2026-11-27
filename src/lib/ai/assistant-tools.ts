@@ -208,6 +208,12 @@ async function nearbyEverything(raw: unknown, location: { lat: number; lng: numb
     })
     .sort((a, b) => a.first.distance_km - b.first.distance_km);
   const missing = CATEGORIES.filter((c) => !byCat.has(c.slug)).map((c) => c.label);
+  // Annuaire ouvert : établissements pas encore inscrits (appel direct, pas de réservation en ligne).
+  const { data: listingRows } = await createAdminClient().rpc("nearby_listings", { p_lat: pos.lat, p_lng: pos.lng, p_radius_km: input.radius_km ?? 25, p_category: null, p_limit: 30 });
+  const notOnPlatform = ((listingRows ?? []) as { category: string; name: string; address: string | null; city: string | null; phone: string | null; distance_km: number }[])
+    .filter((l) => !byCat.has(l.category))
+    .slice(0, 12)
+    .map((l) => ({ category: getCategory(l.category)?.label ?? l.category, name: l.name, address: [l.address, l.city].filter(Boolean).join(", "), phone: l.phone, distance_km: Math.round(l.distance_km * 10) / 10 }));
   return {
     content: JSON.stringify({
       radius_km: input.radius_km ?? 25,
@@ -216,6 +222,7 @@ async function nearbyEverything(raw: unknown, location: { lat: number; lng: numb
         nearest: g.items.map((r) => ({ slug: r.slug, name: r.name, distance_km: Math.round(r.distance_km * 10) / 10, price_from_eur: r.min_price_eur, rating: r.rating_count ? `${Number(r.rating_avg).toFixed(1)}/5 (${r.rating_count})` : "nouveau" })),
       })),
       no_business_yet_within_radius: missing,
+      not_on_platform_yet: { note: "Établissements pas encore inscrits (données OpenStreetMap) : pas de réservation en ligne, à appeler directement. Toujours le préciser.", items: notOnPlatform },
     }),
     cards: groups.slice(0, 8).map((g) => {
       const r = g.first;

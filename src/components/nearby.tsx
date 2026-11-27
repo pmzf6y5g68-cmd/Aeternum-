@@ -18,6 +18,8 @@ interface Item {
   rating: number;
   reviews: number;
   distanceKm: number;
+  /** Fiche de l'annuaire ouvert : pas encore inscrit, pas de réservation en ligne. */
+  unlisted?: boolean;
 }
 interface Group {
   slug: string;
@@ -178,6 +180,7 @@ export function NearbyAllCategories() {
                           <span className="block truncate font-semibold">{i.name}</span>
                           <span className="text-xs text-ink-soft">
                             {km(i.distanceKm)}
+                            {i.unlisted && " · pas encore sur Rendez-vous"}
                             {i.reviews > 0 && (
                               <>
                                 {" · "}
@@ -186,6 +189,7 @@ export function NearbyAllCategories() {
                             )}
                           </span>
                         </span>
+                        {i.unlisted && i.path.startsWith("tel:") && <span className="shrink-0 text-xs font-semibold text-brand">Appeler</span>}
                         {i.minPriceEur !== null && <span className="shrink-0 font-bold">{i.minPriceEur === 0 ? "Gratuit" : `${i.minPriceEur} €`}</span>}
                       </Link>
                     </li>

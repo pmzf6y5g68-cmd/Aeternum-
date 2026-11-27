@@ -41,6 +41,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr">
+      <head>{process.env.NEXT_PUBLIC_SUPABASE_URL && <link rel="preconnect" href={process.env.NEXT_PUBLIC_SUPABASE_URL} crossOrigin="" />}</head>
       <body className="min-h-dvh bg-canvas pb-[env(safe-area-inset-bottom)] font-sans text-ink antialiased">
         <Suspense>
           <NavProgress />
